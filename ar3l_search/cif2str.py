@@ -9,7 +9,7 @@ import warnings
 from pathlib import Path
 from typing import Optional, Dict, Literal, Union, List, Any, Tuple
 
-import sympy as sp
+from asteval import Interpreter
 from pymatgen.core import Structure, Lattice
 from pymatgen.core.periodic_table import Specie, Element, DummySpecie
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
@@ -20,8 +20,7 @@ from ar3l_search.utils import (
     process_phase_name,
     standardize_coords,
     POSSIBLE_SPECIES,
-    supercell_coords,
-    normalize_value,
+    fuzzy_compare,
 )
 
 logger = logging.getLogger(__name__)
@@ -133,27 +132,26 @@ def get_std_position(
 
     std_notations = wyckoff["std_notations"]
 
-    all_possible_positions = [standardize_coords(*position) for position in positions]
-    all_possible_positions += supercell_coords(all_possible_positions)
+    positions = [standardize_coords(*position) for position in positions]
 
-    for position in all_possible_positions:
+    for position in positions:
+        variable_dict = {
+            "x": position[0],
+            "y": position[1],
+            "z": position[2],
+        }
         for std_notation in std_notations:
             constraints = std_notation.split(" ")
-            exprs = [sp.parse_expr(constraint) for constraint in constraints]
 
-            eqs = [sp.Eq(expr, position[i]) for i, expr in enumerate(exprs)]
+            aeval = Interpreter(use_numpy=False, symtable=variable_dict)
+            wx, wy, wz = [aeval.eval(constraint) for constraint in constraints]
 
-            # if all the equations are true
-            if all(eq is sp.true for eq in eqs):
-                return [normalize_value(pos) for pos in position], True
-
-            if any(eq is sp.false for eq in eqs):
-                continue
-
-            sol = sp.solve(eqs)
-
-            if sol and all(isinstance(v, sp.Float) & 0 < v < 1 for v in sol.values()):
-                return [normalize_value(pos) for pos in position], True
+            if (
+                fuzzy_compare(wx, position[0])
+                and fuzzy_compare(wy, position[1])
+                and fuzzy_compare(wz, position[2])
+            ):
+                return position, True
 
     logger.debug(
         f"Cannot find the standard position for {wyckoff_letter} {std_notations}, using the first position"

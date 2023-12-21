@@ -1,8 +1,6 @@
 import math
 import re
-from fractions import Fraction
 from pathlib import Path
-from typing import List
 
 
 def process_phase_name(phase_name: str) -> str:
@@ -39,43 +37,82 @@ def read_phase_name_from_str(str_path: Path) -> str:
     return re.search(r"PHASE=(\w*)", text).group(1)
 
 
-def normalize_value(value) -> float:
-    value = float(value)
-    while value >= 1:
-        value -= 1
-    while value < 0:
-        value += 1
-    return value
+def standardize_coords(x, y, z):
+    # Normalize coordinates to be within [0, 1)
+    while x < 0.0:
+        x += 1.0
+    while y < 0.0:
+        y += 1.0
+    while z < 0.0:
+        z += 1.0
+
+    while x >= 1.0:
+        x -= 1.0
+    while y >= 1.0:
+        y -= 1.0
+    while z >= 1.0:
+        z -= 1.0
+
+    # Adjust coordinates to specific fractional values if close
+    fractions = {
+        0.3333: 1 / 3,
+        0.6667: 2 / 3,
+        0.1667: 1 / 6,
+        0.8333: 5 / 6,
+        0.0833: 1 / 12,
+        0.4167: 5 / 12,
+        0.5833: 7 / 12,
+        0.9167: 11 / 12,
+    }
+
+    for key, value in fractions.items():
+        if abs(x - key) < 0.0001:
+            x = value
+        if abs(y - key) < 0.0001:
+            y = value
+        if abs(z - key) < 0.0001:
+            z = value
+
+    return x, y, z
 
 
-def standardize_coords(x, y, z) -> List[float]:
-    """
-    Standardize the coordinates to be between 0 and 1
-    """
+def fuzzy_compare(a, b):
+    # Getting the fractional part of the numbers
+    fa = math.fmod(a, 1.0)
+    fb = math.fmod(b, 1.0)
 
-    def adjust_value(value):
-        value = normalize_value(value)
+    # Normalizing the fractional parts to be within [0, 1]
+    while fa < 0.0:
+        fa += 1.0
+    while fb < 0.0:
+        fb += 1.0
+    while fa > 1.0:
+        fa -= 1.0
+    while fb > 1.0:
+        fb -= 1.0
 
-        if math.isclose(value, 0.3333, abs_tol=0.0001):
-            return Fraction(1, 3)
-        elif math.isclose(value, 0.6667, abs_tol=0.0001):
-            return Fraction(2, 3)
-        elif math.isclose(value, 0.1667, abs_tol=0.0001):
-            return Fraction(1, 6)
-        elif math.isclose(value, 0.8333, abs_tol=0.0001):
-            return Fraction(5, 6)
-        elif math.isclose(value, 0.0833, abs_tol=0.0001):
-            return Fraction(1, 12)
-        elif math.isclose(value, 0.4167, abs_tol=0.0001):
-            return Fraction(5, 12)
-        elif math.isclose(value, 0.5833, abs_tol=0.0001):
-            return Fraction(7, 12)
-        elif math.isclose(value, 0.9167, abs_tol=0.0001):
-            return Fraction(11, 12)
-        else:
-            return round(value, 6)  # round to 6 decimal places
+    # Checking specific fractional values
+    fractions = [
+        (0.3333, 0.3334),  # 1/3
+        (0.6666, 0.6667),  # 2/3
+        (0.1666, 0.1667),  # 1/6
+        (0.8333, 0.8334),  # 5/6
+        (0.0833, 0.0834),  # 1/12
+        (0.4166, 0.4167),  # 5/12
+        (0.5833, 0.5834),  # 7/12
+        (0.9166, 0.9167),  # 11/12
+    ]
 
-    return [adjust_value(x), adjust_value(y), adjust_value(z)]
+    for lower, upper in fractions:
+        if lower <= fa <= upper and lower <= fb <= upper:
+            return True
+
+    # Fuzzy comparison for general case
+    def is_close(a, b, rel_tol=1e-09, abs_tol=0.0):
+        # Custom implementation of fuzzy comparison
+        return abs(a - b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
+
+    return is_close(fa, fb)
 
 
 def supercell_coords(postions):
