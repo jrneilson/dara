@@ -37,14 +37,14 @@ def download_bgmn():
 
     # unzip
     with zipfile.ZipFile((bgmn_folder / "bgmnwin.zip").as_posix(), "r") as zip_ref:
-        zip_ref.extractall()
+        zip_ref.extractall(path=bgmn_folder.as_posix())
 
     # delete zip
     os.remove((bgmn_folder / "bgmnwin.zip").as_posix())
 
     # give permission
     if os_name == "Linux":
-        os.system(f"chmod +x {bgmn_folder}/bgmn")
+        os.system(f"chmod +x {bgmn_folder}/BGMNwin/bgmn")
     elif os_name == "Darwin":
         os.system(f"chmod +x {bgmn_folder}/BGMNwin/bgmn")
 

@@ -140,8 +140,10 @@ def get_std_position(
 
             if fuzzy_compare(wx, position[0]) and fuzzy_compare(wy, position[1]) and fuzzy_compare(wz, position[2]):
                 return position, True
-
-    logger.debug(f"Cannot find the standard position for {wyckoff_letter} {std_notations}, using the first position")
+    logger.debug(
+        f"Cannot find the standard position for {wyckoff_letter} {std_notations}, using the first position. "
+        f"The positions are: \n{positions}"
+    )
     return positions[0], False
 
 
@@ -248,8 +250,13 @@ def cif2str(cif_path: Path, working_dir: Optional[Path] = None) -> Path:
     else:
         str_path = working_dir / f"{cif_path.stem}.str"
 
-    spg = SpacegroupAnalyzer(Structure.from_file(cif_path.as_posix(), site_tolerance=1e-3))
-    structure: SymmetrizedStructure = spg.get_symmetrized_structure()
+    spg = SpacegroupAnalyzer(
+        Structure.from_file(cif_path.as_posix(), site_tolerance=1e-3)
+    )
+    structure: SymmetrizedStructure = spg.get_refined_structure()
+
+    spg = SpacegroupAnalyzer(structure)
+    structure = spg.get_symmetrized_structure()
 
     hall_number = str(spg.get_symmetry_dataset()["hall_number"])
     with (Path(__file__).parent / "data" / "spglib_db" / "spg.json").open("r", encoding="utf-8") as f:

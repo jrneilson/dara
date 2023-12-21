@@ -28,7 +28,7 @@ class TestCIF2STR(unittest.TestCase):
 
     def test_one_cif2str(self):
         path = Path(
-            "/Users/yuxing/projects/ar3l-search/example/summary_v2/Zn3Ni4(SbO6)2_900_240_Ni(OH)2_Sb2O3_ZnO_recipe138_f3ca1d77-a01d-4086-a8e8-2868b1719823/phases/target_phase.cif"
+            "/Users/yuxing/Downloads/CaGd2Zr(GaO3)4_orderings/CaGd2Zr(GaO3)4_ordering_20755.cif"
         )
         with TemporaryDirectory() as tmpdir:
             tmpdir = Path(tmpdir)

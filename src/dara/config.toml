@@ -4,4 +4,4 @@ gewicht="0_0"
 rp=4
 
 [bgmn]
-print_progress=true
+print_progress=false

@@ -39,19 +39,9 @@ def read_phase_name_from_str(str_path: Path) -> str:
 
 def standardize_coords(x, y, z):
     # Normalize coordinates to be within [0, 1)
-    while x < 0.0:
-        x += 1.0
-    while y < 0.0:
-        y += 1.0
-    while z < 0.0:
-        z += 1.0
-
-    while x >= 1.0:
-        x -= 1.0
-    while y >= 1.0:
-        y -= 1.0
-    while z >= 1.0:
-        z -= 1.0
+    x = math.fmod(x, 1.0)
+    y = math.fmod(y, 1.0)
+    z = math.fmod(z, 1.0)
 
     # Adjust coordinates to specific fractional values if close
     fractions = {
@@ -77,6 +67,9 @@ def standardize_coords(x, y, z):
 
 
 def fuzzy_compare(a, b):
+    a = round(float(a), 6)
+    b = round(float(b), 6)
+
     # Getting the fractional part of the numbers
     fa = math.fmod(a, 1.0)
     fb = math.fmod(b, 1.0)
@@ -108,7 +101,7 @@ def fuzzy_compare(a, b):
             return True
 
     # Fuzzy comparison for general case
-    def is_close(a, b, rel_tol=1e-09, abs_tol=0.0):
+    def is_close(a, b, rel_tol=1e-09, abs_tol=1e-6):
         # Custom implementation of fuzzy comparison
         return abs(a - b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
 
