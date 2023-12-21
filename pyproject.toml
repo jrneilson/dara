@@ -11,6 +11,8 @@ keywords = [
     "search-match",
     "crystallography",
     "xrd",
+    "bgmn",
+    "x-ray",
 ]
 license = { text = "modified BSD" }
 authors = [{ name = "Yuxing Fei", email = "yuxingfei@berkeley.edu" }, {name = "Matthew McDermott", email = "mcdermott@lbl.gov"}]

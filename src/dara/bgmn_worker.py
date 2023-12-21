@@ -46,8 +46,7 @@ class BGMNWorker:
 
     @staticmethod
     def get_result(control_file: Path):
-        """
-        Get the result from the refinement.
+        """Get the result from the refinement.
 
         :param control_file: the path to the control file (.sav)
 
