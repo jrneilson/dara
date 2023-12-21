@@ -5,7 +5,7 @@ import logging
 import re
 import warnings
 from pathlib import Path
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal, Optional, Union, Dict
 
 from asteval import Interpreter
 from pymatgen.core import Lattice, Structure
@@ -194,14 +194,14 @@ def check_wyckoff(
     return element_settings, error_count
 
 
-def make_spacegroup_setting_str(spacegroup_setting: dict[str, Any]) -> str:
+def make_spacegroup_setting_str(spacegroup_setting: Dict[str, Any]) -> str:
     """
     Make the spacegroup setting string
     """
     return " ".join([f"{k}={v}" for k, v in spacegroup_setting["setting"].items()]) + " //"
 
 
-def make_lattice_parameters_str(spacegroup_setting: dict[str, Any], structure: SymmetrizedStructure) -> str:
+def make_lattice_parameters_str(spacegroup_setting: Dict[str, Any], structure: SymmetrizedStructure) -> str:
     crystal_system = spacegroup_setting["setting"]["Lattice"]
     lattice_parameters = get_lattice_parameters_from_lattice(structure.lattice, crystal_system)
 
@@ -219,7 +219,10 @@ def make_lattice_parameters_str(spacegroup_setting: dict[str, Any], structure: S
 def make_peak_parameter_str() -> str:
     config = Config()["structure_refinement"]
     return (
-        f"RP={config['rp']} PARAM=k1=0_0^1 k2=0 PARAM=B1=0_0^0.01 "
+        f"RP={config['rp']} "
+        f"PARAM=k1=0_0^1 "
+        f"k2=0 "
+        f"PARAM=B1=0_0^0.01 "
         f"{'PARAM=' if config['gewicht'] == '0_0' else ''}GEWICHT={config['gewicht']} //"
     )
 

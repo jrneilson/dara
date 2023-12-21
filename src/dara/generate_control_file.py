@@ -1,7 +1,7 @@
 import re
 import shutil
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 
 from dara.utils import read_phase_name_from_str
 
@@ -19,7 +19,7 @@ def copy_xy_pattern(pattern_path: Path, working_dir: Path) -> None:
 
 def generate_control_file(
     pattern_path: Path,
-    str_paths: list[Path],
+    str_paths: List[Path],
     instrument_name: str,
     working_dir: Optional[Path] = None,
     *,

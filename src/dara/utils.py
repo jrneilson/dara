@@ -74,16 +74,6 @@ def fuzzy_compare(a, b):
     fa = math.fmod(a, 1.0)
     fb = math.fmod(b, 1.0)
 
-    # Normalizing the fractional parts to be within [0, 1]
-    while fa < 0.0:
-        fa += 1.0
-    while fb < 0.0:
-        fb += 1.0
-    while fa > 1.0:
-        fa -= 1.0
-    while fb > 1.0:
-        fb -= 1.0
-
     # Checking specific fractional values
     fractions = [
         (0.3333, 0.3334),  # 1/3
@@ -108,12 +98,12 @@ def fuzzy_compare(a, b):
     return is_close(fa, fb)
 
 
-def supercell_coords(postions):
+def supercell_coords(positions):
     """
     Generate the supercell coordinates
     """
     extended_coords = []
-    for x, y, z in postions:
+    for x, y, z in positions:
         for i in range(-1, 2):
             for j in range(-1, 2):
                 for k in range(-1, 2):

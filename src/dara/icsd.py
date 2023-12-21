@@ -4,10 +4,11 @@ from __future__ import annotations
 import itertools
 import re
 from pathlib import Path
+from typing import Union
 
 from monty.serialization import loadfn
-from pymatgen import Structure
 from pymatgen.analysis.structure_matcher import StructureMatcher
+from pymatgen.core import Structure
 
 from dara.utils import copy_and_rename_files
 
@@ -61,14 +62,14 @@ class ICSDDatabase:
 
     def load_structure(self, icsd_code: str | int):
         """Load a pymatgen structure from a CIF file in the ICSD database."""
-        return Structure.from_file(self.get_file_path(icsd_code), merge_tol=0.01, occupancy_tolerance=100)
+        return Structure.from_file(self.get_file_path(icsd_code).as_posix(), merge_tol=0.01, occupancy_tolerance=100)
 
-    def extract_year_from_cif(self, icsd_code: str | int):
+    def extract_year_from_cif(self, icsd_code: Union[str, int]):
         """Extract the year from a line in a CIF file that starts with 'primary' and contains a year.
 
         If the year is not found in the file, the function returns 10000.
 
-        :param file_path: Path to the CIF file
+        :param icsd_code: The ICSD code of the structure
         :return: The extracted year or a file not found error
         """
         file_path = self.get_file_path(icsd_code)
