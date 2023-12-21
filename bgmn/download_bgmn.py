@@ -24,7 +24,7 @@ def download_bgmn():
     if r.status_code != 200:
         raise Exception(f"Cannot download from {URL}.")
 
-    bgmn_folder = Path(__file__).parent / "bgmn"
+    bgmn_folder = Path(__file__).parent
 
     total_size = int(r.headers.get("content-length", 0))
     block_size = 1024
@@ -43,9 +43,7 @@ def download_bgmn():
     os.remove((bgmn_folder / "bgmnwin.zip").as_posix())
 
     # give permission
-    if os_name == "Linux":
-        os.system(f"chmod +x {bgmn_folder}/BGMNwin/bgmn")
-    elif os_name == "Darwin":
+    if os_name == "Linux" or os_name == "Darwin":
         os.system(f"chmod +x {bgmn_folder}/BGMNwin/bgmn")
 
 

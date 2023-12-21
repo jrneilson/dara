@@ -1,3 +1,4 @@
+"""Perform refinements with BGMN."""
 import tempfile
 from pathlib import Path
 from typing import Optional
@@ -47,9 +48,7 @@ def do_refinement_no_saving(
     instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
     **refinement_params,
 ):
-    """
-    Refine the structure using BGMN in a temporary directory without saving
-    """
+    """Refine the structure using BGMN in a temporary directory without saving"""
     with tempfile.TemporaryDirectory() as tmpdir:
         working_dir = Path(tmpdir)
 

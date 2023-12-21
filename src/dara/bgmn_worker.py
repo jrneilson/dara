@@ -8,12 +8,14 @@ from dara.config import Config
 
 
 class BGMNWorker:
+    """API for BGMN executable."""
+
     def __init__(self):
-        self.bgmn_folder = (Path(__file__).parent / "data" / "BGMNwin").absolute()
+        self.bgmn_folder = (Path(__file__).parent.parent.parent / "bgmn" / "BGMNwin").absolute()
 
         self.bgmn_path = self.bgmn_folder / "bgmn"
 
-        # for windows
+        # Windows configuration
         if not self.bgmn_path.exists():
             self.bgmn_path = self.bgmn_folder / "bgmn.exe"
 
