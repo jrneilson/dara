@@ -1,9 +1,9 @@
 import re
 import shutil
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
-from ar3l_search.utils import read_phase_name_from_str
+from dara.utils import read_phase_name_from_str
 
 
 def copy_instrument_files(instrument_name: str, working_dir: Path) -> None:
@@ -19,7 +19,7 @@ def copy_xy_pattern(pattern_path: Path, working_dir: Path) -> None:
 
 def generate_control_file(
     pattern_path: Path,
-    str_paths: List[Path],
+    str_paths: list[Path],
     instrument_name: str,
     working_dir: Optional[Path] = None,
     *,
@@ -36,20 +36,11 @@ def generate_control_file(
     copy_xy_pattern(pattern_path, control_file_path.parent)
     copy_instrument_files(instrument_name, control_file_path.parent)
 
-    phases_str = "\n".join(
-        [f"STRUC[{i}]={str_path.name}" for i, str_path in enumerate(str_paths, start=1)]
-    )
+    phases_str = "\n".join([f"STRUC[{i}]={str_path.name}" for i, str_path in enumerate(str_paths, start=1)])
 
     phase_names = [read_phase_name_from_str(str_path) for str_path in str_paths]
-    phase_fraction_str = "\n".join(
-        [f"Q{phase_name}={phase_name}/sum" for phase_name in phase_names]
-    )
-    goal_str = "\n".join(
-        [
-            f"GOAL[{i}]=Q{phase_name}"
-            for i, phase_name in enumerate(phase_names, start=1)
-        ]
-    )
+    phase_fraction_str = "\n".join([f"Q{phase_name}={phase_name}/sum" for phase_name in phase_names])
+    goal_str = "\n".join([f"GOAL[{i}]=Q{phase_name}" for i, phase_name in enumerate(phase_names, start=1)])
 
     control_file = f"""
     % Theoretical instrumental function

@@ -1,11 +1,9 @@
 import unittest
-import warnings
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from dara.cif2str import cif2str
 from spglib import get_error_message
-
-from ar3l_search.cif2str import cif2str
 
 
 class TestCIF2STR(unittest.TestCase):

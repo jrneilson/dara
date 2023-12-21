@@ -1,15 +1,15 @@
 import tempfile
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
-from ar3l_search.bgmn_worker import BGMNWorker
-from ar3l_search.cif2str import cif2str
-from ar3l_search.generate_control_file import generate_control_file
+from dara.bgmn_worker import BGMNWorker
+from dara.cif2str import cif2str
+from dara.generate_control_file import generate_control_file
 
 
 def do_refinement(
     pattern_path: Path,
-    cif_paths: List[Path],
+    cif_paths: list[Path],
     instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
     working_dir: Optional[Path] = None,
     **refinement_params,
@@ -45,7 +45,7 @@ def do_refinement(
 
 def do_refinement_no_saving(
     pattern_path: Path,
-    cif_paths: List[Path],
+    cif_paths: list[Path],
     instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
     **refinement_params,
 ):
