@@ -1,0 +1,343 @@
+"""
+Convert CIF to Str format
+"""
+import datetime
+import json
+import logging
+import re
+import warnings
+from pathlib import Path
+from typing import Optional, Dict, Literal, Union, List, Any, Tuple
+
+import sympy as sp
+from pymatgen.core import Structure, Lattice
+from pymatgen.core.periodic_table import Specie, Element, DummySpecie
+from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
+from pymatgen.symmetry.structure import SymmetrizedStructure
+
+from ar3l_search.config import Config
+from ar3l_search.utils import (
+    process_phase_name,
+    standardize_coords,
+    POSSIBLE_SPECIES,
+    supercell_coords,
+    normalize_value,
+)
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.WARNING)
+
+
+def process_specie_string(sp: Union[str, Specie, Element, DummySpecie]) -> str:
+    """
+    Reverse the charge notation of a species
+    """
+    specie = re.sub(r"(\d+)([+-])", r"\2\1", str(sp))
+    if specie.endswith("-") or specie.endswith("+"):
+        specie += "1"
+    specie = specie.upper()
+
+    if specie not in POSSIBLE_SPECIES:
+        # remove the valence and try again
+        specie = re.search(r"[A-Z]+", specie).group(0)
+        if specie not in POSSIBLE_SPECIES:
+            raise ValueError(
+                f"Unknown species {specie}, the original specie string is {sp}"
+            )
+    return specie
+
+
+def get_lattice_parameters_from_lattice(
+    lattice: Lattice,
+    crystal_system: Literal[
+        "Monoclinic",
+        "Cubic",
+        "Hexagonal",
+        "Trigonal",
+        "Orthorhombic",
+        "Triclinic",
+        "Tetragonal",
+        "Rhombohedral",
+    ],
+) -> Dict[str, float]:
+    """
+    Get lattice parameters from lattice based on the type of lattice
+
+    .. note::
+        The lattice parameters are in nm
+    """
+    if crystal_system == "Triclinic":
+        return {
+            "A": lattice.a / 10,
+            "B": lattice.b / 10,
+            "C": lattice.c / 10,
+            "ALPHA": lattice.alpha,
+            "BETA": lattice.beta,
+            "GAMMA": lattice.gamma,
+        }
+    elif crystal_system == "Monoclinic":
+        return {
+            "A": lattice.a / 10,
+            "B": lattice.b / 10,
+            "C": lattice.c / 10,
+            "BETA": lattice.beta,
+        }
+    elif crystal_system == "Orthorhombic":
+        return {
+            "A": lattice.a / 10,
+            "B": lattice.b / 10,
+            "C": lattice.c / 10,
+        }
+    elif crystal_system == "Tetragonal":
+        return {
+            "A": lattice.a / 10,
+            "C": lattice.c / 10,
+        }
+    # it seems that the trigonal and hexagonal lattices are the same in BGMN
+    elif crystal_system == "Rhombohedral":
+        return {
+            "A": lattice.a / 10,
+            "ALPHA": lattice.alpha,
+        }
+    elif crystal_system == "Hexagonal" or crystal_system == "Trigonal":
+        return {
+            "A": lattice.a / 10,
+            "C": lattice.c / 10,
+        }
+    elif crystal_system == "Cubic":
+        return {
+            "A": lattice.a / 10,
+        }
+    else:
+        raise ValueError(f"Unknown crystal system {crystal_system}")
+
+
+def get_std_position(
+    spacegroup_setting: Dict[str, Any],
+    wyckoff_letter: str,
+    positions: List[List[float]],
+) -> Tuple[List[float], bool]:
+    """
+    Get the standard position of a site based on the hall number and wyckoff notation
+    """
+    wyckoff = spacegroup_setting["wyckoffs"].get(wyckoff_letter, {})
+
+    if not wyckoff:
+        logger.debug(
+            f"Cannot find the standard position for {wyckoff_letter}, using the first position"
+        )
+        return (
+            positions[0],
+            True,
+        )  # if there is no standard position, we assume that the position is already in the standard position
+
+    std_notations = wyckoff["std_notations"]
+
+    all_possible_positions = [standardize_coords(*position) for position in positions]
+    all_possible_positions += supercell_coords(all_possible_positions)
+
+    for position in all_possible_positions:
+        for std_notation in std_notations:
+            constraints = std_notation.split(" ")
+            exprs = [sp.parse_expr(constraint) for constraint in constraints]
+
+            eqs = [sp.Eq(expr, position[i]) for i, expr in enumerate(exprs)]
+
+            # if all the equations are true
+            if all(eq is sp.true for eq in eqs):
+                return [normalize_value(pos) for pos in position], True
+
+            if any(eq is sp.false for eq in eqs):
+                continue
+
+            sol = sp.solve(eqs)
+
+            if sol and all(isinstance(v, sp.Float) & 0 < v < 1 for v in sol.values()):
+                return [normalize_value(pos) for pos in position], True
+
+    logger.debug(
+        f"Cannot find the standard position for {wyckoff_letter} {std_notations}, using the first position"
+    )
+    return positions[0], False
+
+
+def check_wyckoff(
+    spacegroup_setting: Dict[str, Any], structure: SymmetrizedStructure
+) -> Tuple[List[Dict[str, Any]], int]:
+    """
+    check if a given spacegroup setting is valid for a structure
+    :param spacegroup_setting: the spacegroup setting
+    :param structure: the symmetrized structure
+    :return: the settings of the elements and the number of errors
+    """
+    element_settings = []
+    error_count = 0
+
+    for site_idx in structure.equivalent_indices:
+        idx = site_idx[0]
+        site = structure[idx]
+
+        std_position, ok = get_std_position(
+            spacegroup_setting,
+            structure.wyckoff_letters[idx],
+            [structure[idx].frac_coords for idx in site_idx],
+        )
+
+        if not ok:
+            error_count += 1
+
+        if site.is_ordered:
+            species_string = process_specie_string(str(next(iter(site.species))))
+        else:
+            sorted_species = sorted(site.species)
+            species_string = ",".join(
+                f"{process_specie_string(ssp)}({site.species[ssp]:.6f})"
+                for ssp in sorted_species
+            )
+            species_string = f"({species_string})"
+
+        element_setting = {
+            "E": species_string,
+            "Wyckoff": structure.wyckoff_letters[idx],
+            "x": f"{std_position[0]:.6f}",
+            "y": f"{std_position[1]:.6f}",
+            "z": f"{std_position[2]:.6f}",
+            "TDS": f"{0.01:.6f}",
+        }
+        element_settings.append(element_setting)
+
+    return element_settings, error_count
+
+
+def make_spacegroup_setting_str(spacegroup_setting: Dict[str, Any]) -> str:
+    """
+    Make the spacegroup setting string
+    """
+    return (
+        " ".join([f"{k}={v}" for k, v in spacegroup_setting["setting"].items()]) + " //"
+    )
+
+
+def make_lattice_parameters_str(
+    spacegroup_setting: Dict[str, Any], structure: SymmetrizedStructure
+) -> str:
+    crystal_system = spacegroup_setting["setting"]["Lattice"]
+    lattice_parameters = get_lattice_parameters_from_lattice(
+        structure.lattice, crystal_system
+    )
+
+    lattice_parameters_str = " ".join(
+        [
+            f"PARAM={k}={v:.5f}_{v * (1 - Config()['structure_refinement']['lattice_range']):.5f}^"
+            f"{v * (1 + Config()['structure_refinement']['lattice_range']):.5f}"
+            for k, v in lattice_parameters.items()
+        ]
+    )
+    lattice_parameters_str += " //"
+    return lattice_parameters_str
+
+
+def make_peak_parameter_str() -> str:
+    config = Config()["structure_refinement"]
+    return (
+        f"RP={config['rp']} PARAM=k1=0_0^1 k2=0 PARAM=B1=0_0^0.01 "
+        f"{'PARAM=' if config['gewicht'] == '0_0' else ''}GEWICHT={config['gewicht']} //"
+    )
+
+
+def cif2str(cif_path: Path, working_dir: Optional[Path] = None) -> Path:
+    """
+    Convert CIF to Str format
+
+    Args:
+        cif_path: the path to the CIF file
+        working_dir: the folder to hold the processed str file
+
+    An example of the output Str file:
+    PHASE=BariumzirconiumtinIVoxide105053 // ICSD_43137
+    Reference=ICSD_43137 //
+    Formula=Ba1_O3_Sn0.5_Zr0.5 //
+    SpacegroupNo=221 HermannMauguin=P4/m-32/m Setting=1 Lattice=Cubic //
+    PARAM=A=0.416280_0.412117^0.420443 //
+    RP=4 k1=0 k2=0 PARAM=B1=0_0^0.01 GEWICHT=SPHAR4 //
+    GOAL:BariumzirconiumtinIVoxide105053=GEWICHT*ifthenelse(ifdef(d),exp(my*d*3/4),1) //
+    E=BA+2 Wyckoff=b x=0.500000 y=0.500000 z=0.500000 TDS=0.010000
+    E=(ZR+4(0.5000),SN+4(0.5000)) Wyckoff=a x=0.000000 y=0.000000 z=0.000000 TDS=0.010000
+    E=O-2 Wyckoff=d x=0.500000 y=0.000000 z=0.000000 TDS=0.010000
+
+    """
+    if working_dir is None:
+        str_path = cif_path.parent / f"{cif_path.stem}.str"
+    else:
+        str_path = working_dir / f"{cif_path.stem}.str"
+
+    spg = SpacegroupAnalyzer(
+        Structure.from_file(cif_path.as_posix(), site_tolerance=1e-3)
+    )
+    structure: SymmetrizedStructure = spg.get_symmetrized_structure()
+
+    hall_number = str(spg.get_symmetry_dataset()["hall_number"])
+    with (Path(__file__).parent / "3dparty" / "spglib_db" / "spg.json").open(
+        "r", encoding="utf-8"
+    ) as f:
+        spg_group_db = json.load(f)
+    settings = spg_group_db[hall_number]["settings"]
+
+    best_setting = None
+    for spacegroup_setting in settings:
+        element_settings, error_count = check_wyckoff(spacegroup_setting, structure)
+        if best_setting is None or error_count < best_setting[2]:
+            best_setting = (spacegroup_setting, element_settings, error_count)
+
+        if error_count == 0:
+            break
+
+    spacegroup_setting, element_settings, error_count = best_setting
+
+    if error_count > 0:
+        warnings.warn(
+            f"Cannot find a valid setting for {cif_path}, using the setting with the least errors ({error_count})."
+        )
+
+    logger.debug(
+        f"Using setting {spacegroup_setting['setting']} for {cif_path}, with {error_count} errors"
+    )
+
+    # start to construct the str file string
+    str_text = ""
+
+    # add some metadata
+    phase_name = process_phase_name(cif_path.stem)
+    str_text += (
+        f"PHASE={phase_name} "
+        f"// generated by pymatgen {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+    )
+    formula = Structure.from_file(cif_path.as_posix()).composition.reduced_formula
+    str_text += f"FORMULA={formula} //\n"
+
+    # add spacegroup setting
+    str_text += make_spacegroup_setting_str(spacegroup_setting) + "\n"
+
+    # add lattice
+    str_text += make_lattice_parameters_str(spacegroup_setting, structure) + "\n"
+
+    # add RP
+    str_text += make_peak_parameter_str() + "\n"
+
+    # add goals
+    str_text += (
+        f"GOAL:{phase_name}=GEWICHT*ifthenelse(ifdef(d),exp(my*d*3/4),1) //\n"
+        f"GOAL=GrainSize(1,1,1) //\n"
+    )
+
+    # add wyckoff positions
+    element_settings_str = [
+        " ".join([f"{k}={v}" for k, v in element_setting.items()])
+        for element_setting in element_settings
+    ]
+    str_text += "\n".join(element_settings_str)
+
+    with open(str_path, "w") as f:
+        f.write(str_text)
+
+    return str_path
