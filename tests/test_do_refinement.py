@@ -32,7 +32,7 @@ class TestDoRefinement(unittest.TestCase):
             "/Users/yuxing/projects/ar3l-search/example/CaGd2Zr(GaO3)4/MP350-pellet-24-33h.xy"
         )
 
-        cif_paths = [pattern_path.parent / "target_phase.cif"]
+        cif_paths = [p for p in list(pattern_path.parent.glob("*.cif")) if p.stem != "target_phase"]
         try:
             result = do_refinement(pattern_path, cif_paths)
         except Exception as e:
