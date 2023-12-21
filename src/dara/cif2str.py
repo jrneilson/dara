@@ -254,7 +254,7 @@ def cif2str(cif_path: Path, working_dir: Optional[Path] = None) -> Path:
     structure: SymmetrizedStructure = spg.get_symmetrized_structure()
 
     hall_number = str(spg.get_symmetry_dataset()["hall_number"])
-    with (Path(__file__).parent / "3dparty" / "spglib_db" / "spg.json").open("r", encoding="utf-8") as f:
+    with (Path(__file__).parent / "data" / "spglib_db" / "spg.json").open("r", encoding="utf-8") as f:
         spg_group_db = json.load(f)
     settings = spg_group_db[hall_number]["settings"]
 

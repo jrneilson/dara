@@ -7,7 +7,7 @@ from dara.utils import read_phase_name_from_str
 
 
 def copy_instrument_files(instrument_name: str, working_dir: Path) -> None:
-    instrument_path = Path(__file__).parent / "3dparty" / "BGMN-Templates" / "Devices"
+    instrument_path = Path(__file__).parent / "data" / "BGMN-Templates" / "Devices"
 
     for file in instrument_path.glob(f"{instrument_name}*"):
         shutil.copy(file, working_dir)

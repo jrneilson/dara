@@ -1,13 +1,13 @@
 import os
 from pathlib import Path
 from types import MappingProxyType as FrozenDict
-from typing import Any, Dict
+from typing import Any
 
 import toml
 from monty.design_patterns import singleton
 
 
-def freeze_config(config_: Dict[str, Any]) -> FrozenDict:
+def freeze_config(config_: dict[str, Any]) -> FrozenDict:
     """
     Convert the config dict to frozen config.
 
@@ -22,13 +22,9 @@ def freeze_config(config_: Dict[str, Any]) -> FrozenDict:
     def _frozen_collection(collection_or_element):
         """Convert a list to tuple, a dict to frozen_dict recursively."""
         if isinstance(collection_or_element, list):
-            return tuple(
-                _frozen_collection(element) for element in collection_or_element
-            )
+            return tuple(_frozen_collection(element) for element in collection_or_element)
         if isinstance(collection_or_element, dict):
-            return FrozenDict(
-                {k: _frozen_collection(v) for k, v in collection_or_element.items()}
-            )
+            return FrozenDict({k: _frozen_collection(v) for k, v in collection_or_element.items()})
 
         return collection_or_element
 

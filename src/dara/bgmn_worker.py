@@ -9,7 +9,7 @@ from dara.config import Config
 
 class BGMNWorker:
     def __init__(self):
-        self.bgmn_folder = (Path(__file__).parent / "3dparty" / "BGMNwin").absolute()
+        self.bgmn_folder = (Path(__file__).parent / "data" / "BGMNwin").absolute()
 
         self.bgmn_path = self.bgmn_folder / "bgmn"
 
@@ -33,6 +33,7 @@ class BGMNWorker:
             [self.bgmn_path.as_posix(), control_file.absolute().as_posix()],
             cwd=control_file.parent.absolute().as_posix(),
             capture_output=not Config()["bgmn"]["print_progress"],
+            check=False,
         )
         if cp.returncode:
             raise RuntimeError(
