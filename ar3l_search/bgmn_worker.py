@@ -1,5 +1,6 @@
 import os
 import re
+import warnings
 from pathlib import Path
 from subprocess import run
 from typing import Dict, Any, Union, Tuple
@@ -10,7 +11,16 @@ from ar3l_search.config import Config
 class BGMNWorker:
     def __init__(self):
         self.bgmn_folder = (Path(__file__).parent / "3dparty" / "BGMNwin").absolute()
+
         self.bgmn_path = self.bgmn_folder / "bgmn"
+
+        # for windows
+        if not self.bgmn_path.exists():
+            self.bgmn_path = self.bgmn_folder / "bgmn.exe"
+
+        if not self.bgmn_path.exists():
+            raise FileNotFoundError("Cannot find BGMN executable.")
+
         os.environ["EFLECH"] = self.bgmn_folder.as_posix()
         os.environ["PATH"] += os.pathsep + self.bgmn_folder.as_posix()
 
