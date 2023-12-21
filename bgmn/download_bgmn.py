@@ -4,12 +4,12 @@ import platform
 import zipfile
 from pathlib import Path
 
+import requests
+from tqdm import tqdm
+
 
 def download_bgmn():
     """Download BGMN executable for Linux, Mac, and Windows."""
-    import requests
-    from tqdm import tqdm
-
     # get os
     os_name = platform.system()  # Darwin, Linux, Windows
 
@@ -24,7 +24,7 @@ def download_bgmn():
     if r.status_code != 200:
         raise Exception(f"Cannot download from {URL}.")
 
-    bgmn_folder = Path(__file__).parent / "data"
+    bgmn_folder = Path(__file__).parent / "bgmn"
 
     total_size = int(r.headers.get("content-length", 0))
     block_size = 1024

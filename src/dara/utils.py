@@ -1,25 +1,25 @@
 import math
+import os
 import re
+import shutil
 from pathlib import Path
+
+with open(Path(__file__).parent / "data" / "possible_species.txt") as f:
+    POSSIBLE_SPECIES = {sp.strip() for sp in f}
 
 
 def process_phase_name(phase_name: str) -> str:
-    """
-    Process the phase name to remove special characters
-    """
+    """Process the phase name to remove special characters."""
     return re.sub(r"[\s_/\\+–*]", "", phase_name)
 
 
 def bool2yn(value: bool) -> str:
-    """
-    Convert boolean to Y (yes) or N (no)
-    """
+    """Convert boolean to Y (yes) or N (no)."""
     return "Y" if value else "N"
 
 
 def read_phase_name_from_str(str_path: Path) -> str:
-    """
-    Get the phase name from the str file path
+    """Get the phase name from the str file path.
 
     Example of str:
     PHASE=BaSnO3 // generated from pymatgen
@@ -130,188 +130,25 @@ def supercell_coords(postions):
     return extended_coords
 
 
-POSSIBLE_SPECIES = """H   
-HE
-LI
-LI+1
-BE  
-BE+2
-B   
-C   
-N   
-O   
-O-1 
-O-2 
-F   
-F-1 
-NE  
-NA  
-NA+1
-MG  
-MG+2
-AL  
-AL+3
-SI  
-SI+4
-P   
-S   
-CL  
-CL-1
-AR  
-K   
-K+1 
-CA  
-CA+2
-SC  
-SC+3
-TI  
-TI+3
-TI+4
-V   
-V+2 
-V+3 
-V+5 
-CR  
-CR+2
-CR+3
-MN  
-MN+2
-MN+3
-MN+4
-FE  
-FE+2
-FE+3
-CO  
-CO+2
-CO+3
-NI  
-NI+2
-NI+3
-CU  
-CU+1
-CU+2
-ZN  
-ZN+2
-GA  
-GA+3
-GE  
-AS  
-SE  
-BR  
-BR-1
-KR  
-RB  
-RB+1
-SR  
-SR+2
-Y   
-Y+3 
-ZR  
-ZR+4
-NB  
-NB+3
-NB+5
-MO  
-MO+3
-MO+5
-MO+6
-TC  
-RU  
-RU+3
-RU+4
-RH  
-RH+3
-RH+4
-PD  
-PD+2
-PD+4
-AG  
-AG+1
-AG+2
-CD  
-CD+2
-IN  
-IN+3
-SN  
-SN+2
-SN+4
-SB  
-SB+3
-SB+5
-TE  
-I   
-I-1 
-XE  
-CS  
-CS+1
-BA  
-BA+2
-LA  
-LA+3
-CE  
-CE+3
-CE+4
-PR  
-PR+3
-PR+4
-ND  
-ND+3
-PM  
-PM+3
-SM  
-SM+3
-EU  
-EU+2
-EU+3
-GD  
-GD+3
-TB  
-TB+3
-DY  
-DY+3
-HO  
-HO+3
-ER  
-ER+3
-TM  
-TM+3
-YB  
-YB+2
-YB+3
-LU  
-LU+3
-HF  
-TA  
-W   
-RE  
-OS  
-IR  
-PT  
-AU  
-HG  
-TL  
-PB  
-BI  
-PO  
-AT  
-RN  
-FR  
-RA  
-AC  
-TH  
-PA  
-U   
-NP  
-PU  
-AM  
-CM  
-BK  
-CF  
-ES  
-FM  
-MD  
-NO  
-LW 
-"""
+def copy_and_rename_files(src_directory, dest_directory, file_map):
+    """Copy specific files from the source directory to the destination directory with new names.
 
-POSSIBLE_SPECIES = set(sp.strip() for sp in POSSIBLE_SPECIES.split("\n") if sp.strip())
+    :param src_directory: Path to the source directory
+    :param dest_directory: Path to the destination directory
+    :param file_map: Dictionary where keys are original filenames and values are new filenames
+    """
+    # Ensure the destination directory exists
+    if not os.path.exists(dest_directory):
+        os.makedirs(dest_directory)
+
+    # Copy and rename each specified file
+    for src_filename, dest_filename in file_map.items():
+        src_file = os.path.join(src_directory, src_filename)
+        dest_file = os.path.join(dest_directory, dest_filename)
+
+        # Check if file exists and is a file (not a directory)
+        if os.path.isfile(src_file):
+            shutil.copy(src_file, dest_file)
+            print(f"Copied {src_filename} to {dest_filename} in {dest_directory}")
+        else:
+            print(f"File {src_filename} not found in {src_directory}")

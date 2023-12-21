@@ -1,4 +1,4 @@
-"""Convert CIF to Str format for BGMN"""
+"""Convert CIF to Str format for BGMN."""
 import datetime
 import json
 import logging
@@ -26,9 +26,7 @@ logging.basicConfig(level=logging.WARNING)
 
 
 def process_specie_string(sp: Union[str, Specie, Element, DummySpecie]) -> str:
-    """
-    Reverse the charge notation of a species
-    """
+    """Reverse the charge notation of a species."""
     specie = re.sub(r"(\d+)([+-])", r"\2\1", str(sp))
     if specie.endswith("-") or specie.endswith("+"):
         specie += "1"

@@ -14,9 +14,7 @@ def do_refinement(
     working_dir: Optional[Path] = None,
     **refinement_params,
 ):
-    """
-    Refine the structure using BGMN
-    """
+    """Refine the structure using BGMN."""
     if working_dir is None:
         working_dir = pattern_path.parent / f"refinement_{pattern_path.stem}"
 
