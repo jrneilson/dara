@@ -6,14 +6,16 @@ from typing import Optional, List
 from dara.bgmn_worker import BGMNWorker
 from dara.cif2str import cif2str
 from dara.generate_control_file import generate_control_file
+from dara.parse_result import get_result
+from dara.xrdml2xy import xrdml2xy
 
 
 def do_refinement(
-    pattern_path: Path,
-    cif_paths: List[Path],
-    instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
-    working_dir: Optional[Path] = None,
-    **refinement_params,
+        pattern_path: Path,
+        cif_paths: List[Path],
+        instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
+        working_dir: Optional[Path] = None,
+        **refinement_params,
 ):
     """Refine the structure using BGMN."""
     if working_dir is None:
@@ -21,6 +23,9 @@ def do_refinement(
 
     if not working_dir.exists():
         working_dir.mkdir(exist_ok=True, parents=True)
+
+    if pattern_path.suffix == ".xrdml":
+        pattern_path = xrdml2xy(pattern_path, working_dir)
 
     str_paths = []
     for cif_path in cif_paths:
@@ -37,16 +42,16 @@ def do_refinement(
 
     bgmn_worker = BGMNWorker()
     bgmn_worker.run_refinement_cmd(control_file_path)
-    result = bgmn_worker.get_result(control_file_path)
+    result = get_result(control_file_path)
 
     return result
 
 
 def do_refinement_no_saving(
-    pattern_path: Path,
-    cif_paths: List[Path],
-    instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
-    **refinement_params,
+        pattern_path: Path,
+        cif_paths: List[Path],
+        instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
+        **refinement_params,
 ):
     """Refine the structure using BGMN in a temporary directory without saving"""
     with tempfile.TemporaryDirectory() as tmpdir:
