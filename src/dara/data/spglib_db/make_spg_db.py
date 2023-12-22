@@ -73,6 +73,9 @@ def csv2dict_sp(csv_file):
             international_short = row[keys["hall_symb"]]
             international_full = row[keys["international_full"]].replace(" ", "")
 
+            if international_full in new2old:
+                international_full = new2old[international_full]
+
             data[hall_number] = {
                 "group_number": group_number,
                 "spacegroup": spacegroup,
@@ -87,13 +90,11 @@ if __name__ == "__main__":
     data1 = xml2dict_sp(Path("spacegrp.xml"))
     data2 = csv2dict_sp(Path("spg.csv"))
 
-    for k, v in data2.items():
-        hm = v["international_full"]
-        if hm in new2old:
-            hm = new2old[hm]
-        if hm not in data1:
-            print(f"{k} {hm} not in xml file")
+    xml_international = set(data1.keys())
+    csv_international = set(v["international_full"] for v in data2.values())
 
+    print(f"These are in xml but not in csv: {xml_international - csv_international}")
+    print(f"These are in csv but not in xml: {csv_international - xml_international}")
     # merge two table
     data = {}
 

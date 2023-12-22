@@ -15839,14 +15839,45 @@
   "group_number": "1",
   "spacegroup": "39",
   "hall_symb": "A 2 -2b",
-  "international_full": "Aem2",
+  "international_full": "Abm2",
   "settings": [
    {
     "setting": {
-     "HermannMauguin": "Aem2",
+     "Lattice": "Orthorhombic",
+     "HermannMauguin": "Abm2",
+     "Setting": "1",
      "SpacegroupNo": "39"
     },
-    "wyckoffs": {}
+    "wyckoffs": {
+     "d": {
+      "N": "8",
+      "Symbol": "d",
+      "std_notations": [
+       "x y z"
+      ]
+     },
+     "c": {
+      "N": "4",
+      "Symbol": "c",
+      "std_notations": [
+       "x 1/4 z"
+      ]
+     },
+     "b": {
+      "N": "4",
+      "Symbol": "b",
+      "std_notations": [
+       "1/2 0 z"
+      ]
+     },
+     "a": {
+      "N": "4",
+      "Symbol": "a",
+      "std_notations": [
+       "0 0 z"
+      ]
+     }
+    }
    }
   ]
  },
@@ -16163,14 +16194,31 @@
   "group_number": "1",
   "spacegroup": "41",
   "hall_symb": "A 2 -2ab",
-  "international_full": "Aea2",
+  "international_full": "Aba2",
   "settings": [
    {
     "setting": {
-     "HermannMauguin": "Aea2",
+     "Lattice": "Orthorhombic",
+     "HermannMauguin": "Aba2",
+     "Setting": "1",
      "SpacegroupNo": "41"
     },
-    "wyckoffs": {}
+    "wyckoffs": {
+     "b": {
+      "N": "8",
+      "Symbol": "b",
+      "std_notations": [
+       "x y z"
+      ]
+     },
+     "a": {
+      "N": "4",
+      "Symbol": "a",
+      "std_notations": [
+       "0 0 z"
+      ]
+     }
+    }
    }
   ]
  },
