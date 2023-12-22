@@ -1,7 +1,14 @@
+"""Utility functions for the dara package."""
 import os
 import re
 import shutil
 from pathlib import Path
+
+from rxn_network.core import Composition
+from rxn_network.entries.entry_set import GibbsEntrySet
+from rxn_network.utils.funcs import get_logger
+
+logger = get_logger(__name__)
 
 with open(Path(__file__).parent / "data" / "possible_species.txt") as f:
     POSSIBLE_SPECIES = {sp.strip() for sp in f}
@@ -120,3 +127,30 @@ def copy_and_rename_files(src_directory, dest_directory, file_map):
             print(f"Copied {src_filename} to {dest_filename} in {dest_directory}")
         else:
             print(f"File {src_filename} not found in {src_directory}")
+
+
+def get_entry_by_formula(gibbs_entries: GibbsEntrySet, formula: str):
+    """Either returns the minimum energy entry or a new interpolated entry."""
+    try:
+        entry = gibbs_entries.get_min_entry_by_formula(formula)
+    except:
+        entry = gibbs_entries.get_interpolated_entry(formula)  # if entry is missing, use interpolated one
+    return entry
+
+
+def get_chemsys_from_formulas(formulas: list[str]):
+    """Convert a list of formulas to a chemsys."""
+    elements = set()
+    for formula in formulas:
+        elements.update(Composition(formula).elements)
+
+    return "-".join(sorted([str(e) for e in elements]))
+
+
+def get_mp_entries(chemsys: str):
+    """Download ComputedStructureEntry objects from Materials Project."""
+    logger.info("Downloading entries from Materials Project...")
+    from mp_api.client import MPRester
+
+    with MPRester() as mpr:
+        return mpr.get_entries_in_chemsys(chemsys)

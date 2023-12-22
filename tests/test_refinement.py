@@ -11,9 +11,7 @@ class TestRefinement(unittest.TestCase):
         """Set up the test."""
         self.cif_paths = list((Path(__file__).parent / "test_data").glob("*.cif"))
         self.pattern_path = Path(__file__).parent / "test_data" / "BiFeO3.xy"
-        os.environ["DARA_CONFIG"] = (
-            (Path(__file__).parent / "test_data" / "test_config.toml").absolute().as_posix()
-        )
+        os.environ["DARA_CONFIG"] = (Path(__file__).parent / "test_data" / "test_config.toml").absolute().as_posix()
 
     def tearDown(self):
         """Tear down the test."""
@@ -34,4 +32,3 @@ class TestRefinement(unittest.TestCase):
                 n_threads=1,
             )
             self.assertAlmostEqual(result["Rwp"], 7.82, places=1)
-
