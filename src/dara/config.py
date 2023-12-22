@@ -43,7 +43,7 @@ class Config:
 
     def __init__(self):
         """Load a immutable toml config file from `config_path`."""
-        path = Path(os.environ.get("AR3L_CONFIG", self.DEFAULT_CONFIG_PATH))
+        path = Path(os.environ.get("DARA_CONFIG", self.DEFAULT_CONFIG_PATH))
         try:
             with path.open("r", encoding="utf-8") as f:
                 _config = toml.load(f)
