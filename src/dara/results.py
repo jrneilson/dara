@@ -312,13 +312,3 @@ def visualize(result_dict: Dict[str, Any]):
     )
 
     return fig
-
-
-if __name__ == "__main__":
-    print(
-        get_result(
-            Path(
-                "/Users/yuxing/projects/ar3l-search/example/summary_v2/Ba6Na2Ta2V2O17_900_240_BaCO3_Na2CO3_Ta2O5_V2O5_recipe252_1119fc0c-8822-4c3f-a855-0b24fedb887c/refinement_Ba6Na2Ta2V2O17_900_240_BaCO3_Na2CO3_Ta2O5_V2O5_recipe252_1119fc0c-8822-4c3f-a855-0b24fedb887c/Ba6Na2Ta2V2O17_900_240_BaCO3_Na2CO3_Ta2O5_V2O5_recipe252_1119fc0c-8822-4c3f-a855-0b24fedb887c.sav"
-            )
-        )
-    )
