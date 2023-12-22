@@ -10,7 +10,7 @@ class BGMNWorker:
 
     def __init__(self):
         self.bgmn_folder = (
-                Path(__file__).parent.parent.parent / "bgmn" / "BGMNwin"
+            Path(__file__).parent.parent.parent / "bgmn" / "BGMNwin"
         ).absolute()
 
         self.bgmn_path = self.bgmn_folder / "bgmn"

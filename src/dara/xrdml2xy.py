@@ -8,7 +8,7 @@ def xrdml2xy(file: Path, target_folder: Path = None) -> Path:
     """Converts xrdml file to x and y arrays"""
     if target_folder is None:
         target_folder = file.parent
-    target_path = target_folder / (file.stem + '.xy')
+    target_path = target_folder / (file.stem + ".xy")
 
     with file.open("r", encoding="utf-8") as f:
         xrd_dict = xmltodict.parse(f.read())
@@ -28,6 +28,8 @@ def xrdml2xy(file: Path, target_folder: Path = None) -> Path:
         ]["counts"]["#text"]
         intensities = np.array([float(val) for val in intensities.split()])
         angles = np.linspace(min_angle, max_angle, len(intensities))
-        np.savetxt(target_path.as_posix(), np.column_stack((angles, intensities)), fmt="%f")
+        np.savetxt(
+            target_path.as_posix(), np.column_stack((angles, intensities)), fmt="%f"
+        )
 
-        return target_path / (file.stem + '.xy')
+        return target_path / (file.stem + ".xy")
