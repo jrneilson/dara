@@ -5,7 +5,7 @@ import logging
 import re
 import warnings
 from pathlib import Path
-from typing import Any, Literal, Optional, Union, Dict
+from typing import Any, Literal, Optional, Union, Dict, List, Tuple
 
 from asteval import Interpreter
 from pymatgen.core import Lattice, Structure
@@ -36,7 +36,9 @@ def process_specie_string(sp: Union[str, Specie, Element, DummySpecie]) -> str:
         # remove the valence and try again
         specie = re.search(r"[A-Z]+", specie).group(0)
         if specie not in POSSIBLE_SPECIES:
-            raise ValueError(f"Unknown species {specie}, the original specie string is {sp}")
+            raise ValueError(
+                f"Unknown species {specie}, the original specie string is {sp}"
+            )
     return specie
 
 
@@ -52,7 +54,7 @@ def get_lattice_parameters_from_lattice(
         "Tetragonal",
         "Rhombohedral",
     ],
-) -> dict[str, float]:
+) -> Dict[str, float]:
     """
     Get lattice parameters from lattice based on the type of lattice
 
@@ -106,17 +108,19 @@ def get_lattice_parameters_from_lattice(
 
 
 def get_std_position(
-    spacegroup_setting: dict[str, Any],
+    spacegroup_setting: Dict[str, Any],
     wyckoff_letter: str,
-    positions: list[list[float]],
-) -> tuple[list[float], bool]:
+    positions: List[List[float]],
+) -> Tuple[List[float], bool]:
     """
     Get the standard position of a site based on the hall number and wyckoff notation
     """
     wyckoff = spacegroup_setting["wyckoffs"].get(wyckoff_letter, {})
 
     if not wyckoff:
-        logger.debug(f"Cannot find the standard position for {wyckoff_letter}, using the first position")
+        logger.debug(
+            f"Cannot find the standard position for {wyckoff_letter}, using the first position"
+        )
         return (
             positions[0],
             True,
@@ -138,7 +142,11 @@ def get_std_position(
             aeval = Interpreter(use_numpy=False, symtable=variable_dict)
             wx, wy, wz = (aeval.eval(constraint) for constraint in constraints)
 
-            if fuzzy_compare(wx, position[0]) and fuzzy_compare(wy, position[1]) and fuzzy_compare(wz, position[2]):
+            if (
+                fuzzy_compare(wx, position[0])
+                and fuzzy_compare(wy, position[1])
+                and fuzzy_compare(wz, position[2])
+            ):
                 return position, True
     logger.debug(
         f"Cannot find the standard position for {wyckoff_letter} {std_notations}, using the first position. "
@@ -148,13 +156,17 @@ def get_std_position(
 
 
 def check_wyckoff(
-    spacegroup_setting: dict[str, Any], structure: SymmetrizedStructure
-) -> tuple[list[dict[str, Any]], int]:
+    spacegroup_setting: Dict[str, Any], structure: SymmetrizedStructure
+) -> Tuple[List[Dict[str, Any]], int]:
     """
     check if a given spacegroup setting is valid for a structure
-    :param spacegroup_setting: the spacegroup setting
-    :param structure: the symmetrized structure
-    :return: the settings of the elements and the number of errors
+
+    Args:
+        spacegroup_setting: the spacegroup setting
+        structure: the symmetrized structure
+
+    Returns:
+        the settings of the elements and the number of errors
     """
     element_settings = []
     error_count = 0
@@ -177,7 +189,8 @@ def check_wyckoff(
         else:
             sorted_species = sorted(site.species)
             species_string = ",".join(
-                f"{process_specie_string(ssp)}({site.species[ssp]:.6f})" for ssp in sorted_species
+                f"{process_specie_string(ssp)}({site.species[ssp]:.6f})"
+                for ssp in sorted_species
             )
             species_string = f"({species_string})"
 
@@ -198,12 +211,18 @@ def make_spacegroup_setting_str(spacegroup_setting: Dict[str, Any]) -> str:
     """
     Make the spacegroup setting string
     """
-    return " ".join([f"{k}={v}" for k, v in spacegroup_setting["setting"].items()]) + " //"
+    return (
+        " ".join([f"{k}={v}" for k, v in spacegroup_setting["setting"].items()]) + " //"
+    )
 
 
-def make_lattice_parameters_str(spacegroup_setting: Dict[str, Any], structure: SymmetrizedStructure) -> str:
+def make_lattice_parameters_str(
+    spacegroup_setting: Dict[str, Any], structure: SymmetrizedStructure
+) -> str:
     crystal_system = spacegroup_setting["setting"]["Lattice"]
-    lattice_parameters = get_lattice_parameters_from_lattice(structure.lattice, crystal_system)
+    lattice_parameters = get_lattice_parameters_from_lattice(
+        structure.lattice, crystal_system
+    )
 
     lattice_parameters_str = " ".join(
         [
@@ -262,7 +281,9 @@ def cif2str(cif_path: Path, working_dir: Optional[Path] = None) -> Path:
     structure = spg.get_symmetrized_structure()
 
     hall_number = str(spg.get_symmetry_dataset()["hall_number"])
-    with (Path(__file__).parent / "data" / "spglib_db" / "spg.json").open("r", encoding="utf-8") as f:
+    with (Path(__file__).parent / "data" / "spglib_db" / "spg.json").open(
+        "r", encoding="utf-8"
+    ) as f:
         spg_group_db = json.load(f)
     settings = spg_group_db[hall_number]["settings"]
 
@@ -282,7 +303,9 @@ def cif2str(cif_path: Path, working_dir: Optional[Path] = None) -> Path:
             f"Cannot find a valid setting for {cif_path}, using the setting with the least errors ({error_count})."
         )
 
-    logger.debug(f"Using setting {spacegroup_setting['setting']} for {cif_path}, with {error_count} errors")
+    logger.debug(
+        f"Using setting {spacegroup_setting['setting']} for {cif_path}, with {error_count} errors"
+    )
 
     # start to construct the str file string
     str_text = ""
@@ -307,7 +330,8 @@ def cif2str(cif_path: Path, working_dir: Optional[Path] = None) -> Path:
 
     # add wyckoff positions
     element_settings_str = [
-        " ".join([f"{k}={v}" for k, v in element_setting.items()]) for element_setting in element_settings
+        " ".join([f"{k}={v}" for k, v in element_setting.items()])
+        for element_setting in element_settings
     ]
     str_text += "\n".join(element_settings_str)
 

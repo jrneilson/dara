@@ -16,17 +16,27 @@ class TestDoRefinement(unittest.TestCase):
                     pattern_path = list(pattern_folder.glob("*.xy"))[0]
                     cif_paths = list((pattern_folder / "phases").glob("*.cif"))
                     try:
-                        result = do_refinement(pattern_path, cif_paths, working_dir=tmpdir)
+                        result = do_refinement(
+                            pattern_path, cif_paths, working_dir=tmpdir
+                        )
                     except Exception as e:
                         print(f"Error in {pattern_path}")
                         raise e
 
-                    self.assertTrue(isinstance(result["Rwp"], float), msg=f"Error in {pattern_path}")
+                    self.assertTrue(
+                        isinstance(result["Rwp"], float), msg=f"Error in {pattern_path}"
+                    )
 
     def test_do_one_refinement(self):
-        pattern_path = Path("/Users/yuxing/projects/ar3l-search/example/CaGd2Zr(GaO3)4/MP350-pellet-24-33h.xy")
+        pattern_path = Path(
+            "/Users/yuxing/projects/ar3l-search/example/CaGd2Zr(GaO3)4/MP350-pellet-24-33h.xy"
+        )
 
-        cif_paths = [Path("/Users/yuxing/Downloads/CaGd2Zr(GaO3)4_orderings/CaGd2Zr(GaO3)4_ordering_20755.cif")]
+        cif_paths = [
+            Path(
+                "/Users/yuxing/Downloads/CaGd2Zr(GaO3)4_orderings/CaGd2Zr(GaO3)4_ordering_20755.cif"
+            )
+        ]
         try:
             result = do_refinement(pattern_path, cif_paths)
         except Exception as e:
