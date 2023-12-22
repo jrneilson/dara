@@ -1,3 +1,4 @@
+"""Base classes for phase prediction engines."""
 from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod

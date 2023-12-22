@@ -134,7 +134,9 @@ def get_entry_by_formula(gibbs_entries: GibbsEntrySet, formula: str):
     try:
         entry = gibbs_entries.get_min_entry_by_formula(formula)
     except:
-        entry = gibbs_entries.get_interpolated_entry(formula)  # if entry is missing, use interpolated one
+        entry = gibbs_entries.get_interpolated_entry(
+            formula
+        )  # if entry is missing, use interpolated one
     return entry
 
 

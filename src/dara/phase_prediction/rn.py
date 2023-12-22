@@ -6,16 +6,15 @@ import itertools
 import logging
 import math
 import sys
+import typing
 
-from dara.phase_prediction.base import PredictionEngine
-from dara.utils import get_chemsys_from_formulas, get_entry_by_formula, get_mp_entries
 from pymatgen.core.composition import Element
-from pymatgen.entries.computed_entries import ComputedStructureEntry
 from rxn_network.core import Composition
 from rxn_network.costs.calculators import (
     PrimaryCompetitionCalculator,
     SecondaryCompetitionCalculator,
 )
+from rxn_network.costs.functions import Softplus, WeightedSum
 from rxn_network.entries.entry_set import GibbsEntrySet
 from rxn_network.enumerators.basic import BasicEnumerator, BasicOpenEnumerator
 from rxn_network.enumerators.minimize import (
@@ -25,6 +24,12 @@ from rxn_network.enumerators.minimize import (
 from rxn_network.reactions.hull import InterfaceReactionHull
 from rxn_network.reactions.reaction_set import ReactionSet
 
+from dara.phase_prediction.base import PredictionEngine
+from dara.utils import get_chemsys_from_formulas, get_entry_by_formula, get_mp_entries
+
+if typing.TYPE_CHECKING:
+    from pymatgen.entries.computed_entries import ComputedStructureEntry
+
 logger = logging.getLogger()
 logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
@@ -32,7 +37,14 @@ logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 class ReactionNetworkEngine(PredictionEngine):
     """Engine for predicting products in a chemical reaction."""
 
+    def __init__(self, cost_function="weighted_sum", max_rereact=10):
+        """Initialize the engine."""
+        self.cost_function = cost_function
+        self.max_rereact = max_rereact
+        super().__init__()
+
     def predict(
+        self,
         precursors: list[str],
         temp: float,
         computed_entries: list[ComputedStructureEntry] | None = None,
@@ -41,7 +53,7 @@ class ReactionNetworkEngine(PredictionEngine):
         e_hull_cutoff: float = 0.05,
     ):
         """
-        Predicts the intermediates/products of a mixture of precursors.
+        Interface with reaction-network package for phase prediction based on interface reaction hulls.
 
         Args:
             precursors: List of precursor formulas (no stoichiometry required)
@@ -59,10 +71,38 @@ class ReactionNetworkEngine(PredictionEngine):
         """
         precursors_comp = [Composition(p) for p in precursors]
         temp = round(temp)
+        cf = self._get_cost_function(temp)
+
+        if open_elem == "O_air":
+            open_elem = "O"
+            chempot = 0.5 * 8.617e-5 * temp * math.log(0.21)  # oxygen atmospheric partial pressure
 
         if computed_entries is None:
             computed_entries = get_mp_entries(get_chemsys_from_formulas([p.reduced_formula for p in precursors_comp]))
 
+        gibbs, precursors_no_open = self._get_entries(precursors_comp, computed_entries, open_elem, e_hull_cutoff, temp)
+
+        rxns = self._enumerate_reactions(precursors_no_open, gibbs, open_elem, chempot)
+        data = self._get_rxn_data(precursors_no_open, rxns, open_elem)
+        ranked_formulas = self._rank_formulas(data, cf)
+
+        rereact_formulas = list(ranked_formulas.keys())[: self.max_rereact]
+
+        print(rereact_formulas)
+
+        rereact_rxns = self._enumerate_reactions(rereact_formulas, gibbs, open_elem, chempot)
+        rereact_data = self._get_rxn_data(rereact_formulas, rereact_rxns, open_elem)
+        rereact_ranked_formulas = self._rank_formulas(rereact_data, cf)
+
+        merged_dict = {
+            key: min(ranked_formulas.get(key, float("inf")), rereact_ranked_formulas.get(key, float("inf")))
+            for key in set(ranked_formulas) | set(rereact_ranked_formulas)
+        }
+        merged_dict = collections.OrderedDict(sorted(merged_dict.items(), key=lambda item: item[1], reverse=True))
+
+        return self._get_probabilities(merged_dict)
+
+    def _get_entries(self, precursors, computed_entries, open_elem, e_hull_cutoff, temp):
         gibbs = GibbsEntrySet.from_computed_entries(
             computed_entries,
             300,
@@ -71,20 +111,16 @@ class ReactionNetworkEngine(PredictionEngine):
         gibbs = gibbs.filter_by_stability(e_hull_cutoff)
         gibbs = gibbs.get_entries_with_new_temperature(temp)
 
-        if open_elem == "O_air":
-            open_elem = "O"
-            chempot = 0.5 * 8.617e-5 * temp * math.log(0.21)  # oxygen atmospheric partial pressure
-
-        precursors_no_open = set(precursors_comp)
+        precursors_no_open_set = set(precursors)
 
         if open_elem:
-            precursors_no_open = precursors_no_open - {
+            precursors_no_open_set = precursors_no_open_set - {
                 Composition(Composition(open_elem).reduced_formula)  # remove open element formula
             }
 
-        precursors_no_open = list(precursors_no_open)
+        precursors_no_open = list(precursors_no_open_set)
 
-        reactants = [get_entry_by_formula(gibbs, r.reduced_formula) for r in precursors_comp]
+        reactants = [get_entry_by_formula(gibbs, r.reduced_formula) for r in precursors]
 
         gibbs_entries_list = gibbs.entries_list
         for entry in reactants:
@@ -92,8 +128,10 @@ class ReactionNetworkEngine(PredictionEngine):
                 gibbs_entries_list.append(entry)
         gibbs = GibbsEntrySet(gibbs_entries_list)
 
-        rxns = BasicEnumerator(precursors=precursors_no_open).enumerate(gibbs)
+        return gibbs, precursors_no_open
 
+    def _enumerate_reactions(self, precursors_no_open, gibbs, open_elem, chempot):
+        rxns = BasicEnumerator(precursors=precursors_no_open).enumerate(gibbs)
         rxns = rxns.add_rxn_set(MinimizeGibbsEnumerator(precursors=precursors_no_open).enumerate(gibbs))
 
         if open_elem:
@@ -105,72 +143,85 @@ class ReactionNetworkEngine(PredictionEngine):
             )
             rxns = rxns.add_rxn_set(
                 MinimizeGrandPotentialEnumerator(
-                    open_elem=Element(open_elem),
-                    mu=chempot,
-                    precursors=precursors_no_open,
+                    open_elem=Element(open_elem), mu=chempot, precursors=precursors_no_open
                 ).enumerate(gibbs)
             )
             rxns = ReactionSet.from_rxns(rxns, rxns.entries, open_elem=open_elem, chempot=chempot)
 
-        rxns = rxns.filter_duplicates()
+        return rxns.filter_duplicates()
 
-        all_c1 = {}
-        all_c2 = {}
+    def _get_rxn_data(self, precursors_no_open, rxns, open_elem):
+        all_data = {}
+
         for combo in itertools.combinations(precursors_no_open, 2):
             combo = list(combo)
             if open_elem:
                 combo.append(Composition(Composition(open_elem).reduced_formula))
 
-            irh = InterfaceReactionHull(combo[0], combo[1], list(rxns.get_rxns_by_reactants(combo)))
+            combo_rxns = list(rxns.get_rxns_by_reactants(combo))
+            found_e1 = False
+            found_e2 = False
+            for rxn in combo_rxns:
+                for e in rxn.reactant_entries:
+                    if e.composition.reduced_composition == combo[0]:
+                        found_e1 = True
+                    elif e.composition.reduced_composition == combo[1]:
+                        found_e2 = True
+                    if found_e1 and found_e2:
+                        break
+            if not found_e1 or not found_e2:
+                continue
 
-            for r in irh.reactions:
-                calc1 = PrimaryCompetitionCalculator(irh, temp)
+            irh = InterfaceReactionHull(combo[0], combo[1], combo_rxns)
+
+            for rxn in irh.reactions:
+                calc1 = PrimaryCompetitionCalculator(irh)
                 calc2 = SecondaryCompetitionCalculator(irh)
 
-                c1 = calc1.calculate(r)
-                c2 = calc2.calculate(r)
+                rxn_decorated = calc1.decorate(rxn)
+                rxn_decorated = calc2.decorate(rxn_decorated)
 
-                for product in r.products:
-                    if product in precursors_no_open:
-                        continue
-                    worse_c1 = False
-                    worse_c2 = False
+                for product in rxn_decorated.products:
+                    if product not in all_data:
+                        all_data[product] = [rxn_decorated]
+                    else:
+                        all_data[product].append(rxn_decorated)
 
-                    if product in all_c1 and c1 > all_c1[product]:
-                        worse_c1 = True
-                    if not worse_c1:
-                        all_c1[product] = c1
+        return all_data
 
-                    if product in all_c2 and c2 > all_c2[product]:
-                        worse_c2 = True
-                    if not worse_c2:
-                        all_c2[product] = c2
+    def _get_cost_function(self, temp):
+        if self.cost_function == "weighted_sum":
+            cf = WeightedSum(["energy", "primary_competition", "secondary_competition"], [0.5, 0.25, 0.25])
+        elif self.cost_function == "softplus":
+            cf = Softplus(
+                temp=temp, params=["energy", "primary_competition", "secondary_competition"], weights=[0.5, 0.25, 0.25]
+            )
+        else:
+            raise ValueError(f"Cost function {self.cost_function} not recognized.")
 
-        all_c1 = collections.OrderedDict(sorted(all_c1.items(), key=lambda item: item[1]))
-        all_c2 = collections.OrderedDict(sorted(all_c2.items(), key=lambda item: item[1]))
+        return cf
 
-        return get_probabilities(all_c1, all_c2)
+    @staticmethod
+    def _rank_formulas(data, cf):
+        ranked_formulas = {}
+        for formula, rxns in data.items():
+            min_cost_rxn = min(rxns, key=lambda rxn: cf.evaluate(rxn))
+            min_cost = cf.evaluate(min_cost_rxn)
+            ranked_formulas[formula] = min_cost
 
+        return collections.OrderedDict(sorted(ranked_formulas.items(), key=lambda item: item[1]))
 
-def get_probabilities(c1_data: dict, c2_data: dict, weights: tuple[float, float] = (0.5, 0.5)):
-    """Convert primary and secondary competition values into net probability of appearance"""
-    cost_rankings = []
-    phases = []
-    for phase in c1_data:
-        c1 = c1_data[phase]
-        c2 = c2_data[phase]
-
-        cost = weights[0] * c1 + weights[1] * c2
-        phases.append(phase)
-        cost_rankings.append(cost)
-
-    inverse_rankings = [1 / (cost - min(cost_rankings) + 1) for cost in cost_rankings]
-    total_inverse_rankings = sum(inverse_rankings)
-    probabilities = [inv_rank / total_inverse_rankings for inv_rank in inverse_rankings]
-    return collections.OrderedDict(
-        sorted(
-            {k.reduced_formula: round(v, 4) for k, v in zip(phases, probabilities)}.items(),
-            key=lambda item: item[1],
-            reverse=True,
+    @staticmethod
+    def _get_probabilities(ranked_formulas):
+        """Convert primary and secondary competition values into net probability of appearance."""
+        phases, costs = ranked_formulas.keys(), ranked_formulas.values()
+        inverse_rankings = [1 / (cost - min(costs) + 1) for cost in costs]
+        total_inverse_rankings = sum(inverse_rankings)
+        probabilities = [inv_rank / total_inverse_rankings for inv_rank in inverse_rankings]
+        return collections.OrderedDict(
+            sorted(
+                {k.reduced_formula: round(v, 4) for k, v in zip(phases, probabilities)}.items(),
+                key=lambda item: item[1],
+                reverse=True,
+            )
         )
-    )

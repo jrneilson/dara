@@ -1,6 +1,7 @@
 """Code for predicting products in a chemical reaction."""
-from dara.icsd import ICSDDatabase
 from monty.json import MSONable
+
+from dara.icsd import ICSDDatabase
 
 
 class PhasePredictor(MSONable):
