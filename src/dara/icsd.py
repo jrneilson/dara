@@ -9,8 +9,12 @@ from typing import Union
 from monty.serialization import loadfn
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core import Structure
+from rxn_network.core import Composition
+from rxn_network.utils.funcs import get_logger
 
 from dara.utils import copy_and_rename_files
+
+logger = get_logger(__name__)
 
 
 class ICSDDatabase:
@@ -25,9 +29,7 @@ class ICSDDatabase:
         :param path_to_icsd: Path to the ICSD database
         """
         self.path_to_icsd = Path(path_to_icsd)
-        self.icsd_dict = loadfn(
-            Path(__file__).parent / "data/icsd_codes_by_chemsys.json.gz"
-        )
+        self.icsd_dict = loadfn(Path(__file__).parent / "data/icsd_codes_by_chemsys.json.gz")
 
     def get_cifs_by_chemsys(self, chemsys, filter_unique=True, copy_files=True):
         """Get a list of ICSD codes corresponding to structures in a chemical system. Option to copy CIF files into a
@@ -46,10 +48,7 @@ class ICSDDatabase:
                 if chemsys in self.icsd_dict:
                     for formula, icsd_codes in self.icsd_dict[chemsys].items():
                         if filter_unique:
-                            icsd_codes = [
-                                i["icsd_code"]
-                                for i in self.find_oldest_unique_structures(icsd_codes)
-                            ]
+                            icsd_codes = [i["icsd_code"] for i in self.find_oldest_unique_structures(icsd_codes)]
                         all_icsd_codes.extend(icsd_codes)
                         all_formulas.extend([formula] * len(icsd_codes))
 
@@ -57,16 +56,30 @@ class ICSDDatabase:
             copy_and_rename_files(
                 self.path_to_icsd,
                 f"{chemsys}",
-                {
-                    f"{code}.cif": f"{formula}_{code}.cif"
-                    for formula, code in zip(all_formulas, all_icsd_codes)
-                },
+                {f"{code}.cif": f"{formula}_{code}.cif" for formula, code in zip(all_formulas, all_icsd_codes)},
             )
         return all_icsd_codes
 
     def get_file_path(self, icsd_code: str | int):
         """Get the path to a CIF file in the ICSD database."""
         return self.path_to_icsd / f"{icsd_code}.cif"
+
+    def get_codes_from_formula(self, formula: str, unique: bool = True):
+        """Get a list of ICSD codes corresponding to a formula."""
+        formula_reduced = Composition(formula).reduced_formula
+        chemsys = Composition(formula).chemical_system
+        icsd_chemsys = self.icsd_dict.get(chemsys)
+
+        if not icsd_chemsys:
+            logger.warning(f"No ICSD codes found for {formula}!")
+            return []
+
+        icsd_codes = icsd_chemsys.get(formula_reduced)
+        if not icsd_codes:
+            logger.warning(f"No ICSD codes found for {formula}!")
+            return []
+
+        return [i["icsd_code"] for i in self.find_oldest_unique_structures(icsd_codes)]
 
     def load_structure(self, icsd_code: str | int):
         """Load a pymatgen structure from a CIF file in the ICSD database."""

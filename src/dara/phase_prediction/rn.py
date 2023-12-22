@@ -38,7 +38,12 @@ class ReactionNetworkEngine(PredictionEngine):
     """Engine for predicting products in a chemical reaction."""
 
     def __init__(self, cost_function="weighted_sum", max_rereact=10):
-        """Initialize the engine."""
+        """Initialize the engine.
+
+        Args:
+            cost_function: Cost function to use for ranking (default: weighted sum)
+            max_rereact: Maximum number of phases to consider for followup reactions within the cost function
+        """
         self.cost_function = cost_function
         self.max_rereact = max_rereact
         super().__init__()
@@ -88,8 +93,6 @@ class ReactionNetworkEngine(PredictionEngine):
 
         rereact_formulas = list(ranked_formulas.keys())[: self.max_rereact]
 
-        print(rereact_formulas)
-
         rereact_rxns = self._enumerate_reactions(rereact_formulas, gibbs, open_elem, chempot)
         rereact_data = self._get_rxn_data(rereact_formulas, rereact_rxns, open_elem)
         rereact_ranked_formulas = self._rank_formulas(rereact_data, cf)
@@ -98,9 +101,7 @@ class ReactionNetworkEngine(PredictionEngine):
             key: min(ranked_formulas.get(key, float("inf")), rereact_ranked_formulas.get(key, float("inf")))
             for key in set(ranked_formulas) | set(rereact_ranked_formulas)
         }
-        merged_dict = collections.OrderedDict(sorted(merged_dict.items(), key=lambda item: item[1], reverse=True))
-
-        return self._get_probabilities(merged_dict)
+        return collections.OrderedDict(sorted(merged_dict.items(), key=lambda item: item[1]))
 
     def _get_entries(self, precursors, computed_entries, open_elem, e_hull_cutoff, temp):
         gibbs = GibbsEntrySet.from_computed_entries(
