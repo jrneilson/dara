@@ -5,7 +5,7 @@ import logging
 import re
 import warnings
 from pathlib import Path
-from typing import Any, Literal, Optional, Union, Dict, List, Tuple
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 from asteval import Interpreter
 from pymatgen.core import Lattice, Structure
@@ -28,7 +28,7 @@ logging.basicConfig(level=logging.WARNING)
 def process_specie_string(sp: Union[str, Specie, Element, DummySpecie]) -> str:
     """Reverse the charge notation of a species."""
     specie = re.sub(r"(\d+)([+-])", r"\2\1", str(sp))
-    if specie.endswith("-") or specie.endswith("+"):
+    if specie.endswith(("+", "-")):
         specie += "1"
     specie = specie.upper()
 
@@ -165,7 +165,8 @@ def check_wyckoff(
         spacegroup_setting: the spacegroup setting
         structure: the symmetrized structure
 
-    Returns:
+    Returns
+    -------
         the settings of the elements and the number of errors
     """
     element_settings = []

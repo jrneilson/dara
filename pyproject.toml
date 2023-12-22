@@ -30,10 +30,12 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Chemistry",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 dependencies = [
     "pymatgen>=2022.0.8",
-    "asteval>=0.9.31"
+    "asteval>=0.9.31",
+    "xmltodict>=0.12.0",
+    "plotly>=5.3.1",
 ]
 
 [project.optional-dependencies]
@@ -70,7 +72,7 @@ exclude_also = [
 ]
 
 [tool.ruff]
-target-version = "py39"
+target-version = "py38"
 line-length = 120
 select = [
     "B",      # flake8-bugbear

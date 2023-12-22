@@ -1,11 +1,13 @@
 """Perform refinements with BGMN."""
 import tempfile
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 from dara.bgmn_worker import BGMNWorker
 from dara.cif2str import cif2str
 from dara.generate_control_file import generate_control_file
+from dara.results import get_result
+from dara.xrdml2xy import xrdml2xy
 
 
 def do_refinement(
@@ -22,6 +24,9 @@ def do_refinement(
     if not working_dir.exists():
         working_dir.mkdir(exist_ok=True, parents=True)
 
+    if pattern_path.suffix == ".xrdml":
+        pattern_path = xrdml2xy(pattern_path, working_dir)
+
     str_paths = []
     for cif_path in cif_paths:
         str_path = cif2str(cif_path, working_dir)
@@ -37,7 +42,7 @@ def do_refinement(
 
     bgmn_worker = BGMNWorker()
     bgmn_worker.run_refinement_cmd(control_file_path)
-    result = bgmn_worker.get_result(control_file_path)
+    result = get_result(control_file_path)
 
     return result
 

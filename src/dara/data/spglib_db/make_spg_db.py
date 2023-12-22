@@ -14,12 +14,11 @@ new2old = {
 }
 
 
-# convert xml to dict
-def xml2dict(xml_file):
+def xml2dict_sp(xml_file):
     """
     Convert xml file to dict
 
-    :param xml_file:
+    :param xml_file
     :return:
     """
     tree = ET.parse(xml_file)
@@ -50,7 +49,7 @@ def xml2dict(xml_file):
     return data
 
 
-def csv2dict(csv_file):
+def csv2dict_sp(csv_file):
     """
     Convert csv file to dict
 
@@ -85,8 +84,8 @@ def csv2dict(csv_file):
 
 
 if __name__ == "__main__":
-    data1 = xml2dict(Path("spacegrp.xml"))
-    data2 = csv2dict(Path("spg.csv"))
+    data1 = xml2dict_sp(Path("spacegrp.xml"))
+    data2 = csv2dict_sp(Path("spg.csv"))
 
     for k, v in data2.items():
         hm = v["international_full"]

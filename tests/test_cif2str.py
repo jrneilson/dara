@@ -3,6 +3,7 @@ import tempfile
 import unittest
 import warnings
 from pathlib import Path
+
 from dara.cif2str import cif2str
 from dara.utils import read_phase_name_from_str
 
@@ -14,7 +15,9 @@ class TestCif2Str(unittest.TestCase):
         """Set up the test."""
         self.cif_paths = list((Path(__file__).parent / "test_data").glob("*.cif"))
         os.environ["DARA_CONFIG"] = (
-            (Path(__file__).parent / "test_data" / "test_config.toml").absolute().as_posix()
+            (Path(__file__).parent / "test_data" / "test_config.toml")
+            .absolute()
+            .as_posix()
         )
 
     def tearDown(self):

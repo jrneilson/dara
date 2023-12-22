@@ -1,7 +1,7 @@
 import re
 import shutil
 from pathlib import Path
-from typing import Optional, List
+from typing import List, Optional
 
 from dara.utils import read_phase_name_from_str
 

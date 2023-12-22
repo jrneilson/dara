@@ -4,7 +4,6 @@ from __future__ import annotations
 import itertools
 import re
 from pathlib import Path
-from typing import Union
 
 from monty.serialization import loadfn
 from pymatgen.analysis.structure_matcher import StructureMatcher
@@ -89,7 +88,7 @@ class ICSDDatabase:
             occupancy_tolerance=100,
         )
 
-    def extract_year_from_cif(self, icsd_code: Union[str, int]):
+    def extract_year_from_cif(self, icsd_code: str | int):
         """Extract the year from a line in a CIF file that starts with 'primary' and contains a year.
 
         If the year is not found in the file, the function returns 10000.
