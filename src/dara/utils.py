@@ -1,4 +1,3 @@
-import math
 import os
 import re
 import shutil
@@ -38,11 +37,6 @@ def read_phase_name_from_str(str_path: Path) -> str:
 
 
 def standardize_coords(x, y, z):
-    # Normalize coordinates to be within [0, 1)
-    x = math.fmod(x, 1.0)
-    y = math.fmod(y, 1.0)
-    z = math.fmod(z, 1.0)
-
     # Adjust coordinates to specific fractional values if close
     fractions = {
         0.3333: 1 / 3,
@@ -66,13 +60,19 @@ def standardize_coords(x, y, z):
     return x, y, z
 
 
-def fuzzy_compare(a, b):
-    a = round(float(a), 6)
-    b = round(float(b), 6)
+def fuzzy_compare(a: float, b: float):
+    fa = round(a, 6)
+    fb = round(b, 6)
 
-    # Getting the fractional part of the numbers
-    fa = math.fmod(a, 1.0)
-    fb = math.fmod(b, 1.0)
+    # Normalizing the fractional parts to be within [0, 1]
+    while fa < 0.0:
+        fa += 1.0
+    while fb < 0.0:
+        fb += 1.0
+    while fa > 1.0:
+        fa -= 1.0
+    while fb > 1.0:
+        fb -= 1.0
 
     # Checking specific fractional values
     fractions = [
@@ -91,26 +91,11 @@ def fuzzy_compare(a, b):
             return True
 
     # Fuzzy comparison for general case
-    def is_close(a, b, rel_tol=1e-09, abs_tol=1e-6):
+    def is_close(_a, _b, rel_tol=1e-09, abs_tol=1e-6):
         # Custom implementation of fuzzy comparison
-        return abs(a - b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
+        return abs(_a - _b) <= max(rel_tol * max(abs(_a), abs(_b)), abs_tol)
 
     return is_close(fa, fb)
-
-
-def supercell_coords(positions):
-    """
-    Generate the supercell coordinates
-    """
-    extended_coords = []
-    for x, y, z in positions:
-        for i in range(-1, 2):
-            for j in range(-1, 2):
-                for k in range(-1, 2):
-                    if i == j == k == 0:
-                        continue
-                    extended_coords.append(standardize_coords(x + i, y + j, z + k))
-    return extended_coords
 
 
 def copy_and_rename_files(src_directory, dest_directory, file_map):
