@@ -3,6 +3,7 @@ import tempfile
 import unittest
 import warnings
 from pathlib import Path
+
 from dara.cif2str import cif2str
 from dara.utils import read_phase_name_from_str
 

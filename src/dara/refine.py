@@ -1,7 +1,7 @@
 """Perform refinements with BGMN."""
 import tempfile
 from pathlib import Path
-from typing import Optional, List
+from typing import List, Optional
 
 from dara.bgmn_worker import BGMNWorker
 from dara.cif2str import cif2str

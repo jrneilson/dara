@@ -1,6 +1,6 @@
 import re
 from pathlib import Path
-from typing import Union, Tuple, Dict, Any
+from typing import Any, Dict, Tuple, Union
 
 import numpy as np
 import plotly.graph_objects as go
@@ -84,7 +84,8 @@ def parse_lst(lst_path: Path):
     Args:
         lst_path:
 
-    Returns:
+    Returns
+    -------
 
     """
 
@@ -159,7 +160,6 @@ def parse_dia(dia_path: Path):
     // [3] = iBkgr
     // [4...n] = strucs
     """
-
     if not dia_path.exists():
         raise FileNotFoundError(f"Cannot find the .dia file from {dia_path}")
 
