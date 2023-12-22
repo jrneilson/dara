@@ -30,9 +30,9 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Chemistry",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.7"
 dependencies = [
-    "pymatgen>=2023.11.12",
+    "pymatgen>=2022.0.8",
     "asteval>=0.9.31"
 ]
 
@@ -146,6 +146,7 @@ addopts = "--durations=10"
 
 [tool.pytest.ini_options]
 addopts = "-n auto"
+testpaths = "tests"
 
 [tool.setuptools.package-data]
 rxn_network = ["py.typed"]

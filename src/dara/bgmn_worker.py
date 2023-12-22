@@ -2,7 +2,7 @@ import os
 import re
 from pathlib import Path
 from subprocess import run
-from typing import Any, Union
+from typing import Any, Union, Dict, Tuple
 
 from dara.config import Config
 
@@ -11,7 +11,9 @@ class BGMNWorker:
     """API for BGMN executable."""
 
     def __init__(self):
-        self.bgmn_folder = (Path(__file__).parent.parent.parent / "bgmn" / "BGMNwin").absolute()
+        self.bgmn_folder = (
+            Path(__file__).parent.parent.parent / "bgmn" / "BGMNwin"
+        ).absolute()
 
         self.bgmn_path = self.bgmn_folder / "bgmn"
 
@@ -107,7 +109,7 @@ class BGMNWorker:
 
         """
 
-        def parse_values(v_: str) -> Union[float, tuple[float, float], None, str, int]:
+        def parse_values(v_: str) -> Union[float, Tuple[float, float], None, str, int]:
             try:
                 v_ = v_.strip("%")
                 if v_ == "ERROR" or v_ == "UNDEF":
@@ -122,7 +124,7 @@ class BGMNWorker:
                 pass
             return v_
 
-        def parse_section(text: str) -> dict[str, Any]:
+        def parse_section(text: str) -> Dict[str, Any]:
             section = dict(re.findall(r"^(\w+)=(.+?)$", text, re.MULTILINE))
             section = {k: parse_values(v) for k, v in section.items()}
             return section
@@ -145,7 +147,9 @@ class BGMNWorker:
         result["1-rho"] = float(re.search(r"1-rho=(\d+\.\d+)%", texts).group(1))
 
         # global goals
-        global_parameters_text = re.search(r"Global parameters and GOALs\n(.*?)\n(?:\n|\Z)", texts, re.DOTALL).group(1)
+        global_parameters_text = re.search(
+            r"Global parameters and GOALs\n(.*?)\n(?:\n|\Z)", texts, re.DOTALL
+        ).group(1)
         global_parameters = parse_section(global_parameters_text)
         result.update(global_parameters)
 

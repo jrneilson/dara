@@ -1,37 +1,51 @@
+import os
+import tempfile
 import unittest
+import warnings
 from pathlib import Path
-from tempfile import TemporaryDirectory
-
 from dara.cif2str import cif2str
-from spglib import get_error_message
+from dara.utils import read_phase_name_from_str
 
 
-class TestCIF2STR(unittest.TestCase):
-    def test_cif2str(self):
-        folders = Path(__file__).parent.parent / "example" / "summary_v2"
+class TestCif2Str(unittest.TestCase):
+    """Test the cif2str function."""
 
-        with TemporaryDirectory() as tmpdir:
-            tmpdir = Path(tmpdir)
-            cif_count = 0
-            for folder in folders.glob("*"):
-                if folder.is_dir():
-                    for cif_path in (folder / "phases").glob("*.cif"):
-                        try:
-                            cif2str(cif_path, tmpdir)
-                        except Exception as e:
-                            print(f"Error in {cif_path}")
-                            print(get_error_message())
-                            raise e
-                        cif_count += 1
-                        self.assertTrue((tmpdir / f"{cif_path.stem}.str").exists())
-        self.assertTrue(cif_count > 0)
-
-    def test_one_cif2str(self):
-        path = Path(
-            "/Users/yuxing/Downloads/CaGd2Zr(GaO3)4_orderings/CaGd2Zr(GaO3)4_ordering_20755.cif"
+    def setUp(self):
+        """Set up the test."""
+        self.cif_paths = list((Path(__file__).parent / "test_data").glob("*.cif"))
+        os.environ["DARA_CONFIG"] = (
+            (Path(__file__).parent / "test_data" / "test_config.toml").absolute().as_posix()
         )
-        with TemporaryDirectory() as tmpdir:
+
+    def tearDown(self):
+        """Tear down the test."""
+        os.environ.pop("DARA_CONFIG")
+
+    def test_cif2str(self):
+        """Test the cif2str function."""
+        with tempfile.TemporaryDirectory() as tmpdir:
             tmpdir = Path(tmpdir)
-            cif2str(path, tmpdir)
-            self.assertTrue((tmpdir / f"{path.stem}.str").exists())
-            print((tmpdir / f"{path.stem}.str").read_text())
+            for cif_path in self.cif_paths:
+                with warnings.catch_warnings(record=True) as w:
+                    warnings.simplefilter("always")
+                    str_path = cif2str(cif_path, tmpdir)
+                    self.assertTrue(len(w) == 0)
+
+                self.assertTrue(str_path.exists())
+                self.assertTrue(str_path.is_file())
+                self.assertTrue(str_path.suffix == ".str")
+                self.assertTrue(str_path.stem == cif_path.stem)
+
+                ref_str_path = cif_path.parent / (cif_path.stem + ".str")
+                ref_str_text = ref_str_path.read_text(encoding="utf-8")
+                str_text = str_path.read_text(encoding="utf-8")
+
+                ref_phase_name = read_phase_name_from_str(ref_str_path)
+                phase_name = read_phase_name_from_str(str_path)
+                self.assertTrue(ref_phase_name == phase_name)
+
+                # remove the first line of the str file, since it contains the date information
+                ref_str_text = ref_str_text.split("\n", 1)[1]
+                str_text = str_text.split("\n", 1)[1]
+
+                self.assertTrue(ref_str_text == str_text)
