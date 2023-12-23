@@ -1,13 +1,13 @@
 import os
 from pathlib import Path
 from types import MappingProxyType as FrozenDict
-from typing import Any, Dict
+from typing import Any
 
 import toml
 from monty.design_patterns import singleton
 
 
-def freeze_config(config_: Dict[str, Any]) -> FrozenDict:
+def freeze_config(config_: dict[str, Any]) -> FrozenDict:
     """
     Convert the config dict to frozen config.
 

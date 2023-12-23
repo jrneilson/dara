@@ -1,7 +1,7 @@
 import re
 import shutil
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 from dara.utils import read_phase_name_from_str
 
@@ -19,15 +19,13 @@ def copy_xy_pattern(pattern_path: Path, working_dir: Path) -> None:
 
 def generate_control_file(
     pattern_path: Path,
-    str_paths: List[Path],
+    str_paths: list[Path],
     instrument_name: str,
     working_dir: Optional[Path] = None,
     *,
     n_threads: int = 8,
 ) -> Path:
-    """
-    Generate a control file for BGMN
-    """
+    """Generate a control file for BGMN"""
     if working_dir is None:
         control_file_path = pattern_path.parent / f"{pattern_path.stem}.sav"
     else:

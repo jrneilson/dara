@@ -42,9 +42,7 @@ def do_refinement(
 
     bgmn_worker = BGMNWorker()
     bgmn_worker.run_refinement_cmd(control_file_path)
-    result = get_result(control_file_path)
-
-    return result
+    return get_result(control_file_path)
 
 
 def do_refinement_no_saving(
@@ -57,12 +55,10 @@ def do_refinement_no_saving(
     with tempfile.TemporaryDirectory() as tmpdir:
         working_dir = Path(tmpdir)
 
-        result = do_refinement(
+        return do_refinement(
             pattern_path,
             cif_paths,
             instrument_name,
             working_dir=working_dir,
             **refinement_params,
         )
-
-    return result

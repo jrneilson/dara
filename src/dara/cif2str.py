@@ -3,9 +3,8 @@ import datetime
 import json
 import logging
 import re
-import warnings
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+from typing import Any, Literal, Optional, Union
 
 from asteval import Interpreter
 from pymatgen.core import Lattice, Structure
@@ -36,7 +35,9 @@ def process_specie_string(sp: Union[str, Specie, Element, DummySpecie]) -> str:
         # remove the valence and try again
         specie = re.search(r"[A-Z]+", specie).group(0)
         if specie not in POSSIBLE_SPECIES:
-            raise ValueError(f"Unknown species {specie}, the original specie string is {sp}")
+            raise ValueError(
+                f"Unknown species {specie}, the original specie string is {sp}"
+            )
     return specie
 
 
@@ -52,9 +53,9 @@ def get_lattice_parameters_from_lattice(
         "Tetragonal",
         "Rhombohedral",
     ],
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """
-    Get lattice parameters from lattice based on the type of lattice
+    Get lattice parameters from lattice based on the type of lattice.
 
     .. note::
         The lattice parameters are in nm
@@ -68,59 +69,54 @@ def get_lattice_parameters_from_lattice(
             "BETA": lattice.beta,
             "GAMMA": lattice.gamma,
         }
-    elif crystal_system == "Monoclinic":
+    if crystal_system == "Monoclinic":
         return {
             "A": lattice.a / 10,
             "B": lattice.b / 10,
             "C": lattice.c / 10,
             "BETA": lattice.beta,
         }
-    elif crystal_system == "Orthorhombic":
+    if crystal_system == "Orthorhombic":
         return {
             "A": lattice.a / 10,
             "B": lattice.b / 10,
             "C": lattice.c / 10,
         }
-    elif crystal_system == "Tetragonal":
+    if crystal_system == "Tetragonal":
         return {
             "A": lattice.a / 10,
             "C": lattice.c / 10,
         }
     # it seems that the trigonal and hexagonal lattices are the same in BGMN
-    elif crystal_system == "Rhombohedral":
+    if crystal_system == "Rhombohedral":
         return {
             "A": lattice.a / 10,
             "ALPHA": lattice.alpha,
         }
-    elif crystal_system == "Hexagonal" or crystal_system == "Trigonal":
+    if crystal_system == "Hexagonal" or crystal_system == "Trigonal":
         return {
             "A": lattice.a / 10,
             "C": lattice.c / 10,
         }
-    elif crystal_system == "Cubic":
+    if crystal_system == "Cubic":
         return {
             "A": lattice.a / 10,
         }
-    else:
-        raise ValueError(f"Unknown crystal system {crystal_system}")
+
+    raise ValueError(f"Unknown crystal system {crystal_system}")
 
 
 def get_std_position(
-    spacegroup_setting: Dict[str, Any],
+    spacegroup_setting: dict[str, Any],
     wyckoff_letter: str,
-    positions: List[List[float]],
-) -> Tuple[List[float], bool]:
-    """
-    Get the standard position of a site based on the hall number and wyckoff notation
-    """
+    positions: list[list[float]],
+) -> tuple[list[float], bool]:
+    """Get the standard position of a site based on the hall number and wyckoff notation"""
     wyckoff = spacegroup_setting["wyckoffs"].get(wyckoff_letter, {})
 
     if not wyckoff:
-        logger.debug(f"Cannot find the standard position for {wyckoff_letter}, using the first position")
-        return (
-            positions[0],
-            True,
-        )  # if there is no standard position, we assume that the position is already in the standard position
+        logger.debug(f"Spacegroup setting: {spacegroup_setting}")
+        raise ValueError(f"Cannot find the wyckoff letter {wyckoff_letter}")
 
     std_notations = wyckoff["std_notations"]
 
@@ -137,8 +133,12 @@ def get_std_position(
 
             aeval = Interpreter(use_numpy=False, symtable=variable_dict)
             wx, wy, wz = (aeval.eval(constraint) for constraint in constraints)
-
-            if fuzzy_compare(wx, position[0]) and fuzzy_compare(wy, position[1]) and fuzzy_compare(wz, position[2]):
+            logger.debug([position, (wx, wy, wz)])
+            if (
+                fuzzy_compare(wx, position[0])
+                and fuzzy_compare(wy, position[1])
+                and fuzzy_compare(wz, position[2])
+            ):
                 return position, True
     logger.debug(
         f"Cannot find the standard position for {wyckoff_letter} {std_notations}, using the first position. "
@@ -148,10 +148,10 @@ def get_std_position(
 
 
 def check_wyckoff(
-    spacegroup_setting: Dict[str, Any], structure: SymmetrizedStructure
-) -> Tuple[List[Dict[str, Any]], int]:
+    spacegroup_setting: dict[str, Any], structure: SymmetrizedStructure
+) -> tuple[list[dict[str, Any]], int]:
     """
-    check if a given spacegroup setting is valid for a structure
+    Check if a given spacegroup setting is valid for a structure.
 
     Args:
         spacegroup_setting: the spacegroup setting
@@ -182,7 +182,8 @@ def check_wyckoff(
         else:
             sorted_species = sorted(site.species)
             species_string = ",".join(
-                f"{process_specie_string(ssp)}({site.species[ssp]:.6f})" for ssp in sorted_species
+                f"{process_specie_string(ssp)}({site.species[ssp]:.6f})"
+                for ssp in sorted_species
             )
             species_string = f"({species_string})"
 
@@ -199,16 +200,22 @@ def check_wyckoff(
     return element_settings, error_count
 
 
-def make_spacegroup_setting_str(spacegroup_setting: Dict[str, Any]) -> str:
+def make_spacegroup_setting_str(spacegroup_setting: dict[str, Any]) -> str:
     """
     Make the spacegroup setting string
     """
-    return " ".join([f"{k}={v}" for k, v in spacegroup_setting["setting"].items()]) + " //"
+    return (
+        " ".join([f"{k}={v}" for k, v in spacegroup_setting["setting"].items()]) + " //"
+    )
 
 
-def make_lattice_parameters_str(spacegroup_setting: Dict[str, Any], structure: SymmetrizedStructure) -> str:
+def make_lattice_parameters_str(
+    spacegroup_setting: dict[str, Any], structure: SymmetrizedStructure
+) -> str:
     crystal_system = spacegroup_setting["setting"]["Lattice"]
-    lattice_parameters = get_lattice_parameters_from_lattice(structure.lattice, crystal_system)
+    lattice_parameters = get_lattice_parameters_from_lattice(
+        structure.lattice, crystal_system
+    )
 
     lattice_parameters_str = " ".join(
         [
@@ -253,19 +260,22 @@ def cif2str(cif_path: Path, working_dir: Optional[Path] = None) -> Path:
     E=O-2 Wyckoff=d x=0.500000 y=0.000000 z=0.000000 TDS=0.010000
 
     """
-    if working_dir is None:
-        str_path = cif_path.parent / f"{cif_path.stem}.str"
-    else:
-        str_path = working_dir / f"{cif_path.stem}.str"
+    str_path = cif_path.parent / f"{cif_path.stem}.str" \
+        if working_dir is None \
+        else working_dir / f"{cif_path.stem}.str"
 
-    spg = SpacegroupAnalyzer(Structure.from_file(cif_path.as_posix(), site_tolerance=1e-3))
+    spg = SpacegroupAnalyzer(
+        Structure.from_file(cif_path.as_posix(), site_tolerance=1e-3)
+    )
     structure: Structure = spg.get_refined_structure()
 
     spg = SpacegroupAnalyzer(structure)
     structure: SymmetrizedStructure = spg.get_symmetrized_structure()
 
     hall_number = str(spg.get_symmetry_dataset()["hall_number"])
-    with (Path(__file__).parent / "data" / "spglib_db" / "spg.json").open("r", encoding="utf-8") as f:
+    with (Path(__file__).parent / "data" / "spglib_db" / "spg.json").open(
+        "r", encoding="utf-8"
+    ) as f:
         spg_group_db = json.load(f)
     settings = spg_group_db[hall_number]["settings"]
 
@@ -281,11 +291,15 @@ def cif2str(cif_path: Path, working_dir: Optional[Path] = None) -> Path:
     spacegroup_setting, element_settings, error_count = best_setting
 
     if error_count > 0:
+        logger.debug(f"CIF file: {cif_path.read_text()}")
+        logger.debug(f"Symmetry dataset: {spg.get_symmetry_dataset()}")
         raise ValueError(
             f"Cannot find a valid lattice symmetry setting for {cif_path}."
         )
 
-    logger.debug(f"Using setting {spacegroup_setting['setting']} for {cif_path}, with {error_count} errors")
+    logger.debug(
+        f"Using setting {spacegroup_setting['setting']} for {cif_path}, with {error_count} errors"
+    )
 
     # start to construct the str file string
     str_text = ""
@@ -310,7 +324,8 @@ def cif2str(cif_path: Path, working_dir: Optional[Path] = None) -> Path:
 
     # add wyckoff positions
     element_settings_str = [
-        " ".join([f"{k}={v}" for k, v in element_setting.items()]) for element_setting in element_settings
+        " ".join([f"{k}={v}" for k, v in element_setting.items()])
+        for element_setting in element_settings
     ]
     str_text += "\n".join(element_settings_str)
 

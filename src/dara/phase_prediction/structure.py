@@ -155,7 +155,9 @@ def remap_pattern(angles, intensities):
         ang = steps[np.argmax(row)]
         std_dev = calc_std_dev(ang, domain_size)
         # Gaussian kernel expects step size 1 -> adapt std_dev
-        signals[i, :] = gaussian_filter1d(row, np.sqrt(std_dev) * 1 / step_size, mode="constant")
+        signals[i, :] = gaussian_filter1d(
+            row, np.sqrt(std_dev) * 1 / step_size, mode="constant"
+        )
 
     # Combine signals
     signal = np.sum(signals, axis=0)
@@ -276,7 +278,11 @@ def get_reduced_pattern(y1, y2, last_normalization=1.0):
 
     # Get warped spectrum (DTW)
     distance, path = metrics.dtw(
-        pred_y, orig_y, method="sakoechiba", options={"window_size": window_size}, return_path=True
+        pred_y,
+        orig_y,
+        method="sakoechiba",
+        options={"window_size": window_size},
+        return_path=True,
     )
     index_pairs = path.transpose()
     warped_spectrum = orig_y.copy()
@@ -336,7 +342,8 @@ def parse_formula(formula):
         match = re.search(compound_pattern, formula)
         compound, multiplier = match.groups()
         expanded = "".join(
-            f"{element}{int(count)*int(multiplier)}" for element, count in re.findall(element_pattern, compound)
+            f"{element}{int(count)*int(multiplier)}"
+            for element, count in re.findall(element_pattern, compound)
         )
         formula = formula.replace(match.group(), expanded)
 
@@ -380,10 +387,16 @@ def balance_oxidation_states(formula, oxidation_states, max_time=10):
             multi_valent_count = element_counts[el]
             possible_states = oxidation_states[el]
             start_time = time.time()
-            for combination in combinations_with_replacement(possible_states, multi_valent_count):
+            for combination in combinations_with_replacement(
+                possible_states, multi_valent_count
+            ):
                 current_time = time.time()
                 sum_states = sum(
-                    [oxidation_states[el][0] * element_counts[el] for el in elements if el != multi_valent_element]
+                    [
+                        oxidation_states[el][0] * element_counts[el]
+                        for el in elements
+                        if el != multi_valent_element
+                    ]
                 )
                 sum_states += sum(combination)
                 if current_time - start_time > max_time:
@@ -394,7 +407,11 @@ def balance_oxidation_states(formula, oxidation_states, max_time=10):
                         unique_combination = unique_combination[0]
                     balanced_combinations.append(
                         {
-                            **{el: oxidation_states[el][0] for el in elements if el != multi_valent_element},
+                            **{
+                                el: oxidation_states[el][0]
+                                for el in elements
+                                if el != multi_valent_element
+                            },
                             multi_valent_element: unique_combination,
                         }
                     )
@@ -404,7 +421,13 @@ def balance_oxidation_states(formula, oxidation_states, max_time=10):
         all_state_combinations = product(*[oxidation_states[el] for el in elements])
 
         for state_combination in all_state_combinations:
-            if sum(element_counts[el] * state for el, state in zip(elements, state_combination)) == 0:
+            if (
+                sum(
+                    element_counts[el] * state
+                    for el, state in zip(elements, state_combination)
+                )
+                == 0
+            ):
                 balanced_combination = dict(zip(elements, state_combination))
                 if balanced_combination not in balanced_combinations:
                     balanced_combinations.append(balanced_combination)
@@ -493,7 +516,9 @@ class StructureFilter:
         """
         stoich_strucs, temps, dates = self.stoichiometric_info
 
-        matcher = structure_matcher.StructureMatcher(scale=True, attempt_supercell=True, primitive_cell=False)
+        matcher = structure_matcher.StructureMatcher(
+            scale=True, attempt_supercell=True, primitive_cell=False
+        )
 
         XRD_calculator = XRDCalculator(wavelength="CuKa", symprec=0.0)
 
@@ -507,20 +532,30 @@ class StructureFilter:
 
                 # Check if compositions are similar If so, check structural framework.
                 temp_struc_1 = struc_1.copy()
-                reduced_comp_1_dict = temp_struc_1.composition.remove_charges().reduced_composition.to_reduced_dict
+                reduced_comp_1_dict = (
+                    temp_struc_1.composition.remove_charges().reduced_composition.to_reduced_dict
+                )
                 divider_1 = 1
 
                 for key in reduced_comp_1_dict:
                     divider_1 = max(divider_1, reduced_comp_1_dict[key])
 
-                reduced_comp_1 = temp_struc_1.composition.remove_charges().reduced_composition / divider_1
+                reduced_comp_1 = (
+                    temp_struc_1.composition.remove_charges().reduced_composition
+                    / divider_1
+                )
                 temp_struc_2 = struc_2.copy()
-                reduced_comp_2_dict = temp_struc_2.composition.remove_charges().reduced_composition.to_reduced_dict
+                reduced_comp_2_dict = (
+                    temp_struc_2.composition.remove_charges().reduced_composition.to_reduced_dict
+                )
                 divider_2 = 1
 
                 for key in reduced_comp_2_dict:
                     divider_2 = max(divider_2, reduced_comp_2_dict[key])
-                reduced_comp_2 = temp_struc_2.composition.remove_charges().reduced_composition / divider_2
+                reduced_comp_2 = (
+                    temp_struc_2.composition.remove_charges().reduced_composition
+                    / divider_2
+                )
 
                 if reduced_comp_1.almost_equals(reduced_comp_2, atol=0.5):
                     # Replace with dummy species (H) for structural framework check.
@@ -553,12 +588,20 @@ class StructureFilter:
                         where their XRD patterns differ by some predefined amount.
                         """
                         y_1 = remap_pattern(
-                            XRD_calculator.get_pattern(struc_1, scaled=True, two_theta_range=(10, 100)).x,
-                            XRD_calculator.get_pattern(struc_1, scaled=True, two_theta_range=(10, 100)).y,
+                            XRD_calculator.get_pattern(
+                                struc_1, scaled=True, two_theta_range=(10, 100)
+                            ).x,
+                            XRD_calculator.get_pattern(
+                                struc_1, scaled=True, two_theta_range=(10, 100)
+                            ).y,
                         )
                         y_2 = remap_pattern(
-                            XRD_calculator.get_pattern(struc_2, scaled=True, two_theta_range=(10, 100)).x,
-                            XRD_calculator.get_pattern(struc_2, scaled=True, two_theta_range=(10, 100)).y,
+                            XRD_calculator.get_pattern(
+                                struc_2, scaled=True, two_theta_range=(10, 100)
+                            ).x,
+                            XRD_calculator.get_pattern(
+                                struc_2, scaled=True, two_theta_range=(10, 100)
+                            ).y,
                         )
                         reduced_pattern = np.array(get_reduced_pattern(y_1, y_2))
 
@@ -599,11 +642,15 @@ class StructureFilter:
         grouped_strucs, grouped_temps, grouped_dates = self.unique_struc_info
 
         filtered_cmpds = []
-        for struc_class, temp_class, date_class in zip(grouped_strucs, grouped_temps, grouped_dates):
+        for struc_class, temp_class, date_class in zip(
+            grouped_strucs, grouped_temps, grouped_dates
+        ):
             normalized_temps = abs(np.array(temp_class) - 293.0)  # Difference from RT
             zipped_info = list(zip(struc_class, normalized_temps, date_class))
             sorted_info = sorted(zipped_info, key=lambda x: x[1])  # Sort by temperature
-            best_entry = sorted_info[0]  # Take the entry measured at the temperature closest to RT
+            best_entry = sorted_info[
+                0
+            ]  # Take the entry measured at the temperature closest to RT
             candidate_strucs, candidate_dates = [], []
             for entry in sorted_info:
                 if entry[1] == best_entry[1]:  # If temperature matches best entry
@@ -612,7 +659,9 @@ class StructureFilter:
             zipped_info = list(zip(candidate_strucs, candidate_dates))
             try:
                 sorted_info = sorted(zipped_info, key=lambda x: x[1])  ## Sort by date
-                final_struc = sorted_info[-1][0]  # Take the entry that was measured most recently
+                final_struc = sorted_info[-1][
+                    0
+                ]  # Take the entry that was measured most recently
             # If no dates available
             except TypeError:
                 final_struc = zipped_info[-1][0]
@@ -682,17 +731,30 @@ def write_cifs(unique_strucs, dir, include_elems):
             struc.to(filename=filepath, fmt="cif")
         except:
             try:
-                print("%s Space group cannot be determined, lowering tolerance" % str(f))
+                print(
+                    "%s Space group cannot be determined, lowering tolerance" % str(f)
+                )
                 sg = struc.get_space_group_info(symprec=0.1, angle_tolerance=5.0)[1]
                 filepath = "%s/%s_%s.cif" % (dir, f, sg)
                 struc.to(filename=filepath, fmt="cif")
             except:
-                print("%s Space group cannot be determined even after lowering tolerance, Setting to None" % str(f))
+                print(
+                    "%s Space group cannot be determined even after lowering tolerance, Setting to None"
+                    % str(f)
+                )
 
-    assert len(os.listdir(dir)) > 0, "Something went wrong. No reference phases were found."
+    assert (
+        len(os.listdir(dir)) > 0
+    ), "Something went wrong. No reference phases were found."
 
 
-def clean_cifs(cif_directory, ref_directory, filter_oxi=False, include_elems=True, enforce_order=False):
+def clean_cifs(
+    cif_directory,
+    ref_directory,
+    filter_oxi=False,
+    include_elems=True,
+    enforce_order=False,
+):
     """Clean CIFs and write to reference directory."""
     if filter_oxi:
         copytree(cif_directory, "Filtered_CIFs")

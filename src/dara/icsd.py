@@ -28,7 +28,9 @@ class ICSDDatabase:
         :param path_to_icsd: Path to the ICSD database
         """
         self.path_to_icsd = Path(path_to_icsd)
-        self.icsd_dict = loadfn(Path(__file__).parent / "data/icsd_codes_by_chemsys.json.gz")
+        self.icsd_dict = loadfn(
+            Path(__file__).parent / "data/icsd_codes_by_chemsys.json.gz"
+        )
 
     def get_cifs_by_chemsys(self, chemsys, filter_unique=True, copy_files=True):
         """Get a list of ICSD codes corresponding to structures in a chemical system. Option to copy CIF files into a
@@ -47,7 +49,10 @@ class ICSDDatabase:
                 if chemsys in self.icsd_dict:
                     for formula, icsd_codes in self.icsd_dict[chemsys].items():
                         if filter_unique:
-                            icsd_codes = [i["icsd_code"] for i in self.find_oldest_unique_structures(icsd_codes)]
+                            icsd_codes = [
+                                i["icsd_code"]
+                                for i in self.find_oldest_unique_structures(icsd_codes)
+                            ]
                         all_icsd_codes.extend(icsd_codes)
                         all_formulas.extend([formula] * len(icsd_codes))
 
@@ -55,7 +60,10 @@ class ICSDDatabase:
             copy_and_rename_files(
                 self.path_to_icsd,
                 f"{chemsys}",
-                {f"{code}.cif": f"{formula}_{code}.cif" for formula, code in zip(all_formulas, all_icsd_codes)},
+                {
+                    f"{code}.cif": f"{formula}_{code}.cif"
+                    for formula, code in zip(all_formulas, all_icsd_codes)
+                },
             )
         return all_icsd_codes
 

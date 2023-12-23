@@ -1,6 +1,6 @@
 import re
 from pathlib import Path
-from typing import Any, Dict, Tuple, Union
+from typing import Any, Union
 
 import numpy as np
 import plotly.graph_objects as go
@@ -90,7 +90,7 @@ def parse_lst(lst_path: Path):
 
     """
 
-    def parse_values(v_: str) -> Union[float, Tuple[float, float], None, str, int]:
+    def parse_values(v_: str) -> Union[float, tuple[float, float], None, str, int]:
         try:
             v_ = v_.strip("%")
             if v_ == "ERROR" or v_ == "UNDEF":
@@ -105,7 +105,7 @@ def parse_lst(lst_path: Path):
             pass
         return v_
 
-    def parse_section(text: str) -> Dict[str, Any]:
+    def parse_section(text: str) -> dict[str, Any]:
         section = dict(re.findall(r"^(\w+)=(.+?)$", text, re.MULTILINE))
         section = {k: parse_values(v) for k, v in section.items()}
         return section
@@ -116,7 +116,9 @@ def parse_lst(lst_path: Path):
     with lst_path.open() as f:
         texts = f.read()
 
-    pattern_name = re.search(r"Rietveld refinement to file\(s\) (.+?)\n", texts).group(1)
+    pattern_name = re.search(r"Rietveld refinement to file\(s\) (.+?)\n", texts).group(
+        1
+    )
     result = {"raw_lst": texts, "pattern_name": pattern_name}
 
     num_steps = int(re.search(r"(\d+) iteration steps", texts).group(1))
@@ -128,7 +130,9 @@ def parse_lst(lst_path: Path):
     result["1-rho"] = float(re.search(r"1-rho=(\d+\.\d+)%", texts).group(1))
 
     # global goals
-    global_parameters_text = re.search(r"Global parameters and GOALs\n(.*?)\n(?:\n|\Z)", texts, re.DOTALL).group(1)
+    global_parameters_text = re.search(
+        r"Global parameters and GOALs\n(.*?)\n(?:\n|\Z)", texts, re.DOTALL
+    ).group(1)
     global_parameters = parse_section(global_parameters_text)
     result.update(global_parameters)
 
@@ -178,7 +182,7 @@ def parse_dia(dia_path: Path):
     return data
 
 
-def visualize(result_dict: Dict[str, Any]):
+def visualize(result_dict: dict[str, Any]):
     """
     Visualize the result from the refinement.
 
@@ -207,7 +211,10 @@ def visualize(result_dict: Dict[str, Any]):
     if "plot_data" not in result_dict:
         raise ValueError("No plot data in the result dict!")
 
-    if any(x not in result_dict["plot_data"] for x in ["x", "y_obs", "y_calc", "y_bkg", "structs"]):
+    if any(
+        x not in result_dict["plot_data"]
+        for x in ["x", "y_obs", "y_calc", "y_bkg", "structs"]
+    ):
         raise ValueError("Missing data in the plot data!")
 
     plot_data = result_dict["plot_data"]
@@ -216,7 +223,9 @@ def visualize(result_dict: Dict[str, Any]):
     fig = go.Figure()
 
     # fix the size of the box
-    fig.update_layout(autosize=True, xaxis=dict(range=[plot_data["x"].min(), plot_data["x"].max()]))
+    fig.update_layout(
+        autosize=True, xaxis=dict(range=[plot_data["x"].min(), plot_data["x"].max()])
+    )
 
     # Adding scatter plot for observed data
     fig.add_trace(

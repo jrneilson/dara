@@ -21,6 +21,91 @@
       ]
      }
     }
+   },
+   {
+    "setting": {
+     "Lattice": "Triclinic",
+     "HermannMauguin": "A1",
+     "Setting": "3",
+     "SpacegroupNo": "1"
+    },
+    "wyckoffs": {
+     "a": {
+      "N": "2",
+      "Symbol": "a",
+      "std_notations": [
+       "x y z"
+      ]
+     }
+    }
+   },
+   {
+    "setting": {
+     "Lattice": "Triclinic",
+     "HermannMauguin": "B1",
+     "Setting": "4",
+     "SpacegroupNo": "1"
+    },
+    "wyckoffs": {
+     "a": {
+      "N": "2",
+      "Symbol": "a",
+      "std_notations": [
+       "x y z"
+      ]
+     }
+    }
+   },
+   {
+    "setting": {
+     "Lattice": "Triclinic",
+     "HermannMauguin": "C1",
+     "Setting": "2",
+     "SpacegroupNo": "1"
+    },
+    "wyckoffs": {
+     "a": {
+      "N": "2",
+      "Symbol": "a",
+      "std_notations": [
+       "x y z"
+      ]
+     }
+    }
+   },
+   {
+    "setting": {
+     "Lattice": "Triclinic",
+     "HermannMauguin": "F1",
+     "Setting": "6",
+     "SpacegroupNo": "1"
+    },
+    "wyckoffs": {
+     "a": {
+      "N": "4",
+      "Symbol": "a",
+      "std_notations": [
+       "x y z"
+      ]
+     }
+    }
+   },
+   {
+    "setting": {
+     "Lattice": "Triclinic",
+     "HermannMauguin": "I1",
+     "Setting": "5",
+     "SpacegroupNo": "1"
+    },
+    "wyckoffs": {
+     "a": {
+      "N": "2",
+      "Symbol": "a",
+      "std_notations": [
+       "x y z"
+      ]
+     }
+    }
    }
   ]
  },
@@ -96,6 +181,371 @@
      },
      "a": {
       "N": "1",
+      "Symbol": "a",
+      "std_notations": [
+       "0 0 0"
+      ]
+     }
+    }
+   },
+   {
+    "setting": {
+     "Lattice": "Triclinic",
+     "HermannMauguin": "A-1",
+     "Setting": "3",
+     "SpacegroupNo": "2"
+    },
+    "wyckoffs": {
+     "i": {
+      "N": "4",
+      "Symbol": "i",
+      "std_notations": [
+       "x y z"
+      ]
+     },
+     "h": {
+      "N": "2",
+      "Symbol": "h",
+      "std_notations": [
+       "1/2 3/4 1/4"
+      ]
+     },
+     "g": {
+      "N": "2",
+      "Symbol": "g",
+      "std_notations": [
+       "1/2 1/4 1/4"
+      ]
+     },
+     "f": {
+      "N": "2",
+      "Symbol": "f",
+      "std_notations": [
+       "0 3/4 1/4"
+      ]
+     },
+     "e": {
+      "N": "2",
+      "Symbol": "e",
+      "std_notations": [
+       "0 1/4 1/4"
+      ]
+     },
+     "d": {
+      "N": "2",
+      "Symbol": "d",
+      "std_notations": [
+       "1/2 0 1/2"
+      ]
+     },
+     "c": {
+      "N": "2",
+      "Symbol": "c",
+      "std_notations": [
+       "1/2 0 0"
+      ]
+     },
+     "b": {
+      "N": "2",
+      "Symbol": "b",
+      "std_notations": [
+       "0 0 1/2"
+      ]
+     },
+     "a": {
+      "N": "2",
+      "Symbol": "a",
+      "std_notations": [
+       "0 0 0"
+      ]
+     }
+    }
+   },
+   {
+    "setting": {
+     "Lattice": "Triclinic",
+     "HermannMauguin": "B-1",
+     "Setting": "4",
+     "SpacegroupNo": "2"
+    },
+    "wyckoffs": {
+     "i": {
+      "N": "4",
+      "Symbol": "i",
+      "std_notations": [
+       "x y z"
+      ]
+     },
+     "h": {
+      "N": "2",
+      "Symbol": "h",
+      "std_notations": [
+       "3/4 1/2 1/4"
+      ]
+     },
+     "g": {
+      "N": "2",
+      "Symbol": "g",
+      "std_notations": [
+       "1/4 1/2 1/4"
+      ]
+     },
+     "f": {
+      "N": "2",
+      "Symbol": "f",
+      "std_notations": [
+       "3/4 0 1/4"
+      ]
+     },
+     "e": {
+      "N": "2",
+      "Symbol": "e",
+      "std_notations": [
+       "1/4 0 1/4"
+      ]
+     },
+     "d": {
+      "N": "2",
+      "Symbol": "d",
+      "std_notations": [
+       "1/2 1/2 0"
+      ]
+     },
+     "c": {
+      "N": "2",
+      "Symbol": "c",
+      "std_notations": [
+       "0 1/2 0"
+      ]
+     },
+     "b": {
+      "N": "2",
+      "Symbol": "b",
+      "std_notations": [
+       "1/2 0 0"
+      ]
+     },
+     "a": {
+      "N": "2",
+      "Symbol": "a",
+      "std_notations": [
+       "0 0 0"
+      ]
+     }
+    }
+   },
+   {
+    "setting": {
+     "Lattice": "Triclinic",
+     "HermannMauguin": "C-1",
+     "Setting": "2",
+     "SpacegroupNo": "2"
+    },
+    "wyckoffs": {
+     "i": {
+      "N": "4",
+      "Symbol": "i",
+      "std_notations": [
+       "x y z"
+      ]
+     },
+     "h": {
+      "N": "2",
+      "Symbol": "h",
+      "std_notations": [
+       "1/2 0 1/2"
+      ]
+     },
+     "g": {
+      "N": "2",
+      "Symbol": "g",
+      "std_notations": [
+       "3/4 1/4 1/2"
+      ]
+     },
+     "f": {
+      "N": "2",
+      "Symbol": "f",
+      "std_notations": [
+       "1/4 1/4 1/2"
+      ]
+     },
+     "e": {
+      "N": "2",
+      "Symbol": "e",
+      "std_notations": [
+       "1/2 0 0"
+      ]
+     },
+     "d": {
+      "N": "2",
+      "Symbol": "d",
+      "std_notations": [
+       "3/4 1/4 0"
+      ]
+     },
+     "c": {
+      "N": "2",
+      "Symbol": "c",
+      "std_notations": [
+       "1/4 1/4 0"
+      ]
+     },
+     "b": {
+      "N": "2",
+      "Symbol": "b",
+      "std_notations": [
+       "0 0 1/2"
+      ]
+     },
+     "a": {
+      "N": "2",
+      "Symbol": "a",
+      "std_notations": [
+       "0 0 0"
+      ]
+     }
+    }
+   },
+   {
+    "setting": {
+     "Lattice": "Triclinic",
+     "HermannMauguin": "F-1",
+     "Setting": "6",
+     "SpacegroupNo": "2"
+    },
+    "wyckoffs": {
+     "i": {
+      "N": "8",
+      "Symbol": "i",
+      "std_notations": [
+       "x y z"
+      ]
+     },
+     "h": {
+      "N": "4",
+      "Symbol": "h",
+      "std_notations": [
+       "3/4 1/4 0"
+      ]
+     },
+     "g": {
+      "N": "4",
+      "Symbol": "g",
+      "std_notations": [
+       "1/2 1/4 1/4"
+      ]
+     },
+     "f": {
+      "N": "4",
+      "Symbol": "f",
+      "std_notations": [
+       "1/4 1/4 0"
+      ]
+     },
+     "e": {
+      "N": "4",
+      "Symbol": "e",
+      "std_notations": [
+       "0 1/4 1/4"
+      ]
+     },
+     "d": {
+      "N": "4",
+      "Symbol": "d",
+      "std_notations": [
+       "3/4 0 1/4"
+      ]
+     },
+     "c": {
+      "N": "4",
+      "Symbol": "c",
+      "std_notations": [
+       "1/2 0 0"
+      ]
+     },
+     "b": {
+      "N": "4",
+      "Symbol": "b",
+      "std_notations": [
+       "1/4 0 1/4"
+      ]
+     },
+     "a": {
+      "N": "4",
+      "Symbol": "a",
+      "std_notations": [
+       "0 0 0"
+      ]
+     }
+    }
+   },
+   {
+    "setting": {
+     "Lattice": "Triclinic",
+     "HermannMauguin": "I-1",
+     "Setting": "5",
+     "SpacegroupNo": "2"
+    },
+    "wyckoffs": {
+     "i": {
+      "N": "4",
+      "Symbol": "i",
+      "std_notations": [
+       "x y z"
+      ]
+     },
+     "h": {
+      "N": "2",
+      "Symbol": "h",
+      "std_notations": [
+       "3/4 1/4 3/4"
+      ]
+     },
+     "g": {
+      "N": "2",
+      "Symbol": "g",
+      "std_notations": [
+       "3/4 1/4 1/4"
+      ]
+     },
+     "f": {
+      "N": "2",
+      "Symbol": "f",
+      "std_notations": [
+       "1/4 1/4 3/4"
+      ]
+     },
+     "e": {
+      "N": "2",
+      "Symbol": "e",
+      "std_notations": [
+       "1/4 1/4 1/4"
+      ]
+     },
+     "d": {
+      "N": "2",
+      "Symbol": "d",
+      "std_notations": [
+       "1/2 0 0"
+      ]
+     },
+     "c": {
+      "N": "2",
+      "Symbol": "c",
+      "std_notations": [
+       "1/2 1/2 0"
+      ]
+     },
+     "b": {
+      "N": "2",
+      "Symbol": "b",
+      "std_notations": [
+       "0 0 1/2"
+      ]
+     },
+     "a": {
+      "N": "2",
       "Symbol": "a",
       "std_notations": [
        "0 0 0"
@@ -29186,6 +29636,66 @@
       ]
      }
     }
+   },
+   {
+    "setting": {
+     "OriginChoice": "2",
+     "Lattice": "Orthorhombic",
+     "HermannMauguin": "P2_1/m2/n2_1m",
+     "Setting": "10",
+     "SpacegroupNo": "59"
+    },
+    "wyckoffs": {
+     "g": {
+      "N": "8",
+      "Symbol": "g",
+      "std_notations": [
+       "x y z"
+      ]
+     },
+     "f": {
+      "N": "4",
+      "Symbol": "f",
+      "std_notations": [
+       "1/4 y z"
+      ]
+     },
+     "e": {
+      "N": "4",
+      "Symbol": "e",
+      "std_notations": [
+       "x y 1/4"
+      ]
+     },
+     "d": {
+      "N": "4",
+      "Symbol": "d",
+      "std_notations": [
+       "0 1/2 0"
+      ]
+     },
+     "c": {
+      "N": "4",
+      "Symbol": "c",
+      "std_notations": [
+       "0 0 0"
+      ]
+     },
+     "b": {
+      "N": "2",
+      "Symbol": "b",
+      "std_notations": [
+       "3/4 y 1/4"
+      ]
+     },
+     "a": {
+      "N": "2",
+      "Symbol": "a",
+      "std_notations": [
+       "1/4 y 1/4"
+      ]
+     }
+    }
    }
   ]
  },
@@ -29364,6 +29874,66 @@
       "Symbol": "b",
       "std_notations": [
        "1/4 y 3/4"
+      ]
+     },
+     "a": {
+      "N": "2",
+      "Symbol": "a",
+      "std_notations": [
+       "1/4 y 1/4"
+      ]
+     }
+    }
+   },
+   {
+    "setting": {
+     "OriginChoice": "2",
+     "Lattice": "Orthorhombic",
+     "HermannMauguin": "P2_1/m2/n2_1m",
+     "Setting": "10",
+     "SpacegroupNo": "59"
+    },
+    "wyckoffs": {
+     "g": {
+      "N": "8",
+      "Symbol": "g",
+      "std_notations": [
+       "x y z"
+      ]
+     },
+     "f": {
+      "N": "4",
+      "Symbol": "f",
+      "std_notations": [
+       "1/4 y z"
+      ]
+     },
+     "e": {
+      "N": "4",
+      "Symbol": "e",
+      "std_notations": [
+       "x y 1/4"
+      ]
+     },
+     "d": {
+      "N": "4",
+      "Symbol": "d",
+      "std_notations": [
+       "0 1/2 0"
+      ]
+     },
+     "c": {
+      "N": "4",
+      "Symbol": "c",
+      "std_notations": [
+       "0 0 0"
+      ]
+     },
+     "b": {
+      "N": "2",
+      "Symbol": "b",
+      "std_notations": [
+       "3/4 y 1/4"
       ]
      },
      "a": {
@@ -32567,6 +33137,121 @@
       ]
      }
     }
+   },
+   {
+    "setting": {
+     "Lattice": "Orthorhombic",
+     "HermannMauguin": "C2/m2/m2/b",
+     "Setting": "2",
+     "SpacegroupNo": "67"
+    },
+    "wyckoffs": {
+     "o": {
+      "N": "16",
+      "Symbol": "o",
+      "std_notations": [
+       "x y z"
+      ]
+     },
+     "n": {
+      "N": "8",
+      "Symbol": "n",
+      "std_notations": [
+       "1/4 y z"
+      ]
+     },
+     "m": {
+      "N": "8",
+      "Symbol": "m",
+      "std_notations": [
+       "x 0 z"
+      ]
+     },
+     "l": {
+      "N": "8",
+      "Symbol": "l",
+      "std_notations": [
+       "0 1/4 z"
+      ]
+     },
+     "k": {
+      "N": "8",
+      "Symbol": "k",
+      "std_notations": [
+       "x 1/4 1/2"
+      ]
+     },
+     "j": {
+      "N": "8",
+      "Symbol": "j",
+      "std_notations": [
+       "x 1/4 0"
+      ]
+     },
+     "i": {
+      "N": "8",
+      "Symbol": "i",
+      "std_notations": [
+       "0 y 1/2"
+      ]
+     },
+     "h": {
+      "N": "8",
+      "Symbol": "h",
+      "std_notations": [
+       "0 y 0"
+      ]
+     },
+     "g": {
+      "N": "4",
+      "Symbol": "g",
+      "std_notations": [
+       "1/4 0 z"
+      ]
+     },
+     "f": {
+      "N": "4",
+      "Symbol": "f",
+      "std_notations": [
+       "1/4 1/4 1/2"
+      ]
+     },
+     "e": {
+      "N": "4",
+      "Symbol": "e",
+      "std_notations": [
+       "1/4 1/4 0"
+      ]
+     },
+     "d": {
+      "N": "4",
+      "Symbol": "d",
+      "std_notations": [
+       "0 0 1/2"
+      ]
+     },
+     "c": {
+      "N": "4",
+      "Symbol": "c",
+      "std_notations": [
+       "0 0 0"
+      ]
+     },
+     "b": {
+      "N": "4",
+      "Symbol": "b",
+      "std_notations": [
+       "0 1/4 1/2"
+      ]
+     },
+     "a": {
+      "N": "4",
+      "Symbol": "a",
+      "std_notations": [
+       "0 1/4 0"
+      ]
+     }
+    }
    }
   ]
  },
@@ -32687,6 +33372,121 @@
       "Symbol": "a",
       "std_notations": [
        "1/4 0 0"
+      ]
+     }
+    }
+   },
+   {
+    "setting": {
+     "Lattice": "Orthorhombic",
+     "HermannMauguin": "C2/m2/m2/b",
+     "Setting": "2",
+     "SpacegroupNo": "67"
+    },
+    "wyckoffs": {
+     "o": {
+      "N": "16",
+      "Symbol": "o",
+      "std_notations": [
+       "x y z"
+      ]
+     },
+     "n": {
+      "N": "8",
+      "Symbol": "n",
+      "std_notations": [
+       "1/4 y z"
+      ]
+     },
+     "m": {
+      "N": "8",
+      "Symbol": "m",
+      "std_notations": [
+       "x 0 z"
+      ]
+     },
+     "l": {
+      "N": "8",
+      "Symbol": "l",
+      "std_notations": [
+       "0 1/4 z"
+      ]
+     },
+     "k": {
+      "N": "8",
+      "Symbol": "k",
+      "std_notations": [
+       "x 1/4 1/2"
+      ]
+     },
+     "j": {
+      "N": "8",
+      "Symbol": "j",
+      "std_notations": [
+       "x 1/4 0"
+      ]
+     },
+     "i": {
+      "N": "8",
+      "Symbol": "i",
+      "std_notations": [
+       "0 y 1/2"
+      ]
+     },
+     "h": {
+      "N": "8",
+      "Symbol": "h",
+      "std_notations": [
+       "0 y 0"
+      ]
+     },
+     "g": {
+      "N": "4",
+      "Symbol": "g",
+      "std_notations": [
+       "1/4 0 z"
+      ]
+     },
+     "f": {
+      "N": "4",
+      "Symbol": "f",
+      "std_notations": [
+       "1/4 1/4 1/2"
+      ]
+     },
+     "e": {
+      "N": "4",
+      "Symbol": "e",
+      "std_notations": [
+       "1/4 1/4 0"
+      ]
+     },
+     "d": {
+      "N": "4",
+      "Symbol": "d",
+      "std_notations": [
+       "0 0 1/2"
+      ]
+     },
+     "c": {
+      "N": "4",
+      "Symbol": "c",
+      "std_notations": [
+       "0 0 0"
+      ]
+     },
+     "b": {
+      "N": "4",
+      "Symbol": "b",
+      "std_notations": [
+       "0 1/4 1/2"
+      ]
+     },
+     "a": {
+      "N": "4",
+      "Symbol": "a",
+      "std_notations": [
+       "0 1/4 0"
       ]
      }
     }
@@ -32813,6 +33613,121 @@
       ]
      }
     }
+   },
+   {
+    "setting": {
+     "Lattice": "Orthorhombic",
+     "HermannMauguin": "A2/b2/m2/m",
+     "Setting": "3",
+     "SpacegroupNo": "67"
+    },
+    "wyckoffs": {
+     "o": {
+      "N": "16",
+      "Symbol": "o",
+      "std_notations": [
+       "x y z"
+      ]
+     },
+     "n": {
+      "N": "8",
+      "Symbol": "n",
+      "std_notations": [
+       "x y 1/4"
+      ]
+     },
+     "m": {
+      "N": "8",
+      "Symbol": "m",
+      "std_notations": [
+       "x 0 z"
+      ]
+     },
+     "l": {
+      "N": "8",
+      "Symbol": "l",
+      "std_notations": [
+       "x 1/4 0"
+      ]
+     },
+     "k": {
+      "N": "8",
+      "Symbol": "k",
+      "std_notations": [
+       "1/2 1/4 z"
+      ]
+     },
+     "j": {
+      "N": "8",
+      "Symbol": "j",
+      "std_notations": [
+       "0 1/4 z"
+      ]
+     },
+     "i": {
+      "N": "8",
+      "Symbol": "i",
+      "std_notations": [
+       "1/2 y 0"
+      ]
+     },
+     "h": {
+      "N": "8",
+      "Symbol": "h",
+      "std_notations": [
+       "0 y 0"
+      ]
+     },
+     "g": {
+      "N": "4",
+      "Symbol": "g",
+      "std_notations": [
+       "x 0 1/4"
+      ]
+     },
+     "f": {
+      "N": "4",
+      "Symbol": "f",
+      "std_notations": [
+       "1/2 1/4 1/4"
+      ]
+     },
+     "e": {
+      "N": "4",
+      "Symbol": "e",
+      "std_notations": [
+       "0 1/4 1/4"
+      ]
+     },
+     "d": {
+      "N": "4",
+      "Symbol": "d",
+      "std_notations": [
+       "1/2 0 0"
+      ]
+     },
+     "c": {
+      "N": "4",
+      "Symbol": "c",
+      "std_notations": [
+       "0 0 0"
+      ]
+     },
+     "b": {
+      "N": "4",
+      "Symbol": "b",
+      "std_notations": [
+       "1/2 1/4 0"
+      ]
+     },
+     "a": {
+      "N": "4",
+      "Symbol": "a",
+      "std_notations": [
+       "0 1/4 0"
+      ]
+     }
+    }
    }
   ]
  },
@@ -32933,6 +33848,121 @@
       "Symbol": "a",
       "std_notations": [
        "0 0 1/4"
+      ]
+     }
+    }
+   },
+   {
+    "setting": {
+     "Lattice": "Orthorhombic",
+     "HermannMauguin": "A2/b2/m2/m",
+     "Setting": "3",
+     "SpacegroupNo": "67"
+    },
+    "wyckoffs": {
+     "o": {
+      "N": "16",
+      "Symbol": "o",
+      "std_notations": [
+       "x y z"
+      ]
+     },
+     "n": {
+      "N": "8",
+      "Symbol": "n",
+      "std_notations": [
+       "x y 1/4"
+      ]
+     },
+     "m": {
+      "N": "8",
+      "Symbol": "m",
+      "std_notations": [
+       "x 0 z"
+      ]
+     },
+     "l": {
+      "N": "8",
+      "Symbol": "l",
+      "std_notations": [
+       "x 1/4 0"
+      ]
+     },
+     "k": {
+      "N": "8",
+      "Symbol": "k",
+      "std_notations": [
+       "1/2 1/4 z"
+      ]
+     },
+     "j": {
+      "N": "8",
+      "Symbol": "j",
+      "std_notations": [
+       "0 1/4 z"
+      ]
+     },
+     "i": {
+      "N": "8",
+      "Symbol": "i",
+      "std_notations": [
+       "1/2 y 0"
+      ]
+     },
+     "h": {
+      "N": "8",
+      "Symbol": "h",
+      "std_notations": [
+       "0 y 0"
+      ]
+     },
+     "g": {
+      "N": "4",
+      "Symbol": "g",
+      "std_notations": [
+       "x 0 1/4"
+      ]
+     },
+     "f": {
+      "N": "4",
+      "Symbol": "f",
+      "std_notations": [
+       "1/2 1/4 1/4"
+      ]
+     },
+     "e": {
+      "N": "4",
+      "Symbol": "e",
+      "std_notations": [
+       "0 1/4 1/4"
+      ]
+     },
+     "d": {
+      "N": "4",
+      "Symbol": "d",
+      "std_notations": [
+       "1/2 0 0"
+      ]
+     },
+     "c": {
+      "N": "4",
+      "Symbol": "c",
+      "std_notations": [
+       "0 0 0"
+      ]
+     },
+     "b": {
+      "N": "4",
+      "Symbol": "b",
+      "std_notations": [
+       "1/2 1/4 0"
+      ]
+     },
+     "a": {
+      "N": "4",
+      "Symbol": "a",
+      "std_notations": [
+       "0 1/4 0"
       ]
      }
     }
@@ -33059,6 +34089,121 @@
       ]
      }
     }
+   },
+   {
+    "setting": {
+     "Lattice": "Orthorhombic",
+     "HermannMauguin": "B2/m2/a2/m",
+     "Setting": "6",
+     "SpacegroupNo": "67"
+    },
+    "wyckoffs": {
+     "o": {
+      "N": "16",
+      "Symbol": "o",
+      "std_notations": [
+       "x y z"
+      ]
+     },
+     "n": {
+      "N": "8",
+      "Symbol": "n",
+      "std_notations": [
+       "x y 1/4"
+      ]
+     },
+     "m": {
+      "N": "8",
+      "Symbol": "m",
+      "std_notations": [
+       "0 y z"
+      ]
+     },
+     "l": {
+      "N": "8",
+      "Symbol": "l",
+      "std_notations": [
+       "1/4 y 0"
+      ]
+     },
+     "k": {
+      "N": "8",
+      "Symbol": "k",
+      "std_notations": [
+       "1/4 1/2 z"
+      ]
+     },
+     "j": {
+      "N": "8",
+      "Symbol": "j",
+      "std_notations": [
+       "1/4 0 z"
+      ]
+     },
+     "i": {
+      "N": "8",
+      "Symbol": "i",
+      "std_notations": [
+       "x 1/2 0"
+      ]
+     },
+     "h": {
+      "N": "8",
+      "Symbol": "h",
+      "std_notations": [
+       "x 0 0"
+      ]
+     },
+     "g": {
+      "N": "4",
+      "Symbol": "g",
+      "std_notations": [
+       "0 y 1/4"
+      ]
+     },
+     "f": {
+      "N": "4",
+      "Symbol": "f",
+      "std_notations": [
+       "1/4 1/2 1/4"
+      ]
+     },
+     "e": {
+      "N": "4",
+      "Symbol": "e",
+      "std_notations": [
+       "1/4 0 1/4"
+      ]
+     },
+     "d": {
+      "N": "4",
+      "Symbol": "d",
+      "std_notations": [
+       "0 1/2 0"
+      ]
+     },
+     "c": {
+      "N": "4",
+      "Symbol": "c",
+      "std_notations": [
+       "0 0 0"
+      ]
+     },
+     "b": {
+      "N": "4",
+      "Symbol": "b",
+      "std_notations": [
+       "1/4 1/2 0"
+      ]
+     },
+     "a": {
+      "N": "4",
+      "Symbol": "a",
+      "std_notations": [
+       "1/4 0 0"
+      ]
+     }
+    }
    }
   ]
  },
@@ -33179,6 +34324,121 @@
       "Symbol": "a",
       "std_notations": [
        "0 0 1/4"
+      ]
+     }
+    }
+   },
+   {
+    "setting": {
+     "Lattice": "Orthorhombic",
+     "HermannMauguin": "B2/m2/a2/m",
+     "Setting": "6",
+     "SpacegroupNo": "67"
+    },
+    "wyckoffs": {
+     "o": {
+      "N": "16",
+      "Symbol": "o",
+      "std_notations": [
+       "x y z"
+      ]
+     },
+     "n": {
+      "N": "8",
+      "Symbol": "n",
+      "std_notations": [
+       "x y 1/4"
+      ]
+     },
+     "m": {
+      "N": "8",
+      "Symbol": "m",
+      "std_notations": [
+       "0 y z"
+      ]
+     },
+     "l": {
+      "N": "8",
+      "Symbol": "l",
+      "std_notations": [
+       "1/4 y 0"
+      ]
+     },
+     "k": {
+      "N": "8",
+      "Symbol": "k",
+      "std_notations": [
+       "1/4 1/2 z"
+      ]
+     },
+     "j": {
+      "N": "8",
+      "Symbol": "j",
+      "std_notations": [
+       "1/4 0 z"
+      ]
+     },
+     "i": {
+      "N": "8",
+      "Symbol": "i",
+      "std_notations": [
+       "x 1/2 0"
+      ]
+     },
+     "h": {
+      "N": "8",
+      "Symbol": "h",
+      "std_notations": [
+       "x 0 0"
+      ]
+     },
+     "g": {
+      "N": "4",
+      "Symbol": "g",
+      "std_notations": [
+       "0 y 1/4"
+      ]
+     },
+     "f": {
+      "N": "4",
+      "Symbol": "f",
+      "std_notations": [
+       "1/4 1/2 1/4"
+      ]
+     },
+     "e": {
+      "N": "4",
+      "Symbol": "e",
+      "std_notations": [
+       "1/4 0 1/4"
+      ]
+     },
+     "d": {
+      "N": "4",
+      "Symbol": "d",
+      "std_notations": [
+       "0 1/2 0"
+      ]
+     },
+     "c": {
+      "N": "4",
+      "Symbol": "c",
+      "std_notations": [
+       "0 0 0"
+      ]
+     },
+     "b": {
+      "N": "4",
+      "Symbol": "b",
+      "std_notations": [
+       "1/4 1/2 0"
+      ]
+     },
+     "a": {
+      "N": "4",
+      "Symbol": "a",
+      "std_notations": [
+       "1/4 0 0"
       ]
      }
     }
@@ -33338,6 +34598,154 @@
       ]
      }
     }
+   },
+   {
+    "setting": {
+     "OriginChoice": "1",
+     "Lattice": "Orthorhombic",
+     "HermannMauguin": "C2/c2/c2/b",
+     "Setting": "3",
+     "SpacegroupNo": "68"
+    },
+    "wyckoffs": {
+     "i": {
+      "N": "16",
+      "Symbol": "i",
+      "std_notations": [
+       "x y z"
+      ]
+     },
+     "h": {
+      "N": "8",
+      "Symbol": "h",
+      "std_notations": [
+       "1/4 1/4 z"
+      ]
+     },
+     "g": {
+      "N": "8",
+      "Symbol": "g",
+      "std_notations": [
+       "0 0 z"
+      ]
+     },
+     "f": {
+      "N": "8",
+      "Symbol": "f",
+      "std_notations": [
+       "x 0 0"
+      ]
+     },
+     "e": {
+      "N": "8",
+      "Symbol": "e",
+      "std_notations": [
+       "0 y 0"
+      ]
+     },
+     "d": {
+      "N": "8",
+      "Symbol": "d",
+      "std_notations": [
+       "1/4 0 3/4"
+      ]
+     },
+     "c": {
+      "N": "8",
+      "Symbol": "c",
+      "std_notations": [
+       "0 1/4 3/4"
+      ]
+     },
+     "b": {
+      "N": "4",
+      "Symbol": "b",
+      "std_notations": [
+       "0 0 1/2"
+      ]
+     },
+     "a": {
+      "N": "4",
+      "Symbol": "a",
+      "std_notations": [
+       "0 0 0"
+      ]
+     }
+    }
+   },
+   {
+    "setting": {
+     "OriginChoice": "2",
+     "Lattice": "Orthorhombic",
+     "HermannMauguin": "C2/c2/c2/b",
+     "Setting": "4",
+     "SpacegroupNo": "68"
+    },
+    "wyckoffs": {
+     "i": {
+      "N": "16",
+      "Symbol": "i",
+      "std_notations": [
+       "x y z"
+      ]
+     },
+     "h": {
+      "N": "8",
+      "Symbol": "h",
+      "std_notations": [
+       "0 1/4 z"
+      ]
+     },
+     "g": {
+      "N": "8",
+      "Symbol": "g",
+      "std_notations": [
+       "1/4 0 z"
+      ]
+     },
+     "f": {
+      "N": "8",
+      "Symbol": "f",
+      "std_notations": [
+       "x 0 3/4"
+      ]
+     },
+     "e": {
+      "N": "8",
+      "Symbol": "e",
+      "std_notations": [
+       "1/4 y 3/4"
+      ]
+     },
+     "d": {
+      "N": "8",
+      "Symbol": "d",
+      "std_notations": [
+       "0 0 0"
+      ]
+     },
+     "c": {
+      "N": "8",
+      "Symbol": "c",
+      "std_notations": [
+       "3/4 1/4 0"
+      ]
+     },
+     "b": {
+      "N": "4",
+      "Symbol": "b",
+      "std_notations": [
+       "1/4 0 1/4"
+      ]
+     },
+     "a": {
+      "N": "4",
+      "Symbol": "a",
+      "std_notations": [
+       "1/4 0 3/4"
+      ]
+     }
+    }
    }
   ]
  },
@@ -33491,6 +34899,154 @@
       "Symbol": "a",
       "std_notations": [
        "0 1/4 1/4"
+      ]
+     }
+    }
+   },
+   {
+    "setting": {
+     "OriginChoice": "1",
+     "Lattice": "Orthorhombic",
+     "HermannMauguin": "C2/c2/c2/b",
+     "Setting": "3",
+     "SpacegroupNo": "68"
+    },
+    "wyckoffs": {
+     "i": {
+      "N": "16",
+      "Symbol": "i",
+      "std_notations": [
+       "x y z"
+      ]
+     },
+     "h": {
+      "N": "8",
+      "Symbol": "h",
+      "std_notations": [
+       "1/4 1/4 z"
+      ]
+     },
+     "g": {
+      "N": "8",
+      "Symbol": "g",
+      "std_notations": [
+       "0 0 z"
+      ]
+     },
+     "f": {
+      "N": "8",
+      "Symbol": "f",
+      "std_notations": [
+       "x 0 0"
+      ]
+     },
+     "e": {
+      "N": "8",
+      "Symbol": "e",
+      "std_notations": [
+       "0 y 0"
+      ]
+     },
+     "d": {
+      "N": "8",
+      "Symbol": "d",
+      "std_notations": [
+       "1/4 0 3/4"
+      ]
+     },
+     "c": {
+      "N": "8",
+      "Symbol": "c",
+      "std_notations": [
+       "0 1/4 3/4"
+      ]
+     },
+     "b": {
+      "N": "4",
+      "Symbol": "b",
+      "std_notations": [
+       "0 0 1/2"
+      ]
+     },
+     "a": {
+      "N": "4",
+      "Symbol": "a",
+      "std_notations": [
+       "0 0 0"
+      ]
+     }
+    }
+   },
+   {
+    "setting": {
+     "OriginChoice": "2",
+     "Lattice": "Orthorhombic",
+     "HermannMauguin": "C2/c2/c2/b",
+     "Setting": "4",
+     "SpacegroupNo": "68"
+    },
+    "wyckoffs": {
+     "i": {
+      "N": "16",
+      "Symbol": "i",
+      "std_notations": [
+       "x y z"
+      ]
+     },
+     "h": {
+      "N": "8",
+      "Symbol": "h",
+      "std_notations": [
+       "0 1/4 z"
+      ]
+     },
+     "g": {
+      "N": "8",
+      "Symbol": "g",
+      "std_notations": [
+       "1/4 0 z"
+      ]
+     },
+     "f": {
+      "N": "8",
+      "Symbol": "f",
+      "std_notations": [
+       "x 0 3/4"
+      ]
+     },
+     "e": {
+      "N": "8",
+      "Symbol": "e",
+      "std_notations": [
+       "1/4 y 3/4"
+      ]
+     },
+     "d": {
+      "N": "8",
+      "Symbol": "d",
+      "std_notations": [
+       "0 0 0"
+      ]
+     },
+     "c": {
+      "N": "8",
+      "Symbol": "c",
+      "std_notations": [
+       "3/4 1/4 0"
+      ]
+     },
+     "b": {
+      "N": "4",
+      "Symbol": "b",
+      "std_notations": [
+       "1/4 0 1/4"
+      ]
+     },
+     "a": {
+      "N": "4",
+      "Symbol": "a",
+      "std_notations": [
+       "1/4 0 3/4"
       ]
      }
     }
@@ -33650,6 +35206,154 @@
       ]
      }
     }
+   },
+   {
+    "setting": {
+     "OriginChoice": "1",
+     "Lattice": "Orthorhombic",
+     "HermannMauguin": "C2/c2/c2/b",
+     "Setting": "3",
+     "SpacegroupNo": "68"
+    },
+    "wyckoffs": {
+     "i": {
+      "N": "16",
+      "Symbol": "i",
+      "std_notations": [
+       "x y z"
+      ]
+     },
+     "h": {
+      "N": "8",
+      "Symbol": "h",
+      "std_notations": [
+       "1/4 1/4 z"
+      ]
+     },
+     "g": {
+      "N": "8",
+      "Symbol": "g",
+      "std_notations": [
+       "0 0 z"
+      ]
+     },
+     "f": {
+      "N": "8",
+      "Symbol": "f",
+      "std_notations": [
+       "x 0 0"
+      ]
+     },
+     "e": {
+      "N": "8",
+      "Symbol": "e",
+      "std_notations": [
+       "0 y 0"
+      ]
+     },
+     "d": {
+      "N": "8",
+      "Symbol": "d",
+      "std_notations": [
+       "1/4 0 3/4"
+      ]
+     },
+     "c": {
+      "N": "8",
+      "Symbol": "c",
+      "std_notations": [
+       "0 1/4 3/4"
+      ]
+     },
+     "b": {
+      "N": "4",
+      "Symbol": "b",
+      "std_notations": [
+       "0 0 1/2"
+      ]
+     },
+     "a": {
+      "N": "4",
+      "Symbol": "a",
+      "std_notations": [
+       "0 0 0"
+      ]
+     }
+    }
+   },
+   {
+    "setting": {
+     "OriginChoice": "2",
+     "Lattice": "Orthorhombic",
+     "HermannMauguin": "C2/c2/c2/b",
+     "Setting": "4",
+     "SpacegroupNo": "68"
+    },
+    "wyckoffs": {
+     "i": {
+      "N": "16",
+      "Symbol": "i",
+      "std_notations": [
+       "x y z"
+      ]
+     },
+     "h": {
+      "N": "8",
+      "Symbol": "h",
+      "std_notations": [
+       "0 1/4 z"
+      ]
+     },
+     "g": {
+      "N": "8",
+      "Symbol": "g",
+      "std_notations": [
+       "1/4 0 z"
+      ]
+     },
+     "f": {
+      "N": "8",
+      "Symbol": "f",
+      "std_notations": [
+       "x 0 3/4"
+      ]
+     },
+     "e": {
+      "N": "8",
+      "Symbol": "e",
+      "std_notations": [
+       "1/4 y 3/4"
+      ]
+     },
+     "d": {
+      "N": "8",
+      "Symbol": "d",
+      "std_notations": [
+       "0 0 0"
+      ]
+     },
+     "c": {
+      "N": "8",
+      "Symbol": "c",
+      "std_notations": [
+       "3/4 1/4 0"
+      ]
+     },
+     "b": {
+      "N": "4",
+      "Symbol": "b",
+      "std_notations": [
+       "1/4 0 1/4"
+      ]
+     },
+     "a": {
+      "N": "4",
+      "Symbol": "a",
+      "std_notations": [
+       "1/4 0 3/4"
+      ]
+     }
+    }
    }
   ]
  },
@@ -33803,6 +35507,154 @@
       "Symbol": "a",
       "std_notations": [
        "0 1/4 1/4"
+      ]
+     }
+    }
+   },
+   {
+    "setting": {
+     "OriginChoice": "1",
+     "Lattice": "Orthorhombic",
+     "HermannMauguin": "C2/c2/c2/b",
+     "Setting": "3",
+     "SpacegroupNo": "68"
+    },
+    "wyckoffs": {
+     "i": {
+      "N": "16",
+      "Symbol": "i",
+      "std_notations": [
+       "x y z"
+      ]
+     },
+     "h": {
+      "N": "8",
+      "Symbol": "h",
+      "std_notations": [
+       "1/4 1/4 z"
+      ]
+     },
+     "g": {
+      "N": "8",
+      "Symbol": "g",
+      "std_notations": [
+       "0 0 z"
+      ]
+     },
+     "f": {
+      "N": "8",
+      "Symbol": "f",
+      "std_notations": [
+       "x 0 0"
+      ]
+     },
+     "e": {
+      "N": "8",
+      "Symbol": "e",
+      "std_notations": [
+       "0 y 0"
+      ]
+     },
+     "d": {
+      "N": "8",
+      "Symbol": "d",
+      "std_notations": [
+       "1/4 0 3/4"
+      ]
+     },
+     "c": {
+      "N": "8",
+      "Symbol": "c",
+      "std_notations": [
+       "0 1/4 3/4"
+      ]
+     },
+     "b": {
+      "N": "4",
+      "Symbol": "b",
+      "std_notations": [
+       "0 0 1/2"
+      ]
+     },
+     "a": {
+      "N": "4",
+      "Symbol": "a",
+      "std_notations": [
+       "0 0 0"
+      ]
+     }
+    }
+   },
+   {
+    "setting": {
+     "OriginChoice": "2",
+     "Lattice": "Orthorhombic",
+     "HermannMauguin": "C2/c2/c2/b",
+     "Setting": "4",
+     "SpacegroupNo": "68"
+    },
+    "wyckoffs": {
+     "i": {
+      "N": "16",
+      "Symbol": "i",
+      "std_notations": [
+       "x y z"
+      ]
+     },
+     "h": {
+      "N": "8",
+      "Symbol": "h",
+      "std_notations": [
+       "0 1/4 z"
+      ]
+     },
+     "g": {
+      "N": "8",
+      "Symbol": "g",
+      "std_notations": [
+       "1/4 0 z"
+      ]
+     },
+     "f": {
+      "N": "8",
+      "Symbol": "f",
+      "std_notations": [
+       "x 0 3/4"
+      ]
+     },
+     "e": {
+      "N": "8",
+      "Symbol": "e",
+      "std_notations": [
+       "1/4 y 3/4"
+      ]
+     },
+     "d": {
+      "N": "8",
+      "Symbol": "d",
+      "std_notations": [
+       "0 0 0"
+      ]
+     },
+     "c": {
+      "N": "8",
+      "Symbol": "c",
+      "std_notations": [
+       "3/4 1/4 0"
+      ]
+     },
+     "b": {
+      "N": "4",
+      "Symbol": "b",
+      "std_notations": [
+       "1/4 0 1/4"
+      ]
+     },
+     "a": {
+      "N": "4",
+      "Symbol": "a",
+      "std_notations": [
+       "1/4 0 3/4"
       ]
      }
     }
@@ -33962,6 +35814,154 @@
       ]
      }
     }
+   },
+   {
+    "setting": {
+     "OriginChoice": "1",
+     "Lattice": "Orthorhombic",
+     "HermannMauguin": "A2/c2/a2/a",
+     "Setting": "7",
+     "SpacegroupNo": "68"
+    },
+    "wyckoffs": {
+     "i": {
+      "N": "16",
+      "Symbol": "i",
+      "std_notations": [
+       "x y z"
+      ]
+     },
+     "h": {
+      "N": "8",
+      "Symbol": "h",
+      "std_notations": [
+       "x 1/4 1/4"
+      ]
+     },
+     "g": {
+      "N": "8",
+      "Symbol": "g",
+      "std_notations": [
+       "x 0 0"
+      ]
+     },
+     "f": {
+      "N": "8",
+      "Symbol": "f",
+      "std_notations": [
+       "0 y 0"
+      ]
+     },
+     "e": {
+      "N": "8",
+      "Symbol": "e",
+      "std_notations": [
+       "0 0 z"
+      ]
+     },
+     "d": {
+      "N": "8",
+      "Symbol": "d",
+      "std_notations": [
+       "3/4 1/4 0"
+      ]
+     },
+     "c": {
+      "N": "8",
+      "Symbol": "c",
+      "std_notations": [
+       "3/4 0 1/4"
+      ]
+     },
+     "b": {
+      "N": "4",
+      "Symbol": "b",
+      "std_notations": [
+       "1/2 0 0"
+      ]
+     },
+     "a": {
+      "N": "4",
+      "Symbol": "a",
+      "std_notations": [
+       "0 0 0"
+      ]
+     }
+    }
+   },
+   {
+    "setting": {
+     "OriginChoice": "2",
+     "Lattice": "Orthorhombic",
+     "HermannMauguin": "A2/c2/a2/a",
+     "Setting": "8",
+     "SpacegroupNo": "68"
+    },
+    "wyckoffs": {
+     "i": {
+      "N": "16",
+      "Symbol": "i",
+      "std_notations": [
+       "x y z"
+      ]
+     },
+     "h": {
+      "N": "8",
+      "Symbol": "h",
+      "std_notations": [
+       "x 0 1/4"
+      ]
+     },
+     "g": {
+      "N": "8",
+      "Symbol": "g",
+      "std_notations": [
+       "x 1/4 0"
+      ]
+     },
+     "f": {
+      "N": "8",
+      "Symbol": "f",
+      "std_notations": [
+       "3/4 y 0"
+      ]
+     },
+     "e": {
+      "N": "8",
+      "Symbol": "e",
+      "std_notations": [
+       "3/4 1/4 z"
+      ]
+     },
+     "d": {
+      "N": "8",
+      "Symbol": "d",
+      "std_notations": [
+       "0 0 0"
+      ]
+     },
+     "c": {
+      "N": "8",
+      "Symbol": "c",
+      "std_notations": [
+       "0 3/4 1/4"
+      ]
+     },
+     "b": {
+      "N": "4",
+      "Symbol": "b",
+      "std_notations": [
+       "1/4 1/4 0"
+      ]
+     },
+     "a": {
+      "N": "4",
+      "Symbol": "a",
+      "std_notations": [
+       "3/4 1/4 0"
+      ]
+     }
+    }
    }
   ]
  },
@@ -34115,6 +36115,154 @@
       "Symbol": "a",
       "std_notations": [
        "1/4 0 1/4"
+      ]
+     }
+    }
+   },
+   {
+    "setting": {
+     "OriginChoice": "1",
+     "Lattice": "Orthorhombic",
+     "HermannMauguin": "A2/c2/a2/a",
+     "Setting": "7",
+     "SpacegroupNo": "68"
+    },
+    "wyckoffs": {
+     "i": {
+      "N": "16",
+      "Symbol": "i",
+      "std_notations": [
+       "x y z"
+      ]
+     },
+     "h": {
+      "N": "8",
+      "Symbol": "h",
+      "std_notations": [
+       "x 1/4 1/4"
+      ]
+     },
+     "g": {
+      "N": "8",
+      "Symbol": "g",
+      "std_notations": [
+       "x 0 0"
+      ]
+     },
+     "f": {
+      "N": "8",
+      "Symbol": "f",
+      "std_notations": [
+       "0 y 0"
+      ]
+     },
+     "e": {
+      "N": "8",
+      "Symbol": "e",
+      "std_notations": [
+       "0 0 z"
+      ]
+     },
+     "d": {
+      "N": "8",
+      "Symbol": "d",
+      "std_notations": [
+       "3/4 1/4 0"
+      ]
+     },
+     "c": {
+      "N": "8",
+      "Symbol": "c",
+      "std_notations": [
+       "3/4 0 1/4"
+      ]
+     },
+     "b": {
+      "N": "4",
+      "Symbol": "b",
+      "std_notations": [
+       "1/2 0 0"
+      ]
+     },
+     "a": {
+      "N": "4",
+      "Symbol": "a",
+      "std_notations": [
+       "0 0 0"
+      ]
+     }
+    }
+   },
+   {
+    "setting": {
+     "OriginChoice": "2",
+     "Lattice": "Orthorhombic",
+     "HermannMauguin": "A2/c2/a2/a",
+     "Setting": "8",
+     "SpacegroupNo": "68"
+    },
+    "wyckoffs": {
+     "i": {
+      "N": "16",
+      "Symbol": "i",
+      "std_notations": [
+       "x y z"
+      ]
+     },
+     "h": {
+      "N": "8",
+      "Symbol": "h",
+      "std_notations": [
+       "x 0 1/4"
+      ]
+     },
+     "g": {
+      "N": "8",
+      "Symbol": "g",
+      "std_notations": [
+       "x 1/4 0"
+      ]
+     },
+     "f": {
+      "N": "8",
+      "Symbol": "f",
+      "std_notations": [
+       "3/4 y 0"
+      ]
+     },
+     "e": {
+      "N": "8",
+      "Symbol": "e",
+      "std_notations": [
+       "3/4 1/4 z"
+      ]
+     },
+     "d": {
+      "N": "8",
+      "Symbol": "d",
+      "std_notations": [
+       "0 0 0"
+      ]
+     },
+     "c": {
+      "N": "8",
+      "Symbol": "c",
+      "std_notations": [
+       "0 3/4 1/4"
+      ]
+     },
+     "b": {
+      "N": "4",
+      "Symbol": "b",
+      "std_notations": [
+       "1/4 1/4 0"
+      ]
+     },
+     "a": {
+      "N": "4",
+      "Symbol": "a",
+      "std_notations": [
+       "3/4 1/4 0"
       ]
      }
     }
@@ -34274,6 +36422,154 @@
       ]
      }
     }
+   },
+   {
+    "setting": {
+     "OriginChoice": "1",
+     "Lattice": "Orthorhombic",
+     "HermannMauguin": "A2/c2/a2/a",
+     "Setting": "7",
+     "SpacegroupNo": "68"
+    },
+    "wyckoffs": {
+     "i": {
+      "N": "16",
+      "Symbol": "i",
+      "std_notations": [
+       "x y z"
+      ]
+     },
+     "h": {
+      "N": "8",
+      "Symbol": "h",
+      "std_notations": [
+       "x 1/4 1/4"
+      ]
+     },
+     "g": {
+      "N": "8",
+      "Symbol": "g",
+      "std_notations": [
+       "x 0 0"
+      ]
+     },
+     "f": {
+      "N": "8",
+      "Symbol": "f",
+      "std_notations": [
+       "0 y 0"
+      ]
+     },
+     "e": {
+      "N": "8",
+      "Symbol": "e",
+      "std_notations": [
+       "0 0 z"
+      ]
+     },
+     "d": {
+      "N": "8",
+      "Symbol": "d",
+      "std_notations": [
+       "3/4 1/4 0"
+      ]
+     },
+     "c": {
+      "N": "8",
+      "Symbol": "c",
+      "std_notations": [
+       "3/4 0 1/4"
+      ]
+     },
+     "b": {
+      "N": "4",
+      "Symbol": "b",
+      "std_notations": [
+       "1/2 0 0"
+      ]
+     },
+     "a": {
+      "N": "4",
+      "Symbol": "a",
+      "std_notations": [
+       "0 0 0"
+      ]
+     }
+    }
+   },
+   {
+    "setting": {
+     "OriginChoice": "2",
+     "Lattice": "Orthorhombic",
+     "HermannMauguin": "A2/c2/a2/a",
+     "Setting": "8",
+     "SpacegroupNo": "68"
+    },
+    "wyckoffs": {
+     "i": {
+      "N": "16",
+      "Symbol": "i",
+      "std_notations": [
+       "x y z"
+      ]
+     },
+     "h": {
+      "N": "8",
+      "Symbol": "h",
+      "std_notations": [
+       "x 0 1/4"
+      ]
+     },
+     "g": {
+      "N": "8",
+      "Symbol": "g",
+      "std_notations": [
+       "x 1/4 0"
+      ]
+     },
+     "f": {
+      "N": "8",
+      "Symbol": "f",
+      "std_notations": [
+       "3/4 y 0"
+      ]
+     },
+     "e": {
+      "N": "8",
+      "Symbol": "e",
+      "std_notations": [
+       "3/4 1/4 z"
+      ]
+     },
+     "d": {
+      "N": "8",
+      "Symbol": "d",
+      "std_notations": [
+       "0 0 0"
+      ]
+     },
+     "c": {
+      "N": "8",
+      "Symbol": "c",
+      "std_notations": [
+       "0 3/4 1/4"
+      ]
+     },
+     "b": {
+      "N": "4",
+      "Symbol": "b",
+      "std_notations": [
+       "1/4 1/4 0"
+      ]
+     },
+     "a": {
+      "N": "4",
+      "Symbol": "a",
+      "std_notations": [
+       "3/4 1/4 0"
+      ]
+     }
+    }
    }
   ]
  },
@@ -34427,6 +36723,154 @@
       "Symbol": "a",
       "std_notations": [
        "1/4 0 1/4"
+      ]
+     }
+    }
+   },
+   {
+    "setting": {
+     "OriginChoice": "1",
+     "Lattice": "Orthorhombic",
+     "HermannMauguin": "A2/c2/a2/a",
+     "Setting": "7",
+     "SpacegroupNo": "68"
+    },
+    "wyckoffs": {
+     "i": {
+      "N": "16",
+      "Symbol": "i",
+      "std_notations": [
+       "x y z"
+      ]
+     },
+     "h": {
+      "N": "8",
+      "Symbol": "h",
+      "std_notations": [
+       "x 1/4 1/4"
+      ]
+     },
+     "g": {
+      "N": "8",
+      "Symbol": "g",
+      "std_notations": [
+       "x 0 0"
+      ]
+     },
+     "f": {
+      "N": "8",
+      "Symbol": "f",
+      "std_notations": [
+       "0 y 0"
+      ]
+     },
+     "e": {
+      "N": "8",
+      "Symbol": "e",
+      "std_notations": [
+       "0 0 z"
+      ]
+     },
+     "d": {
+      "N": "8",
+      "Symbol": "d",
+      "std_notations": [
+       "3/4 1/4 0"
+      ]
+     },
+     "c": {
+      "N": "8",
+      "Symbol": "c",
+      "std_notations": [
+       "3/4 0 1/4"
+      ]
+     },
+     "b": {
+      "N": "4",
+      "Symbol": "b",
+      "std_notations": [
+       "1/2 0 0"
+      ]
+     },
+     "a": {
+      "N": "4",
+      "Symbol": "a",
+      "std_notations": [
+       "0 0 0"
+      ]
+     }
+    }
+   },
+   {
+    "setting": {
+     "OriginChoice": "2",
+     "Lattice": "Orthorhombic",
+     "HermannMauguin": "A2/c2/a2/a",
+     "Setting": "8",
+     "SpacegroupNo": "68"
+    },
+    "wyckoffs": {
+     "i": {
+      "N": "16",
+      "Symbol": "i",
+      "std_notations": [
+       "x y z"
+      ]
+     },
+     "h": {
+      "N": "8",
+      "Symbol": "h",
+      "std_notations": [
+       "x 0 1/4"
+      ]
+     },
+     "g": {
+      "N": "8",
+      "Symbol": "g",
+      "std_notations": [
+       "x 1/4 0"
+      ]
+     },
+     "f": {
+      "N": "8",
+      "Symbol": "f",
+      "std_notations": [
+       "3/4 y 0"
+      ]
+     },
+     "e": {
+      "N": "8",
+      "Symbol": "e",
+      "std_notations": [
+       "3/4 1/4 z"
+      ]
+     },
+     "d": {
+      "N": "8",
+      "Symbol": "d",
+      "std_notations": [
+       "0 0 0"
+      ]
+     },
+     "c": {
+      "N": "8",
+      "Symbol": "c",
+      "std_notations": [
+       "0 3/4 1/4"
+      ]
+     },
+     "b": {
+      "N": "4",
+      "Symbol": "b",
+      "std_notations": [
+       "1/4 1/4 0"
+      ]
+     },
+     "a": {
+      "N": "4",
+      "Symbol": "a",
+      "std_notations": [
+       "3/4 1/4 0"
       ]
      }
     }
@@ -34586,6 +37030,154 @@
       ]
      }
     }
+   },
+   {
+    "setting": {
+     "OriginChoice": "1",
+     "Lattice": "Orthorhombic",
+     "HermannMauguin": "B2/b2/c2/b",
+     "Setting": "9",
+     "SpacegroupNo": "68"
+    },
+    "wyckoffs": {
+     "i": {
+      "N": "16",
+      "Symbol": "i",
+      "std_notations": [
+       "x y z"
+      ]
+     },
+     "h": {
+      "N": "8",
+      "Symbol": "h",
+      "std_notations": [
+       "1/4 y 1/4"
+      ]
+     },
+     "g": {
+      "N": "8",
+      "Symbol": "g",
+      "std_notations": [
+       "0 y 0"
+      ]
+     },
+     "f": {
+      "N": "8",
+      "Symbol": "f",
+      "std_notations": [
+       "x 0 0"
+      ]
+     },
+     "e": {
+      "N": "8",
+      "Symbol": "e",
+      "std_notations": [
+       "0 0 z"
+      ]
+     },
+     "d": {
+      "N": "8",
+      "Symbol": "d",
+      "std_notations": [
+       "1/4 1/4 0"
+      ]
+     },
+     "c": {
+      "N": "8",
+      "Symbol": "c",
+      "std_notations": [
+       "0 1/4 1/4"
+      ]
+     },
+     "b": {
+      "N": "4",
+      "Symbol": "b",
+      "std_notations": [
+       "0 1/2 0"
+      ]
+     },
+     "a": {
+      "N": "4",
+      "Symbol": "a",
+      "std_notations": [
+       "0 0 0"
+      ]
+     }
+    }
+   },
+   {
+    "setting": {
+     "OriginChoice": "2",
+     "Lattice": "Orthorhombic",
+     "HermannMauguin": "B2/b2/c2/b",
+     "Setting": "10",
+     "SpacegroupNo": "68"
+    },
+    "wyckoffs": {
+     "i": {
+      "N": "16",
+      "Symbol": "i",
+      "std_notations": [
+       "x y z"
+      ]
+     },
+     "h": {
+      "N": "8",
+      "Symbol": "h",
+      "std_notations": [
+       "0 y 1/4"
+      ]
+     },
+     "g": {
+      "N": "8",
+      "Symbol": "g",
+      "std_notations": [
+       "1/4 y 0"
+      ]
+     },
+     "f": {
+      "N": "8",
+      "Symbol": "f",
+      "std_notations": [
+       "x 1/4 0"
+      ]
+     },
+     "e": {
+      "N": "8",
+      "Symbol": "e",
+      "std_notations": [
+       "1/4 1/4 z"
+      ]
+     },
+     "d": {
+      "N": "8",
+      "Symbol": "d",
+      "std_notations": [
+       "0 0 0"
+      ]
+     },
+     "c": {
+      "N": "8",
+      "Symbol": "c",
+      "std_notations": [
+       "3/4 0 1/4"
+      ]
+     },
+     "b": {
+      "N": "4",
+      "Symbol": "b",
+      "std_notations": [
+       "1/4 3/4 0"
+      ]
+     },
+     "a": {
+      "N": "4",
+      "Symbol": "a",
+      "std_notations": [
+       "1/4 1/4 0"
+      ]
+     }
+    }
    }
   ]
  },
@@ -34739,6 +37331,154 @@
       "Symbol": "a",
       "std_notations": [
        "0 3/4 1/4"
+      ]
+     }
+    }
+   },
+   {
+    "setting": {
+     "OriginChoice": "1",
+     "Lattice": "Orthorhombic",
+     "HermannMauguin": "B2/b2/c2/b",
+     "Setting": "9",
+     "SpacegroupNo": "68"
+    },
+    "wyckoffs": {
+     "i": {
+      "N": "16",
+      "Symbol": "i",
+      "std_notations": [
+       "x y z"
+      ]
+     },
+     "h": {
+      "N": "8",
+      "Symbol": "h",
+      "std_notations": [
+       "1/4 y 1/4"
+      ]
+     },
+     "g": {
+      "N": "8",
+      "Symbol": "g",
+      "std_notations": [
+       "0 y 0"
+      ]
+     },
+     "f": {
+      "N": "8",
+      "Symbol": "f",
+      "std_notations": [
+       "x 0 0"
+      ]
+     },
+     "e": {
+      "N": "8",
+      "Symbol": "e",
+      "std_notations": [
+       "0 0 z"
+      ]
+     },
+     "d": {
+      "N": "8",
+      "Symbol": "d",
+      "std_notations": [
+       "1/4 1/4 0"
+      ]
+     },
+     "c": {
+      "N": "8",
+      "Symbol": "c",
+      "std_notations": [
+       "0 1/4 1/4"
+      ]
+     },
+     "b": {
+      "N": "4",
+      "Symbol": "b",
+      "std_notations": [
+       "0 1/2 0"
+      ]
+     },
+     "a": {
+      "N": "4",
+      "Symbol": "a",
+      "std_notations": [
+       "0 0 0"
+      ]
+     }
+    }
+   },
+   {
+    "setting": {
+     "OriginChoice": "2",
+     "Lattice": "Orthorhombic",
+     "HermannMauguin": "B2/b2/c2/b",
+     "Setting": "10",
+     "SpacegroupNo": "68"
+    },
+    "wyckoffs": {
+     "i": {
+      "N": "16",
+      "Symbol": "i",
+      "std_notations": [
+       "x y z"
+      ]
+     },
+     "h": {
+      "N": "8",
+      "Symbol": "h",
+      "std_notations": [
+       "0 y 1/4"
+      ]
+     },
+     "g": {
+      "N": "8",
+      "Symbol": "g",
+      "std_notations": [
+       "1/4 y 0"
+      ]
+     },
+     "f": {
+      "N": "8",
+      "Symbol": "f",
+      "std_notations": [
+       "x 1/4 0"
+      ]
+     },
+     "e": {
+      "N": "8",
+      "Symbol": "e",
+      "std_notations": [
+       "1/4 1/4 z"
+      ]
+     },
+     "d": {
+      "N": "8",
+      "Symbol": "d",
+      "std_notations": [
+       "0 0 0"
+      ]
+     },
+     "c": {
+      "N": "8",
+      "Symbol": "c",
+      "std_notations": [
+       "3/4 0 1/4"
+      ]
+     },
+     "b": {
+      "N": "4",
+      "Symbol": "b",
+      "std_notations": [
+       "1/4 3/4 0"
+      ]
+     },
+     "a": {
+      "N": "4",
+      "Symbol": "a",
+      "std_notations": [
+       "1/4 1/4 0"
       ]
      }
     }
@@ -34898,6 +37638,154 @@
       ]
      }
     }
+   },
+   {
+    "setting": {
+     "OriginChoice": "1",
+     "Lattice": "Orthorhombic",
+     "HermannMauguin": "B2/b2/c2/b",
+     "Setting": "9",
+     "SpacegroupNo": "68"
+    },
+    "wyckoffs": {
+     "i": {
+      "N": "16",
+      "Symbol": "i",
+      "std_notations": [
+       "x y z"
+      ]
+     },
+     "h": {
+      "N": "8",
+      "Symbol": "h",
+      "std_notations": [
+       "1/4 y 1/4"
+      ]
+     },
+     "g": {
+      "N": "8",
+      "Symbol": "g",
+      "std_notations": [
+       "0 y 0"
+      ]
+     },
+     "f": {
+      "N": "8",
+      "Symbol": "f",
+      "std_notations": [
+       "x 0 0"
+      ]
+     },
+     "e": {
+      "N": "8",
+      "Symbol": "e",
+      "std_notations": [
+       "0 0 z"
+      ]
+     },
+     "d": {
+      "N": "8",
+      "Symbol": "d",
+      "std_notations": [
+       "1/4 1/4 0"
+      ]
+     },
+     "c": {
+      "N": "8",
+      "Symbol": "c",
+      "std_notations": [
+       "0 1/4 1/4"
+      ]
+     },
+     "b": {
+      "N": "4",
+      "Symbol": "b",
+      "std_notations": [
+       "0 1/2 0"
+      ]
+     },
+     "a": {
+      "N": "4",
+      "Symbol": "a",
+      "std_notations": [
+       "0 0 0"
+      ]
+     }
+    }
+   },
+   {
+    "setting": {
+     "OriginChoice": "2",
+     "Lattice": "Orthorhombic",
+     "HermannMauguin": "B2/b2/c2/b",
+     "Setting": "10",
+     "SpacegroupNo": "68"
+    },
+    "wyckoffs": {
+     "i": {
+      "N": "16",
+      "Symbol": "i",
+      "std_notations": [
+       "x y z"
+      ]
+     },
+     "h": {
+      "N": "8",
+      "Symbol": "h",
+      "std_notations": [
+       "0 y 1/4"
+      ]
+     },
+     "g": {
+      "N": "8",
+      "Symbol": "g",
+      "std_notations": [
+       "1/4 y 0"
+      ]
+     },
+     "f": {
+      "N": "8",
+      "Symbol": "f",
+      "std_notations": [
+       "x 1/4 0"
+      ]
+     },
+     "e": {
+      "N": "8",
+      "Symbol": "e",
+      "std_notations": [
+       "1/4 1/4 z"
+      ]
+     },
+     "d": {
+      "N": "8",
+      "Symbol": "d",
+      "std_notations": [
+       "0 0 0"
+      ]
+     },
+     "c": {
+      "N": "8",
+      "Symbol": "c",
+      "std_notations": [
+       "3/4 0 1/4"
+      ]
+     },
+     "b": {
+      "N": "4",
+      "Symbol": "b",
+      "std_notations": [
+       "1/4 3/4 0"
+      ]
+     },
+     "a": {
+      "N": "4",
+      "Symbol": "a",
+      "std_notations": [
+       "1/4 1/4 0"
+      ]
+     }
+    }
    }
   ]
  },
@@ -35051,6 +37939,154 @@
       "Symbol": "a",
       "std_notations": [
        "0 3/4 1/4"
+      ]
+     }
+    }
+   },
+   {
+    "setting": {
+     "OriginChoice": "1",
+     "Lattice": "Orthorhombic",
+     "HermannMauguin": "B2/b2/c2/b",
+     "Setting": "9",
+     "SpacegroupNo": "68"
+    },
+    "wyckoffs": {
+     "i": {
+      "N": "16",
+      "Symbol": "i",
+      "std_notations": [
+       "x y z"
+      ]
+     },
+     "h": {
+      "N": "8",
+      "Symbol": "h",
+      "std_notations": [
+       "1/4 y 1/4"
+      ]
+     },
+     "g": {
+      "N": "8",
+      "Symbol": "g",
+      "std_notations": [
+       "0 y 0"
+      ]
+     },
+     "f": {
+      "N": "8",
+      "Symbol": "f",
+      "std_notations": [
+       "x 0 0"
+      ]
+     },
+     "e": {
+      "N": "8",
+      "Symbol": "e",
+      "std_notations": [
+       "0 0 z"
+      ]
+     },
+     "d": {
+      "N": "8",
+      "Symbol": "d",
+      "std_notations": [
+       "1/4 1/4 0"
+      ]
+     },
+     "c": {
+      "N": "8",
+      "Symbol": "c",
+      "std_notations": [
+       "0 1/4 1/4"
+      ]
+     },
+     "b": {
+      "N": "4",
+      "Symbol": "b",
+      "std_notations": [
+       "0 1/2 0"
+      ]
+     },
+     "a": {
+      "N": "4",
+      "Symbol": "a",
+      "std_notations": [
+       "0 0 0"
+      ]
+     }
+    }
+   },
+   {
+    "setting": {
+     "OriginChoice": "2",
+     "Lattice": "Orthorhombic",
+     "HermannMauguin": "B2/b2/c2/b",
+     "Setting": "10",
+     "SpacegroupNo": "68"
+    },
+    "wyckoffs": {
+     "i": {
+      "N": "16",
+      "Symbol": "i",
+      "std_notations": [
+       "x y z"
+      ]
+     },
+     "h": {
+      "N": "8",
+      "Symbol": "h",
+      "std_notations": [
+       "0 y 1/4"
+      ]
+     },
+     "g": {
+      "N": "8",
+      "Symbol": "g",
+      "std_notations": [
+       "1/4 y 0"
+      ]
+     },
+     "f": {
+      "N": "8",
+      "Symbol": "f",
+      "std_notations": [
+       "x 1/4 0"
+      ]
+     },
+     "e": {
+      "N": "8",
+      "Symbol": "e",
+      "std_notations": [
+       "1/4 1/4 z"
+      ]
+     },
+     "d": {
+      "N": "8",
+      "Symbol": "d",
+      "std_notations": [
+       "0 0 0"
+      ]
+     },
+     "c": {
+      "N": "8",
+      "Symbol": "c",
+      "std_notations": [
+       "3/4 0 1/4"
+      ]
+     },
+     "b": {
+      "N": "4",
+      "Symbol": "b",
+      "std_notations": [
+       "1/4 3/4 0"
+      ]
+     },
+     "a": {
+      "N": "4",
+      "Symbol": "a",
+      "std_notations": [
+       "1/4 1/4 0"
       ]
      }
     }
@@ -41603,7 +44639,7 @@
       "N": "8",
       "Symbol": "e",
       "std_notations": [
-       "-x x 0"
+       "x -x 0"
       ]
      },
      "d": {

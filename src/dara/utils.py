@@ -76,9 +76,9 @@ def fuzzy_compare(a: float, b: float):
         fa += 1.0
     while fb < 0.0:
         fb += 1.0
-    while fa > 1.0:
+    while fa >= 1.0:
         fa -= 1.0
-    while fb > 1.0:
+    while fb >= 1.0:
         fb -= 1.0
 
     # Checking specific fractional values
@@ -98,7 +98,7 @@ def fuzzy_compare(a: float, b: float):
             return True
 
     # Fuzzy comparison for general case
-    def is_close(_a, _b, rel_tol=1e-09, abs_tol=1e-6):
+    def is_close(_a, _b, rel_tol=0, abs_tol=1e-3):
         # Custom implementation of fuzzy comparison
         return abs(_a - _b) <= max(rel_tol * max(abs(_a), abs(_b)), abs_tol)
 
