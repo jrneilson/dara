@@ -1,7 +1,7 @@
 """Perform refinements with BGMN."""
 import tempfile
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 from dara.bgmn_worker import BGMNWorker
 from dara.cif2str import cif2str
@@ -29,6 +29,7 @@ def do_refinement(
 
     str_paths = []
     for cif_path in cif_paths:
+        print(cif_path)
         str_path = cif2str(cif_path, working_dir)
         str_paths.append(str_path)
 

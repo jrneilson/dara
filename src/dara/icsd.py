@@ -63,7 +63,7 @@ class ICSDDatabase:
         """Get the path to a CIF file in the ICSD database."""
         return self.path_to_icsd / f"{icsd_code}.cif"
 
-    def get_codes_from_formula(self, formula: str, unique: bool = True):
+    def get_formula_data(self, formula: str, unique: bool = True):
         """Get a list of ICSD codes corresponding to a formula."""
         formula_reduced = Composition(formula).reduced_formula
         chemsys = Composition(formula).chemical_system
@@ -78,7 +78,7 @@ class ICSDDatabase:
             logger.warning(f"No ICSD codes found for {formula}!")
             return []
 
-        return [i["icsd_code"] for i in self.find_oldest_unique_structures(icsd_codes)]
+        return self.find_oldest_unique_structures(icsd_codes)
 
     def load_structure(self, icsd_code: str | int):
         """Load a pymatgen structure from a CIF file in the ICSD database."""

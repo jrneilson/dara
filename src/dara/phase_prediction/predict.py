@@ -1,5 +1,9 @@
 """Code for predicting products in a chemical reaction."""
+from __future__ import annotations
+
 import collections
+import os
+from pathlib import Path
 
 from monty.json import MSONable
 from rxn_network.core import Composition
@@ -45,6 +49,10 @@ class PhasePredictor(MSONable):
     def write_cifs_from_formulas(self, prediction, cost_cutoff=0.1, dest_dir="cifs", unique=True, exclude_gases=True):
         """Write CIFs of the predicted products."""
         prediction_sorted = collections.OrderedDict(sorted(prediction.items(), key=lambda item: item[1]))
+        dest_dir = Path(dest_dir)
+        if not os.path.exists(dest_dir):
+            os.makedirs(dest_dir)
+
         for f, cost in prediction_sorted.items():
             if cost > cost_cutoff:
                 logger.info("Reached cost cutoff.")
@@ -56,12 +64,19 @@ class PhasePredictor(MSONable):
                 logger.info("Skipping common gas: %s", formula)
                 continue
 
-            icsd_codes = self.db.get_codes_from_formula(formula, unique=unique)
-            if not icsd_codes:
+            icsd_data = self.db.get_formula_data(formula, unique=unique)
+            if not icsd_data:
                 continue
 
             copy_and_rename_files(
                 self.db.path_to_icsd,
                 dest_dir,
-                {f"{code}.cif": f"{formula}_{code}.cif" for code in icsd_codes},
+                {f"{data['icsd_code']}.cif": f"{formula}_{data['icsd_code']}.cif" for data in icsd_data},
             )
+
+            # for data in icsd_data:
+            #     icsd_code = data["icsd_code"]
+            #     logger.info("Writing CIF for %s", icsd_code)
+            #     fn = str(dest_dir / f"{formula}_{icsd_code}.cif")
+
+            #     data["structure"].to(filename=fn)
