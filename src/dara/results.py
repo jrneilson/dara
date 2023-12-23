@@ -86,6 +86,7 @@ def parse_lst(lst_path: Path):
 
     Returns
     -------
+        phase_results: a dictionary of the results for each phase
 
     """
 
@@ -185,12 +186,22 @@ def visualize(result_dict: Dict[str, Any]):
         result_dict: the result from the refinement
     """
     colormap = [
-        "#FF6347",  # Tomato
-        "#FFC300",  # Orchid
-        "#DAF7A6 ",  # Lime Green
-        "#FFD700",  # Gold
-        "#616A6B",  # Orange
-        "#884EA0",  # Cyan
+        "#1f77b4",
+        "#aec7e8",
+        "#ff7f0e",
+        "#2ca02c",
+        "#98df8a",
+        "#d62728",
+        "#9467bd",
+        "#c5b0d5",
+        "#8c564b",
+        "#e377c2",
+        "#f7b6d2",
+        "#7f7f7f",
+        "#bcbd22",
+        "#dbdb8d",
+        "#17becf",
+        "#9edae5",
     ]
 
     if "plot_data" not in result_dict:
@@ -254,6 +265,8 @@ def visualize(result_dict: Dict[str, Any]):
     # Adding dashed lines for phases
     for i, (phase_name, phase) in enumerate(plot_data["structs"].items()):
         # add area under the curve between the curve and the plot_data["y_bkg"]
+        if i >= len(colormap) - 1:
+            i = i % (len(colormap) - 1)
         fig.add_trace(
             go.Scatter(
                 x=plot_data["x"],

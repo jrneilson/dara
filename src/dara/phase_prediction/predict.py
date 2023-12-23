@@ -78,4 +78,5 @@ class PhasePredictor(MSONable):
             )
 
         if clean:
+            logger.info("Cleaning cifs... (this may take a second!)")
             clean_cifs(dest_dir, str(dest_dir) + "_cleaned")
