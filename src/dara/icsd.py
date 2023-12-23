@@ -111,7 +111,7 @@ class ICSDDatabase:
             return "File not found. Please check the file path."
 
     def find_oldest_unique_structures(self, icsd_codes: list[str | int]):
-        """Get oldest uniques structures from a list of ICSD codes."""
+        """Get oldest unique structures from a list of ICSD codes."""
         matcher = StructureMatcher()
         unique_structures: list[dict] = []
 

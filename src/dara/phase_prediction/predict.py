@@ -11,6 +11,7 @@ from rxn_network.data import COMMON_GASES
 from rxn_network.utils.funcs import get_logger
 
 from dara.icsd import ICSDDatabase
+from dara.phase_prediction.structure import clean_cifs
 from dara.utils import copy_and_rename_files
 
 logger = get_logger(__name__)
@@ -46,14 +47,16 @@ class PhasePredictor(MSONable):
             e_hull_cutoff=e_hull_cutoff,
         )
 
-    def write_cifs_from_formulas(self, prediction, cost_cutoff=0.1, dest_dir="cifs", unique=True, exclude_gases=True):
+    def write_cifs_from_formulas(
+        self, prediction, cost_cutoff=0.01, dest_dir="cifs", clean=True, unique=True, exclude_gases=True
+    ):
         """Write CIFs of the predicted products."""
         prediction_sorted = collections.OrderedDict(sorted(prediction.items(), key=lambda item: item[1]))
         dest_dir = Path(dest_dir)
         if not os.path.exists(dest_dir):
             os.makedirs(dest_dir)
 
-        for f, cost in prediction_sorted.items():
+        for idx, (f, cost) in enumerate(prediction_sorted.items()):
             if cost > cost_cutoff:
                 logger.info("Reached cost cutoff.")
                 break
@@ -71,12 +74,8 @@ class PhasePredictor(MSONable):
             copy_and_rename_files(
                 self.db.path_to_icsd,
                 dest_dir,
-                {f"{data['icsd_code']}.cif": f"{formula}_{data['icsd_code']}.cif" for data in icsd_data},
+                {f"{data['icsd_code']}.cif": f"{idx}_{formula}_{data['icsd_code']}.cif" for data in icsd_data},
             )
 
-            # for data in icsd_data:
-            #     icsd_code = data["icsd_code"]
-            #     logger.info("Writing CIF for %s", icsd_code)
-            #     fn = str(dest_dir / f"{formula}_{icsd_code}.cif")
-
-            #     data["structure"].to(filename=fn)
+        if clean:
+            clean_cifs(dest_dir, str(dest_dir) + "_cleaned")

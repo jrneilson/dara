@@ -115,9 +115,7 @@ def parse_lst(lst_path: Path):
     with lst_path.open() as f:
         texts = f.read()
 
-    pattern_name = re.search(r"Rietveld refinement to file\(s\) (.+?)\n", texts).group(
-        1
-    )
+    pattern_name = re.search(r"Rietveld refinement to file\(s\) (.+?)\n", texts).group(1)
     result = {"raw_lst": texts, "pattern_name": pattern_name}
 
     num_steps = int(re.search(r"(\d+) iteration steps", texts).group(1))
@@ -129,9 +127,7 @@ def parse_lst(lst_path: Path):
     result["1-rho"] = float(re.search(r"1-rho=(\d+\.\d+)%", texts).group(1))
 
     # global goals
-    global_parameters_text = re.search(
-        r"Global parameters and GOALs\n(.*?)\n(?:\n|\Z)", texts, re.DOTALL
-    ).group(1)
+    global_parameters_text = re.search(r"Global parameters and GOALs\n(.*?)\n(?:\n|\Z)", texts, re.DOTALL).group(1)
     global_parameters = parse_section(global_parameters_text)
     result.update(global_parameters)
 
@@ -200,10 +196,7 @@ def visualize(result_dict: Dict[str, Any]):
     if "plot_data" not in result_dict:
         raise ValueError("No plot data in the result dict!")
 
-    if any(
-        x not in result_dict["plot_data"]
-        for x in ["x", "y_obs", "y_calc", "y_bkg", "structs"]
-    ):
+    if any(x not in result_dict["plot_data"] for x in ["x", "y_obs", "y_calc", "y_bkg", "structs"]):
         raise ValueError("Missing data in the plot data!")
 
     plot_data = result_dict["plot_data"]
@@ -212,9 +205,7 @@ def visualize(result_dict: Dict[str, Any]):
     fig = go.Figure()
 
     # fix the size of the box
-    fig.update_layout(
-        autosize=True, xaxis=dict(range=[plot_data["x"].min(), plot_data["x"].max()])
-    )
+    fig.update_layout(autosize=True, xaxis=dict(range=[plot_data["x"].min(), plot_data["x"].max()]))
 
     # Adding scatter plot for observed data
     fig.add_trace(

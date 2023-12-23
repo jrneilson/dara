@@ -29,7 +29,6 @@ def do_refinement(
 
     str_paths = []
     for cif_path in cif_paths:
-        print(cif_path)
         str_path = cif2str(cif_path, working_dir)
         str_paths.append(str_path)
 
