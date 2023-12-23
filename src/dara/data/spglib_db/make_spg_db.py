@@ -1,17 +1,79 @@
 import csv
 import json
+import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-## New symbol	Aem2	Aea2	Cmce	Cmme	Ccce
-## Old Symbol	Abm2	Aba2	Cmca	Cmma	Ccca
+# the glide for a, b, c to e
+# different notation for the same space group
 new2old = {
     "Aem2": "Abm2",
     "Aea2": "Aba2",
     "Cmce": "Cmca",
     "Cmme": "Cmma",
-    "Ccme": "Ccca",
+    "Ccce": "Ccca",
+    "Cc2e": "Cc2a",
+    "Bbe2": "Bba2",
+    "B2em": "B2cm",
+    "Bme2": "Bma2",
+    "Ae2a": "Ac2a",
+    "B2eb": "B2cb",
+    "C2ce": "C2cb",
+    "Cm2e": "Cm2a",
+    "Ae2m": "Ac2m",
+    "C2me": "C2mb",
+    "B2/m2/e2/m": "B2/m2/c2/m",
+    "P4/m2_1/nc": "P4/m2_1/n2/c",
+    "P4/m2_1/bm": "P4/m2_1/b2/m",
+    "C2/m2/c2_1/e": "C2/m2/c2_1/a",
+    "I2/b2/m2/m": "I2_1/b2_1/m2_1/m",
+    "P2_1/m2/a2/m": "P2/m2/a2_1/m",
+    "A2/e2/a2/a": "A2/b2/a2/a",
+    "A2_1/e2/a2/m": "A2_1/c2/a2/m",
+    "C2/c2/m2_1/e": "C2/c2/m2_1/b",
+    "C2/c2/m2_1/m": "C2/c2/m2_1m",
+    "P2_1/n2_1/a2/b": "P2_1/n2/a2_1/b",
+    "P2/c2/a2_1/a": "P2/c2_1/a2/a",
+    "B2/b2/e2/b": "B2/b2/a2/b",
+    "P4/n2_1/mm": "P4/n2_1/m2/m",
+    "C2/m2/m2/e": "C2/m2/m2/a",
+    "P2/c2_1/a2_1/n": "P2_1/c2/a2_1/n",
+    "A2/e2/m2/m": "A2/c2/m2/m",
+    "I2/m2/c2/m": "I2_1/m2_1/c2_1/m",
+    "C2/c2/c2/e": "C2/c2/c2/a",
+    "P2/m2_1/m2/b": "P2_1/m2/m2/b",
+    "P2_1/c2_1/n2/b": "P2/c2_1/n2_1/b",
+    "P2_1/m2_1/a2/b": "P2_1/m2/a2_1/b",
+    "P2/n2/a2_1/n": "P2_1/n2/a2/n",
+    "P2_1/m2/c2_1/a": "P2_1/m2/c2_1a",
+    "P2_1/c2/a2_1/m": "P2/c2_1/a2_1/m",
+    "I2/b2/c2/a": "I2_1/b2_1/c2_1/a",
+    "I2/m2/a2/m": "I2_1/m2_1/a2_1/m",
+    "I2/m2/m2/a": "I2_1/m2_1/m2_1/a",
+    "I2/m2/m2/b": "I2_1/m2_1/m2_1/b",
+    "I2/c2/m2/m": "I2_1/c2_1/m2_1/m",
+    "I2/c2/a2/b": "I2_1/c2_1/a2_1/b",
+    "A2_1/e2/m2/a": "A2_1/b2/m2/a",
+    "B2/b2_1/e2/m": "B2/b2_1/c2/m",
+    "P4/n2_1/cc": "P4/n2_1/c2/c",
+    "P2/c2_1/c2/b": "P2_1/c2/c2/b",
+    "P2_1/n2/n2/b": "P2/n2_1/n2/b",
+    "P2_1/b2/a2/b": "P2/b2/a2_1/b",
+    "P2/c2/m2_1/m": "P2/c2_1/m2/m",
+    "P2/c2_1/m2_1/b": "P2_1/c2_1/m2/b",
+    "P2_1/n2/a2_1/b": "P2_1/n2_1/a2/b",
+    "P2/c2_1/n2/n": "P2/c2/n2_1/n",
+    "B2/m2_1/e2/b": "B2/m2_1/a2/b",
 }
+
+# a sanity check on the definition of new2old
+for k, v in new2old.items():
+    k_new = re.sub(r"[\d_/]+", "", k)
+    k_new = re.sub(r"e", "[abc]", k_new)
+    v_new = re.sub(r"[\d_/]+", "", v)
+
+    if re.match(k_new, v_new) is None:
+        print(f"{k} {v}")
 
 
 def xml2dict_sp(xml_file):
@@ -73,9 +135,6 @@ def csv2dict_sp(csv_file):
             international_short = row[keys["hall_symb"]]
             international_full = row[keys["international_full"]].replace(" ", "")
 
-            if international_full in new2old:
-                international_full = new2old[international_full]
-
             data[hall_number] = {
                 "group_number": group_number,
                 "spacegroup": spacegroup,
@@ -91,15 +150,19 @@ if __name__ == "__main__":
     data2 = csv2dict_sp(Path("spg.csv"))
 
     xml_international = set(data1.keys())
-    csv_international = set(v["international_full"] for v in data2.values())
+    csv_international = set(
+        new2old.get(v["international_full"], v["international_full"])
+        for v in data2.values()
+    )
 
     print(f"These are in xml but not in csv: {xml_international - csv_international}")
     print(f"These are in csv but not in xml: {csv_international - xml_international}")
     # merge two table
     data = {}
 
-    for k, v in data2.items():
-        hm = v["international_full"]
+    for k_new, v_new in data2.items():
+        hm = v_new["international_full"]
+        hm = new2old.get(hm, hm)
         if hm in data1:
             settings = data1[hm]
             settings_list = []
@@ -107,15 +170,15 @@ if __name__ == "__main__":
                 setting = {**setting}
                 wyckoffs = setting.pop("Wyckoffs")
                 settings_list.append({"setting": setting, "wyckoffs": wyckoffs})
-            data[k] = {**v, "settings": settings_list}
+            data[k_new] = {**v_new, "settings": settings_list}
         else:
-            data[k] = {
-                **v,
+            data[k_new] = {
+                **v_new,
                 "settings": [
                     {
                         "setting": {
                             "HermannMauguin": hm,
-                            "SpacegroupNo": v["spacegroup"],
+                            "SpacegroupNo": v_new["spacegroup"],
                         },
                         "wyckoffs": {},
                     }
