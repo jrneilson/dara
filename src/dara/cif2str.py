@@ -259,10 +259,10 @@ def cif2str(cif_path: Path, working_dir: Optional[Path] = None) -> Path:
         str_path = working_dir / f"{cif_path.stem}.str"
 
     spg = SpacegroupAnalyzer(Structure.from_file(cif_path.as_posix(), site_tolerance=1e-3))
-    structure: SymmetrizedStructure = spg.get_refined_structure()
+    structure: Structure = spg.get_refined_structure()
 
     spg = SpacegroupAnalyzer(structure)
-    structure = spg.get_symmetrized_structure()
+    structure: SymmetrizedStructure = spg.get_symmetrized_structure()
 
     hall_number = str(spg.get_symmetry_dataset()["hall_number"])
     with (Path(__file__).parent / "data" / "spglib_db" / "spg.json").open("r", encoding="utf-8") as f:
@@ -281,8 +281,8 @@ def cif2str(cif_path: Path, working_dir: Optional[Path] = None) -> Path:
     spacegroup_setting, element_settings, error_count = best_setting
 
     if error_count > 0:
-        warnings.warn(
-            f"Cannot find a valid setting for {cif_path}, using the setting with the least errors ({error_count})."
+        raise ValueError(
+            f"Cannot find a valid lattice symmetry setting for {cif_path}."
         )
 
     logger.debug(f"Using setting {spacegroup_setting['setting']} for {cif_path}, with {error_count} errors")
