@@ -87,12 +87,12 @@ def get_lattice_parameters_from_lattice(
             "A": lattice.a / 10,
             "C": lattice.c / 10,
         }
-    # it seems that the trigonal and hexagonal lattices are the same in BGMN
     if crystal_system == "Rhombohedral":
         return {
             "A": lattice.a / 10,
-            "ALPHA": lattice.alpha,
+            "GAMMA": lattice.alpha,
         }
+    # it seems that the trigonal and hexagonal lattices are the same in BGMN
     if crystal_system == "Hexagonal" or crystal_system == "Trigonal":
         return {
             "A": lattice.a / 10,
@@ -157,8 +157,7 @@ def check_wyckoff(
         spacegroup_setting: the spacegroup setting
         structure: the symmetrized structure
 
-    Returns
-    -------
+    Returns:
         the settings of the elements and the number of errors
     """
     element_settings = []
@@ -167,14 +166,18 @@ def check_wyckoff(
     for site_idx in structure.equivalent_indices:
         idx = site_idx[0]
         site = structure[idx]
+        wyckoff_letter = structure.wyckoff_letters[idx]
+        if wyckoff_letter == "A":
+            wyckoff_letter = "alpha"
 
         std_position, ok = get_std_position(
             spacegroup_setting,
-            structure.wyckoff_letters[idx],
+            wyckoff_letter,
             [structure[idx].frac_coords for idx in site_idx],
         )
 
         if not ok:
+            logger.debug(f"Site {site_idx} is not in the standard position")
             error_count += 1
 
         if site.is_ordered:
@@ -189,7 +192,7 @@ def check_wyckoff(
 
         element_setting = {
             "E": species_string,
-            "Wyckoff": structure.wyckoff_letters[idx],
+            "Wyckoff": wyckoff_letter,
             "x": f"{std_position[0]:.6f}",
             "y": f"{std_position[1]:.6f}",
             "z": f"{std_position[2]:.6f}",
@@ -260,14 +263,15 @@ def cif2str(cif_path: Path, working_dir: Optional[Path] = None) -> Path:
     E=O-2 Wyckoff=d x=0.500000 y=0.000000 z=0.000000 TDS=0.010000
 
     """
-    str_path = cif_path.parent / f"{cif_path.stem}.str" \
-        if working_dir is None \
+    str_path = (
+        cif_path.parent / f"{cif_path.stem}.str"
+        if working_dir is None
         else working_dir / f"{cif_path.stem}.str"
-
-    spg = SpacegroupAnalyzer(
-        Structure.from_file(cif_path.as_posix(), site_tolerance=1e-3)
     )
-    structure: Structure = spg.get_refined_structure()
+
+    structure = SpacegroupAnalyzer(
+        Structure.from_file(cif_path.as_posix(), site_tolerance=1e-3)
+    ).get_refined_structure()
 
     spg = SpacegroupAnalyzer(structure)
     structure: SymmetrizedStructure = spg.get_symmetrized_structure()

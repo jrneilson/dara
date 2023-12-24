@@ -195,9 +195,11 @@ if __name__ == "__main__":
         hm = v_new["international_full"]
         hm = new2old.get(hm, hm)
         if (isinstance(hm, list) and any(hm_ in data1 for hm_ in hm)) or hm in data1:
-            settings = sum([data1[hm_] for hm_ in hm if hm_ in data1], []) \
-                if isinstance(hm, list) \
+            settings = (
+                sum([data1[hm_] for hm_ in hm if hm_ in data1], [])
+                if isinstance(hm, list)
                 else data1[hm]
+            )
             settings_list = []
             for setting in settings:
                 setting = {**setting}
