@@ -1,12 +1,16 @@
+"""Generate a control file for BGMN."""
+
+from __future__ import annotations
+
 import re
 import shutil
 from pathlib import Path
-from typing import Optional
 
 from dara.utils import read_phase_name_from_str
 
 
 def copy_instrument_files(instrument_name: str, working_dir: Path) -> None:
+    """Copy the instrument files to the working directory."""
     instrument_path = Path(__file__).parent / "data" / "BGMN-Templates" / "Devices"
 
     for file in instrument_path.glob(f"{instrument_name}*"):
@@ -14,6 +18,7 @@ def copy_instrument_files(instrument_name: str, working_dir: Path) -> None:
 
 
 def copy_xy_pattern(pattern_path: Path, working_dir: Path) -> None:
+    """Copy the xy pattern to the working directory."""
     shutil.copy(pattern_path, working_dir)
 
 
@@ -21,13 +26,13 @@ def generate_control_file(
     pattern_path: Path,
     str_paths: list[Path],
     instrument_name: str,
-    working_dir: Optional[Path] = None,
+    working_dir: Path | None = None,
     *,
     n_threads: int = 8,
-    wmin: Optional[float] = None,
-    wmax: Optional[float] = None,
+    wmin: float | None = None,
+    wmax: float | None = None,
 ) -> Path:
-    """Generate a control file for BGMN"""
+    """Generate a control file for BGMN."""
     if working_dir is None:
         control_file_path = pattern_path.parent / f"{pattern_path.stem}.sav"
     else:

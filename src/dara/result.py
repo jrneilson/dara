@@ -1,38 +1,42 @@
+"""The parser for the result from the refinement."""
+
+from __future__ import annotations
+
 import re
-from pathlib import Path
-from typing import Any, Optional, Union
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import plotly.graph_objects as go
 from pydantic import BaseModel, Field, model_validator
 
+if TYPE_CHECKING:
+    from pathlib import Path
+
 
 class PhaseResult(BaseModel):
-    """
-    The result for each phase.
-    """
+    """The result for each phase."""
 
-    class Config:
+    class Config:  # noqa: D106
         extra = "allow"
 
-    spacegroup_no: Optional[int] = Field(alias="SpacegroupNo")
-    hermann_mauguin: Optional[str] = Field(alias="HermannMauguin")
-    xray_density: Optional[float] = Field(alias="XrayDensity")
-    rphase: Optional[float] = Field(alias="Rphase")
+    spacegroup_no: int | None = Field(alias="SpacegroupNo")
+    hermann_mauguin: str | None = Field(alias="HermannMauguin")
+    xray_density: float | None = Field(alias="XrayDensity")
+    rphase: float | None = Field(alias="Rphase")
     unit: str = Field(alias="UNIT")
-    gewicht: Union[float, tuple[float, float]] = Field(alias="GEWICHT")
-    gewicht_name: Optional[str] = Field(alias="GEWICHT_NAME")
+    gewicht: float | tuple[float, float] = Field(alias="GEWICHT")
+    gewicht_name: str | None = Field(alias="GEWICHT_NAME")
 
-    a: Union[float, tuple[float, float], None] = Field(None, alias="A")
-    b: Union[float, tuple[float, float], None] = Field(None, alias="B")
-    c: Union[float, tuple[float, float], None] = Field(None, alias="C")
-    alpha: Union[float, tuple[float, float], None] = Field(None, alias="ALPHA")
-    beta: Union[float, tuple[float, float], None] = Field(None, alias="BETA")
-    gamma: Union[float, tuple[float, float], None] = Field(None, alias="GAMMA")
+    a: float | tuple[float, float] | None = Field(None, alias="A")
+    b: float | tuple[float, float] | None = Field(None, alias="B")
+    c: float | tuple[float, float] | None = Field(None, alias="C")
+    alpha: float | tuple[float, float] | None = Field(None, alias="ALPHA")
+    beta: float | tuple[float, float] | None = Field(None, alias="BETA")
+    gamma: float | tuple[float, float] | None = Field(None, alias="GAMMA")
 
     @model_validator(mode="before")
     @classmethod
-    def check_gewicht(cls, values):
+    def check_gewicht(cls, values):  # noqa: D102
         if "GEWICHT" in values and isinstance(values["GEWICHT"], str):
             geweicht = values["GEWICHT"]
             geweicht_mean = float(re.search(r"(\d+\.\d+)", geweicht).group(1))
@@ -45,6 +49,8 @@ class PhaseResult(BaseModel):
 
 
 class LstResult(BaseModel):
+    """Refinement result parsed from the .lst file."""
+
     raw_lst: str
     pattern_name: str
     num_steps: int
@@ -59,6 +65,8 @@ class LstResult(BaseModel):
 
 
 class DiaResult(BaseModel):
+    """Refinement result parsed from the .dia file. Mainly some x-y data for plotting."""
+
     x: list[float]
     y_obs: list[float]
     y_calc: list[float]
@@ -67,13 +75,13 @@ class DiaResult(BaseModel):
 
 
 class RefinementResult(BaseModel):
+    """The result from the refinement, which is parsed from the .lst and .dia files."""
+
     lst_data: LstResult
     plot_data: DiaResult
 
     def visualize(self):
-        """
-        Visualize the result from the refinement.
-        """
+        """Visualize the result from the refinement. It uses a plotly figure as the backend."""
         colormap = [
             "#1f77b4",
             "#aec7e8",
@@ -287,7 +295,7 @@ def parse_lst(lst_path: Path) -> LstResult:
 
     """
 
-    def parse_values(v_: str) -> Union[float, tuple[float, float], None, str, int]:
+    def parse_values(v_: str) -> float | tuple[float, float] | None | str | int:
         try:
             v_ = v_.strip("%")
             if v_ == "ERROR" or v_ == "UNDEF":
@@ -304,8 +312,7 @@ def parse_lst(lst_path: Path) -> LstResult:
 
     def parse_section(text: str) -> dict[str, Any]:
         section = dict(re.findall(r"^(\w+)=(.+?)$", text, re.MULTILINE))
-        section = {k: parse_values(v) for k, v in section.items()}
-        return section
+        return {k: parse_values(v) for k, v in section.items()}
 
     if not lst_path.exists():
         raise FileNotFoundError(f"Cannot find the .lst file from {lst_path}")

@@ -11,11 +11,6 @@ class TestRefinement(unittest.TestCase):
         """Set up the test."""
         self.cif_paths = list((Path(__file__).parent / "test_data").glob("*.cif"))
         self.pattern_path = Path(__file__).parent / "test_data" / "BiFeO3.xy"
-        os.environ["DARA_CONFIG"] = (
-            (Path(__file__).parent / "test_data" / "test_config.toml")
-            .absolute()
-            .as_posix()
-        )
 
     def tearDown(self):
         """Tear down the test."""
@@ -33,6 +28,5 @@ class TestRefinement(unittest.TestCase):
                 cif_paths,
                 working_dir=tmpdir,
                 instrument_name="Aeris-fds-Pixcel1d-Medipix3",
-                n_threads=1,
             )
-            self.assertAlmostEqual(result["Rwp"], 7.82, places=1)
+            self.assertTrue(7.81 < result["Rwp"] < 7.83)

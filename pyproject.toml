@@ -128,6 +128,7 @@ ignore = [
     "PT004", # pytest-missing-fixture-name-underscore
     "PT006", # pytest-parametrize-names-wrong-type
     "PT013", # pytest-incorrect-pytest-import
+    "PT009", # pytest-assertion-rewrite
     "PYI024", # collections-named-tuple (TODO should maybe fix these)
     "RUF012", # Disable checks for mutable class args. This is a non-problem.
     "RUF013", # implicit-optional

@@ -14,11 +14,6 @@ class TestCif2Str(unittest.TestCase):
     def setUp(self):
         """Set up the test."""
         self.cif_paths = list((Path(__file__).parent / "test_data").glob("*.cif"))
-        os.environ["DARA_CONFIG"] = (
-            (Path(__file__).parent / "test_data" / "test_config.toml")
-            .absolute()
-            .as_posix()
-        )
 
     def tearDown(self):
         """Tear down the test."""

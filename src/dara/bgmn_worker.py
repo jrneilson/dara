@@ -1,3 +1,5 @@
+"""APIs for running BGMN executable from Python."""
+
 import os
 from pathlib import Path
 from subprocess import run

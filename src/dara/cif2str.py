@@ -1,16 +1,16 @@
 """Convert CIF to Str format for BGMN."""
+from __future__ import annotations
+
 import datetime
 import json
 import logging
 import re
 from pathlib import Path
-from typing import Any, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal
 
 from asteval import Interpreter
 from pymatgen.core import Lattice, Structure
-from pymatgen.core.periodic_table import DummySpecie, Element, Specie
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
-from pymatgen.symmetry.structure import SymmetrizedStructure
 
 from dara.utils import (
     POSSIBLE_SPECIES,
@@ -19,11 +19,15 @@ from dara.utils import (
     standardize_coords,
 )
 
+if TYPE_CHECKING:
+    from pymatgen.core.periodic_table import DummySpecie, Element, Specie
+    from pymatgen.symmetry.structure import SymmetrizedStructure
+
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.WARNING)
 
 
-def process_specie_string(sp: Union[str, Specie, Element, DummySpecie]) -> str:
+def process_specie_string(sp: str | Specie | Element | DummySpecie) -> str:
     """Reverse the charge notation of a species."""
     specie = re.sub(r"(\d+)([+-])", r"\2\1", str(sp))
     if specie.endswith(("+", "-")):
@@ -41,17 +45,17 @@ def process_specie_string(sp: Union[str, Specie, Element, DummySpecie]) -> str:
 
 
 def get_lattice_parameters_from_lattice(
-        lattice: Lattice,
-        crystal_system: Literal[
-            "Monoclinic",
-            "Cubic",
-            "Hexagonal",
-            "Trigonal",
-            "Orthorhombic",
-            "Triclinic",
-            "Tetragonal",
-            "Rhombohedral",
-        ],
+    lattice: Lattice,
+    crystal_system: Literal[
+        "Monoclinic",
+        "Cubic",
+        "Hexagonal",
+        "Trigonal",
+        "Orthorhombic",
+        "Triclinic",
+        "Tetragonal",
+        "Rhombohedral",
+    ],
 ) -> dict[str, float]:
     """
     Get lattice parameters from lattice based on the type of lattice.
@@ -106,11 +110,11 @@ def get_lattice_parameters_from_lattice(
 
 
 def get_std_position(
-        spacegroup_setting: dict[str, Any],
-        wyckoff_letter: str,
-        positions: list[list[float]],
+    spacegroup_setting: dict[str, Any],
+    wyckoff_letter: str,
+    positions: list[list[float]],
 ) -> tuple[list[float], bool]:
-    """Get the standard position of a site based on the hall number and wyckoff notation"""
+    """Get the standard position of a site based on the hall number and wyckoff notation."""
     wyckoff = spacegroup_setting["wyckoffs"].get(wyckoff_letter, {})
 
     if not wyckoff:
@@ -134,9 +138,9 @@ def get_std_position(
             wx, wy, wz = (aeval.eval(constraint) for constraint in constraints)
             logger.debug([position, (wx, wy, wz)])
             if (
-                    fuzzy_compare(wx, position[0])
-                    and fuzzy_compare(wy, position[1])
-                    and fuzzy_compare(wz, position[2])
+                fuzzy_compare(wx, position[0])
+                and fuzzy_compare(wy, position[1])
+                and fuzzy_compare(wz, position[2])
             ):
                 return position, True
     logger.debug(
@@ -147,7 +151,7 @@ def get_std_position(
 
 
 def check_wyckoff(
-        spacegroup_setting: dict[str, Any], structure: SymmetrizedStructure
+    spacegroup_setting: dict[str, Any], structure: SymmetrizedStructure
 ) -> tuple[list[dict[str, Any]], int]:
     """
     Check if a given spacegroup setting is valid for a structure.
@@ -204,19 +208,18 @@ def check_wyckoff(
 
 
 def make_spacegroup_setting_str(spacegroup_setting: dict[str, Any]) -> str:
-    """
-    Make the spacegroup setting string
-    """
+    """Make the spacegroup setting string."""
     return (
-            " ".join([f"{k}={v}" for k, v in spacegroup_setting["setting"].items()]) + " //"
+        " ".join([f"{k}={v}" for k, v in spacegroup_setting["setting"].items()]) + " //"
     )
 
 
 def make_lattice_parameters_str(
-        spacegroup_setting: dict[str, Any],
-        structure: SymmetrizedStructure,
-        lattice_range: float,
+    spacegroup_setting: dict[str, Any],
+    structure: SymmetrizedStructure,
+    lattice_range: float,
 ) -> str:
+    """Make the lattice parameters string."""
     crystal_system = spacegroup_setting["setting"]["Lattice"]
     lattice_parameters = get_lattice_parameters_from_lattice(
         structure.lattice, crystal_system
@@ -234,6 +237,7 @@ def make_lattice_parameters_str(
 
 
 def make_peak_parameter_str(gewicht: str, rp: int) -> str:
+    """Make the peak parameter string."""
     return (
         f"RP={rp} "
         f"PARAM=k1=0_0^1 "
@@ -244,15 +248,15 @@ def make_peak_parameter_str(gewicht: str, rp: int) -> str:
 
 
 def cif2str(
-        cif_path: Path,
-        working_dir: Optional[Path] = None,
-        *,
-        lattice_range: float = 0.01,
-        gewicht: str = "0_0",
-        rp: int = 4,
+    cif_path: Path,
+    working_dir: Path | None = None,
+    *,
+    lattice_range: float = 0.01,
+    gewicht: str = "0_0",
+    rp: int = 4,
 ) -> Path:
     """
-    Convert CIF to Str format
+    Convert CIF to Str format.
 
     Args:
         cif_path: the path to the CIF file
@@ -290,7 +294,7 @@ def cif2str(
 
     hall_number = str(spg.get_symmetry_dataset()["hall_number"])
     with (Path(__file__).parent / "data" / "spglib_db" / "spg.json").open(
-            "r", encoding="utf-8"
+        "r", encoding="utf-8"
     ) as f:
         spg_group_db = json.load(f)
     settings = spg_group_db[hall_number]["settings"]
@@ -331,10 +335,10 @@ def cif2str(
 
     # add lattice
     str_text += (
-            make_lattice_parameters_str(
-                spacegroup_setting, structure, lattice_range=lattice_range
-            )
-            + "\n"
+        make_lattice_parameters_str(
+            spacegroup_setting, structure, lattice_range=lattice_range
+        )
+        + "\n"
     )
 
     # add RP

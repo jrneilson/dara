@@ -1,3 +1,5 @@
+"""Convert xrdml file to x and y arrays."""
+
 from pathlib import Path
 
 import numpy as np
@@ -5,7 +7,7 @@ import xmltodict
 
 
 def xrdml2xy(file: Path, target_folder: Path = None) -> Path:
-    """Converts xrdml file to x and y arrays."""
+    """Convert xrdml file to x and y arrays."""
     if target_folder is None:
         target_folder = file.parent
     target_path = target_folder / (file.stem + ".xy")

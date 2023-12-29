@@ -1,7 +1,8 @@
 """Perform refinements with BGMN."""
+from __future__ import annotations
+
 import tempfile
 from pathlib import Path
-from typing import Optional
 
 from dara.bgmn_worker import BGMNWorker
 from dara.cif2str import cif2str
@@ -14,9 +15,9 @@ def do_refinement(
     pattern_path: Path,
     cif_paths: list[Path],
     instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
-    working_dir: Optional[Path] = None,
-    phase_params: Optional[dict] = None,
-    refinement_params: Optional[dict] = None,
+    working_dir: Path | None = None,
+    phase_params: dict | None = None,
+    refinement_params: dict | None = None,
     show_progress: bool = False,
 ):
     """Refine the structure using BGMN."""
@@ -57,11 +58,11 @@ def do_refinement_no_saving(
     pattern_path: Path,
     cif_paths: list[Path],
     instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
-    phase_params: Optional[dict] = None,
-    refinement_params: Optional[dict] = None,
+    phase_params: dict | None = None,
+    refinement_params: dict | None = None,
     show_progress: bool = False,
 ):
-    """Refine the structure using BGMN in a temporary directory without saving"""
+    """Refine the structure using BGMN in a temporary directory without saving."""
     with tempfile.TemporaryDirectory() as tmpdir:
         working_dir = Path(tmpdir)
 
