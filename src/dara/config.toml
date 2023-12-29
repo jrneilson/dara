@@ -1,7 +1,0 @@
-[structure_refinement]
-lattice_range = 0.01
-gewicht="0_0"
-rp=4
-
-[bgmn]
-print_progress=false

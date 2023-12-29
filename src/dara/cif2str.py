@@ -12,7 +12,6 @@ from pymatgen.core.periodic_table import DummySpecie, Element, Specie
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.symmetry.structure import SymmetrizedStructure
 
-from dara.config import Config
 from dara.utils import (
     POSSIBLE_SPECIES,
     fuzzy_compare,
@@ -42,17 +41,17 @@ def process_specie_string(sp: Union[str, Specie, Element, DummySpecie]) -> str:
 
 
 def get_lattice_parameters_from_lattice(
-    lattice: Lattice,
-    crystal_system: Literal[
-        "Monoclinic",
-        "Cubic",
-        "Hexagonal",
-        "Trigonal",
-        "Orthorhombic",
-        "Triclinic",
-        "Tetragonal",
-        "Rhombohedral",
-    ],
+        lattice: Lattice,
+        crystal_system: Literal[
+            "Monoclinic",
+            "Cubic",
+            "Hexagonal",
+            "Trigonal",
+            "Orthorhombic",
+            "Triclinic",
+            "Tetragonal",
+            "Rhombohedral",
+        ],
 ) -> dict[str, float]:
     """
     Get lattice parameters from lattice based on the type of lattice.
@@ -107,9 +106,9 @@ def get_lattice_parameters_from_lattice(
 
 
 def get_std_position(
-    spacegroup_setting: dict[str, Any],
-    wyckoff_letter: str,
-    positions: list[list[float]],
+        spacegroup_setting: dict[str, Any],
+        wyckoff_letter: str,
+        positions: list[list[float]],
 ) -> tuple[list[float], bool]:
     """Get the standard position of a site based on the hall number and wyckoff notation"""
     wyckoff = spacegroup_setting["wyckoffs"].get(wyckoff_letter, {})
@@ -135,9 +134,9 @@ def get_std_position(
             wx, wy, wz = (aeval.eval(constraint) for constraint in constraints)
             logger.debug([position, (wx, wy, wz)])
             if (
-                fuzzy_compare(wx, position[0])
-                and fuzzy_compare(wy, position[1])
-                and fuzzy_compare(wz, position[2])
+                    fuzzy_compare(wx, position[0])
+                    and fuzzy_compare(wy, position[1])
+                    and fuzzy_compare(wz, position[2])
             ):
                 return position, True
     logger.debug(
@@ -148,7 +147,7 @@ def get_std_position(
 
 
 def check_wyckoff(
-    spacegroup_setting: dict[str, Any], structure: SymmetrizedStructure
+        spacegroup_setting: dict[str, Any], structure: SymmetrizedStructure
 ) -> tuple[list[dict[str, Any]], int]:
     """
     Check if a given spacegroup setting is valid for a structure.
@@ -157,7 +156,8 @@ def check_wyckoff(
         spacegroup_setting: the spacegroup setting
         structure: the symmetrized structure
 
-    Returns:
+    Returns
+    -------
         the settings of the elements and the number of errors
     """
     element_settings = []
@@ -208,12 +208,14 @@ def make_spacegroup_setting_str(spacegroup_setting: dict[str, Any]) -> str:
     Make the spacegroup setting string
     """
     return (
-        " ".join([f"{k}={v}" for k, v in spacegroup_setting["setting"].items()]) + " //"
+            " ".join([f"{k}={v}" for k, v in spacegroup_setting["setting"].items()]) + " //"
     )
 
 
 def make_lattice_parameters_str(
-    spacegroup_setting: dict[str, Any], structure: SymmetrizedStructure
+        spacegroup_setting: dict[str, Any],
+        structure: SymmetrizedStructure,
+        lattice_range: float,
 ) -> str:
     crystal_system = spacegroup_setting["setting"]["Lattice"]
     lattice_parameters = get_lattice_parameters_from_lattice(
@@ -222,8 +224,8 @@ def make_lattice_parameters_str(
 
     lattice_parameters_str = " ".join(
         [
-            f"PARAM={k}={v:.5f}_{v * (1 - Config()['structure_refinement']['lattice_range']):.5f}^"
-            f"{v * (1 + Config()['structure_refinement']['lattice_range']):.5f}"
+            f"PARAM={k}={v:.5f}_{v * (1 - lattice_range):.5f}^"
+            f"{v * (1 + lattice_range):.5f}"
             for k, v in lattice_parameters.items()
         ]
     )
@@ -231,24 +233,34 @@ def make_lattice_parameters_str(
     return lattice_parameters_str
 
 
-def make_peak_parameter_str() -> str:
-    config = Config()["structure_refinement"]
+def make_peak_parameter_str(gewicht: str, rp: int) -> str:
     return (
-        f"RP={config['rp']} "
+        f"RP={rp} "
         f"PARAM=k1=0_0^1 "
         f"k2=0 "
         f"PARAM=B1=0_0^0.01 "
-        f"{'PARAM=' if config['gewicht'] == '0_0' else ''}GEWICHT={config['gewicht']} //"
+        f"{'PARAM=' if gewicht == '0_0' else ''}GEWICHT={gewicht} //"
     )
 
 
-def cif2str(cif_path: Path, working_dir: Optional[Path] = None) -> Path:
+def cif2str(
+        cif_path: Path,
+        working_dir: Optional[Path] = None,
+        *,
+        lattice_range: float = 0.01,
+        gewicht: str = "0_0",
+        rp: int = 4,
+) -> Path:
     """
     Convert CIF to Str format
 
     Args:
         cif_path: the path to the CIF file
         working_dir: the folder to hold the processed str file
+        lattice_range: the range of the lattice parameters to be refined
+        gewicht: the weight fraction of the phase to be refined (preferred oritentation or not.
+          If 0_0, then no preferred orientation. Read more on the BGMN manual.)
+        rp: the peak function to be used in the refinement. Read more on the BGMN manual.
 
     An example of the output Str file:
     PHASE=BariumzirconiumtinIVoxide105053 // ICSD_43137
@@ -278,7 +290,7 @@ def cif2str(cif_path: Path, working_dir: Optional[Path] = None) -> Path:
 
     hall_number = str(spg.get_symmetry_dataset()["hall_number"])
     with (Path(__file__).parent / "data" / "spglib_db" / "spg.json").open(
-        "r", encoding="utf-8"
+            "r", encoding="utf-8"
     ) as f:
         spg_group_db = json.load(f)
     settings = spg_group_db[hall_number]["settings"]
@@ -318,10 +330,15 @@ def cif2str(cif_path: Path, working_dir: Optional[Path] = None) -> Path:
     str_text += make_spacegroup_setting_str(spacegroup_setting) + "\n"
 
     # add lattice
-    str_text += make_lattice_parameters_str(spacegroup_setting, structure) + "\n"
+    str_text += (
+            make_lattice_parameters_str(
+                spacegroup_setting, structure, lattice_range=lattice_range
+            )
+            + "\n"
+    )
 
     # add RP
-    str_text += make_peak_parameter_str() + "\n"
+    str_text += make_peak_parameter_str(gewicht, rp) + "\n"
 
     # add goals
     str_text += f"GOAL:{phase_name}=GEWICHT*ifthenelse(ifdef(d),exp(my*d*3/4),1) //\nGOAL=GrainSize(1,1,1) //\n"

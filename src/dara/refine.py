@@ -6,7 +6,7 @@ from typing import Optional
 from dara.bgmn_worker import BGMNWorker
 from dara.cif2str import cif2str
 from dara.generate_control_file import generate_control_file
-from dara.results import get_result
+from dara.result import get_result
 from dara.xrdml2xy import xrdml2xy
 
 
@@ -15,7 +15,9 @@ def do_refinement(
     cif_paths: list[Path],
     instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
     working_dir: Optional[Path] = None,
-    **refinement_params,
+    phase_params: Optional[dict] = None,
+    refinement_params: Optional[dict] = None,
+    show_progress: bool = False,
 ):
     """Refine the structure using BGMN."""
     if working_dir is None:
@@ -24,12 +26,18 @@ def do_refinement(
     if not working_dir.exists():
         working_dir.mkdir(exist_ok=True, parents=True)
 
+    if phase_params is None:
+        phase_params = {}
+
+    if refinement_params is None:
+        refinement_params = {}
+
     if pattern_path.suffix == ".xrdml":
         pattern_path = xrdml2xy(pattern_path, working_dir)
 
     str_paths = []
     for cif_path in cif_paths:
-        str_path = cif2str(cif_path, working_dir)
+        str_path = cif2str(cif_path, working_dir, **phase_params)
         str_paths.append(str_path)
 
     control_file_path = generate_control_file(
@@ -41,7 +49,7 @@ def do_refinement(
     )
 
     bgmn_worker = BGMNWorker()
-    bgmn_worker.run_refinement_cmd(control_file_path)
+    bgmn_worker.run_refinement_cmd(control_file_path, show_progress=show_progress)
     return get_result(control_file_path)
 
 
@@ -49,7 +57,9 @@ def do_refinement_no_saving(
     pattern_path: Path,
     cif_paths: list[Path],
     instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
-    **refinement_params,
+    phase_params: Optional[dict] = None,
+    refinement_params: Optional[dict] = None,
+    show_progress: bool = False,
 ):
     """Refine the structure using BGMN in a temporary directory without saving"""
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -60,5 +70,7 @@ def do_refinement_no_saving(
             cif_paths,
             instrument_name,
             working_dir=working_dir,
-            **refinement_params,
+            phase_params=phase_params,
+            refinement_params=refinement_params,
+            show_progress=show_progress,
         )

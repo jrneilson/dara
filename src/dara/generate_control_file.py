@@ -24,6 +24,8 @@ def generate_control_file(
     working_dir: Optional[Path] = None,
     *,
     n_threads: int = 8,
+    wmin: Optional[float] = None,
+    wmax: Optional[float] = None,
 ) -> Path:
     """Generate a control file for BGMN"""
     if working_dir is None:
@@ -54,6 +56,8 @@ def generate_control_file(
     VERZERR={instrument_name}.geq
     % Wavelength
     LAMBDA=CU
+    {f"WMIN={wmin}" if wmin is not None else ""}
+    {f"WMAX={wmax}" if wmax is not None else ""}
     % Phases
     {phases_str}
     % Measured data

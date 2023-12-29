@@ -2,8 +2,6 @@ import os
 from pathlib import Path
 from subprocess import run
 
-from dara.config import Config
-
 
 class BGMNWorker:
     """API for BGMN executable."""
@@ -25,16 +23,17 @@ class BGMNWorker:
         os.environ["EFLECH"] = self.bgmn_folder.as_posix()
         os.environ["PATH"] += os.pathsep + self.bgmn_folder.as_posix()
 
-    def run_refinement_cmd(self, control_file: Path):
+    def run_refinement_cmd(self, control_file: Path, show_progress: bool = False):
         """
         Run refinement via BGMN executable.
 
         :param control_file: the path to the control file (.sav)
+        :param show_progress: whether to show the progress in the console
         """
         cp = run(
             [self.bgmn_path.as_posix(), control_file.absolute().as_posix()],
             cwd=control_file.parent.absolute().as_posix(),
-            capture_output=not Config()["bgmn"]["print_progress"],
+            capture_output=not show_progress,
             check=False,
         )
         if cp.returncode:
