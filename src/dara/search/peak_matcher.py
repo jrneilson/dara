@@ -1,10 +1,10 @@
 import numpy as np
 
 
-ANGLE_TOLERANCE = 0.5  # maximum difference in angle
+ANGLE_TOLERANCE = 0.75  # maximum difference in angle
 INTENSITY_TOLERANCE = 2  # maximum ratio of the intensities
 MAX_INTENSITY_TOLERANCE = (
-    10  # maximum ratio of the intensities to be considered as missing
+    10  # maximum ratio of the intensities to be considered as missing or extra
 )
 
 
@@ -44,13 +44,13 @@ def find_best_match(
         peak_obs: the observed peaks, (m, 2) array of peaks with [position, intensity]
 
     Returns:
-        missing: the indices of the missing peaks in the calculated peaks
-        matched: the indices of both the matched peaks in the calculated peaks and the observed peaks
-        extra: the indices of the extra peaks in the calculated peaks
-        wrong_intens: the indices of the peaks with wrong intensities in the matched peaks
+        missing[j]: the indices of the missing peaks in the `obs peaks`
+        matched[i, j]: the indices of both the matched peaks in the `calculated peaks` and the `observed peaks`
+        extra[i]: the indices of the extra peaks in the `calculated peaks`
+        wrong_intens[i, j]: the indices of the peaks with wrong intensities in both the
+          `calculated peaks` and the `observed peaks`
 
     """
-    missing = []
     matched = []
     extra = []
     wrong_intens = []
@@ -58,37 +58,35 @@ def find_best_match(
     distance = distance_matrix(peak_calc, peak_obs)
     peak_obs_acc = np.zeros(len(peak_obs))
 
-    for peak_idx in np.argsort(peak_calc[:, 1])[::-1]:
+    for peak_idx in np.argsort(peak_calc[:, 1])[::-1]:  # sort by intensity
         peak = peak_calc[peak_idx]
-        best_match = np.argmin(distance[peak_idx])
+        best_match_idx = np.argmin(distance[peak_idx])
 
-        closest_peak = peak_obs[best_match]
+        best_match_peak = peak_obs[best_match_idx]
 
-        if np.abs(peak[0] - closest_peak[0]) > ANGLE_TOLERANCE:
+        if np.abs(peak[0] - best_match_peak[0]) > ANGLE_TOLERANCE or np.log(
+            best_match_peak[1]
+        ) - np.log(peak[0]) > np.log(MAX_INTENSITY_TOLERANCE):
             extra.append(peak_idx)
             continue
 
-        matched.append((peak_idx, best_match))
-        peak_obs_acc[best_match] += peak[1]
-        distance[:, best_match] = distance_matrix(
-            peak_calc,
-            np.array(
-                [
-                    closest_peak[0],
-                    np.clip(
-                        closest_peak[1] - peak_obs_acc[best_match],
-                        a_min=1e-6,
-                        a_max=None,
-                    ),
-                ]
-            ).reshape(1, -1),
-        )[0]
-
+        matched.append((peak_idx, best_match_idx))
+        peak_obs_acc[best_match_idx] += peak[1]
+        updated_obs_peak = np.array(
+            [
+                best_match_peak[0],
+                np.clip(
+                    best_match_peak[1] - peak_obs_acc[best_match_idx],
+                    a_min=1e-6,
+                    a_max=None,
+                ),
+            ]
+        )  # [position, intensity]
+        distance[:, best_match_idx] = distance_matrix(
+            peak_calc, updated_obs_peak.reshape(1, -1)
+        )[:, 0]
     all_assigned = set([m[1] for m in matched])
-
-    for i in range(len(peak_obs)):
-        if i not in all_assigned:
-            missing.append(i)
+    missing = [i for i in range(len(peak_obs)) if i not in all_assigned]
 
     # tell if a peak has wrong intensity by the sum of the intensities of the matched peaks
     to_be_deleted = set()
