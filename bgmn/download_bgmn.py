@@ -45,6 +45,8 @@ def download_bgmn():
     # give permission
     if os_name == "Linux" or os_name == "Darwin":
         os.system(f"chmod +x {bgmn_folder}/BGMNwin/bgmn")
+        os.system(f"chmod +x {bgmn_folder}/BGMNwin/teil")
+        os.system(f"chmod +x {bgmn_folder}/BGMNwin/eflech")
 
 
 if __name__ == "__main__":

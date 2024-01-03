@@ -266,11 +266,12 @@ def get_reduced_pattern(y1, y2, last_normalization=1.0):
     pred_y = np.array(y1)
     orig_y = np.array(y2)
 
-    # Downsample spectra (helps reduce time for DTW)
-    downsampled_res = 0.1  # new resolution: 0.1 degrees
-    num_pts = int((100 - 10) / downsampled_res)
-    orig_y = resample(orig_y, num_pts)
-    pred_y = resample(pred_y, num_pts)
+    # # Downsample spectra (helps reduce time for DTW)
+    # downsampled_res = 0.1  # new resolution: 0.1 degrees
+    # num_pts = int((100 - 10) / downsampled_res)
+    # orig_y = resample(orig_y, num_pts)
+    # pred_y = resample(pred_y, num_pts)
+    num_pts = len(orig_y)
 
     # Calculate window size for DTW
     allow_shifts = 0.75  # Allow shifts up to 0.75 degrees
@@ -288,22 +289,22 @@ def get_reduced_pattern(y1, y2, last_normalization=1.0):
     warped_spectrum = orig_y.copy()
     for ind1, ind2 in index_pairs:
         distance = abs(ind1 - ind2)
-        if distance <= window_size:
-            warped_spectrum[ind2] = pred_y[ind1]
-        else:
-            warped_spectrum[ind2] = 0.0
+        # if distance <= window_size:
+        warped_spectrum[ind2] = pred_y[ind1]
+        # else:
+        #     warped_spectrum[ind2] = 0.0
 
     # Now, upsample spectra back to their original size (4501)
-    warped_spectrum = resample(warped_spectrum, 4501)
-    orig_y = resample(orig_y, 4501)
+    # warped_spectrum = resample(warped_spectrum, 4501)
+    # orig_y = resample(orig_y, 4501)
 
     # Scale warped spectrum so y-values match measured spectrum
-    scaled_spectrum, scaling_constant = scale_spectrum(warped_spectrum, orig_y)
+    # scaled_spectrum, scaling_constant = scale_spectrum(warped_spectrum, orig_y)
 
     # Subtract scaled spectrum from measured spectrum
-    stripped_y = strip_spectrum(scaled_spectrum, orig_y)
-    stripped_y = smooth_spectrum(stripped_y)
-    stripped_y = np.array(stripped_y) - min(stripped_y)
+    stripped_y = strip_spectrum(warped_spectrum, orig_y)
+    # stripped_y = smooth_spectrum(stripped_y)
+    # stripped_y = np.array(stripped_y) - min(stripped_y)
 
     return stripped_y
 

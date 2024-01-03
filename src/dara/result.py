@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import numpy as np
+import pandas as pd
 import plotly.graph_objects as go
 from pydantic import BaseModel, Field, model_validator
 
@@ -19,20 +20,20 @@ class PhaseResult(BaseModel):
     class Config:  # noqa: D106
         extra = "allow"
 
-    spacegroup_no: int | None = Field(alias="SpacegroupNo")
-    hermann_mauguin: str | None = Field(alias="HermannMauguin")
-    xray_density: float | None = Field(alias="XrayDensity")
-    rphase: float | None = Field(alias="Rphase")
+    spacegroup_no: Optional[int] = Field(alias="SpacegroupNo")
+    hermann_mauguin: Optional[str] = Field(alias="HermannMauguin")
+    xray_density: Optional[float] = Field(alias="XrayDensity")
+    rphase: Optional[float] = Field(alias="Rphase")
     unit: str = Field(alias="UNIT")
-    gewicht: float | tuple[float, float] = Field(alias="GEWICHT")
-    gewicht_name: str | None = Field(alias="GEWICHT_NAME")
+    gewicht: Union[float, tuple[float, float]] = Field(alias="GEWICHT")
+    gewicht_name: Optional[str] = Field(alias="GEWICHT_NAME")
 
-    a: float | tuple[float, float] | None = Field(None, alias="A")
-    b: float | tuple[float, float] | None = Field(None, alias="B")
-    c: float | tuple[float, float] | None = Field(None, alias="C")
-    alpha: float | tuple[float, float] | None = Field(None, alias="ALPHA")
-    beta: float | tuple[float, float] | None = Field(None, alias="BETA")
-    gamma: float | tuple[float, float] | None = Field(None, alias="GAMMA")
+    a: Optional[Union[float, tuple[float, float]]] = Field(None, alias="A")
+    b: Optional[Union[float, tuple[float, float]]] = Field(None, alias="B")
+    c: Optional[Union[float, tuple[float, float]]] = Field(None, alias="C")
+    alpha: Optional[Union[float, tuple[float, float]]] = Field(None, alias="ALPHA")
+    beta: Optional[Union[float, tuple[float, float]]] = Field(None, alias="BETA")
+    gamma: Optional[Union[float, tuple[float, float]]] = Field(None, alias="GAMMA")
 
     @model_validator(mode="before")
     @classmethod
@@ -77,8 +78,12 @@ class DiaResult(BaseModel):
 class RefinementResult(BaseModel):
     """The result from the refinement, which is parsed from the .lst and .dia files."""
 
+    class Config:  # noqa: D106
+        arbitrary_types_allowed = True
+
     lst_data: LstResult
     plot_data: DiaResult
+    peak_data: pd.DataFrame
 
     def visualize(self):
         """Visualize the result from the refinement. It uses a plotly figure as the backend."""
@@ -219,10 +224,12 @@ def get_result(control_file: Path) -> RefinementResult:
     """
     lst_path = control_file.parent / f"{control_file.stem}.lst"
     dia_path = control_file.parent / f"{control_file.stem}.dia"
+    par_path = control_file.parent / f"{control_file.stem}.par"
 
     result = {
         "lst_data": parse_lst(lst_path),
         "plot_data": parse_dia(dia_path),
+        "peak_data": parse_par(par_path),
     }
 
     return RefinementResult(**result)
@@ -391,3 +398,79 @@ def parse_dia(dia_path: Path) -> DiaResult:
         },
     }
     return DiaResult(**data)
+
+
+def parse_par(par_file: Path) -> pd.DataFrame:
+    """Get the parameters from the .par file (hkl)."""
+    content = par_file.read_text().split("\n")
+    peak_list = []
+
+    if len(content) < 2:
+        return pd.DataFrame(
+            peak_list,
+            columns=["2theta", "intensity", "b1", "b2", "h", "k", "l", "phase"],
+        )
+
+    peak_num = re.search(r"PEAKZAHL=(\d+)", content[0])
+
+    if not peak_num:
+        return pd.DataFrame(
+            peak_list,
+            columns=["2theta", "intensity", "b1", "b2", "h", "k", "l", "phase"],
+        )
+
+    peak_num = int(peak_num.group(1))
+
+    for i in range(1, peak_num + 1):
+        if i >= len(content):
+            break
+
+        numbers = re.split(r"\s+", content[i])
+
+        if numbers:
+            rp = int(numbers[0])
+            intensity = float(numbers[1])
+            d_inv = float(numbers[2])
+            if rp == 2:
+                b1 = 0
+                b2 = 0
+            elif rp == 3:
+                b1 = float(numbers[3])
+                b2 = 0
+            elif rp == 4:
+                b1 = float(numbers[3])
+                b2 = float(numbers[4]) ** 2
+            else:
+                b1 = 0
+                b2 = 0
+
+            h = int(numbers[-3])
+            k = int(numbers[-2])
+            l = int(numbers[-1])
+
+            phase = re.search(r"PHASE=(\w+)", content[i]).group(1)
+
+            peak_list.append([d_inv, intensity, b1, b2, h, k, l, phase])
+
+    # from d_inv to two theta
+    two_theta = (
+        np.arcsin(0.15406 * np.array([p[0] for p in peak_list]) / 2) * 180 / np.pi * 2
+    ).tolist()
+    peak_list = [[two_theta[i]] + peak_list[i][1:] for i in range(len(peak_list))]
+
+    peak_list = pd.DataFrame(
+        peak_list, columns=["2theta", "intensity", "b1", "b2", "h", "k", "l", "phase"]
+    )
+    return peak_list
+
+
+if __name__ == "__main__":
+    from pathlib import Path
+
+    print(
+        parse_par(
+            Path(
+                "/Users/yuxing/projects/ar3l-search/example/Mn7(P2O7)4/Mn7(P2O7)4_recipe19_Pellet.par"
+            )
+        )
+    )

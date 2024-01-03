@@ -19,6 +19,9 @@ def copy_instrument_files(instrument_name: str, working_dir: Path) -> None:
 
 def copy_xy_pattern(pattern_path: Path, working_dir: Path) -> None:
     """Copy the xy pattern to the working directory."""
+    # if same directory, do nothing
+    if pattern_path.parent == working_dir:
+        return
     shutil.copy(pattern_path, working_dir)
 
 
@@ -78,8 +81,10 @@ def generate_control_file(
     PARAM[1]=EPS2=0_-0.01^0.01
     NTHREADS={n_threads}
     PROTOKOLL=Y
+    
     sum={"+".join(phase_name for phase_name in phase_names)}
     {phase_fraction_str}
+    
     {goal_str}
     """
     control_file = re.sub(r"^\s+", "", control_file, flags=re.MULTILINE)

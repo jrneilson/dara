@@ -1,6 +1,7 @@
 """Perform refinements with BGMN."""
 from __future__ import annotations
 
+import shutil
 import tempfile
 from pathlib import Path
 
@@ -13,7 +14,7 @@ from dara.xrdml2xy import xrdml2xy
 
 def do_refinement(
     pattern_path: Path,
-    cif_paths: list[Path],
+    phase_paths: list[Path],
     instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
     working_dir: Path | None = None,
     phase_params: dict | None = None,
@@ -37,8 +38,13 @@ def do_refinement(
         pattern_path = xrdml2xy(pattern_path, working_dir)
 
     str_paths = []
-    for cif_path in cif_paths:
-        str_path = cif2str(cif_path, working_dir, **phase_params)
+    for phase_path in phase_paths:
+        if phase_path.suffix == ".cif":
+            str_path = cif2str(phase_path, working_dir, **phase_params)
+        else:
+            if phase_path.parent != working_dir:
+                shutil.copy(phase_path, working_dir)
+            str_path = working_dir / phase_path.name
         str_paths.append(str_path)
 
     control_file_path = generate_control_file(
@@ -56,7 +62,7 @@ def do_refinement(
 
 def do_refinement_no_saving(
     pattern_path: Path,
-    cif_paths: list[Path],
+    phase_paths: list[Path],
     instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
     phase_params: dict | None = None,
     refinement_params: dict | None = None,
@@ -66,12 +72,6 @@ def do_refinement_no_saving(
     with tempfile.TemporaryDirectory() as tmpdir:
         working_dir = Path(tmpdir)
 
-        return do_refinement(
-            pattern_path,
-            cif_paths,
-            instrument_name,
-            working_dir=working_dir,
-            phase_params=phase_params,
-            refinement_params=refinement_params,
-            show_progress=show_progress,
-        )
+        return do_refinement(pattern_path, phase_paths, instrument_name, working_dir=working_dir,
+                             phase_params=phase_params, refinement_params=refinement_params,
+                             show_progress=show_progress)

@@ -29,8 +29,9 @@ class BGMNWorker:
         """
         Run refinement via BGMN executable.
 
-        :param control_file: the path to the control file (.sav)
-        :param show_progress: whether to show the progress in the console
+        Args:
+            control_file: the path to the control file (.sav)
+            show_progress: whether to show the progress in the console
         """
         cp = run(
             [self.bgmn_path.as_posix(), control_file.absolute().as_posix()],

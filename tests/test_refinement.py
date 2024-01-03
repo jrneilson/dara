@@ -23,10 +23,6 @@ class TestRefinement(unittest.TestCase):
             cif_paths = self.cif_paths
             pattern_path = self.pattern_path
 
-            result = do_refinement(
-                pattern_path,
-                cif_paths,
-                working_dir=tmpdir,
-                instrument_name="Aeris-fds-Pixcel1d-Medipix3",
-            )
+            result = do_refinement(pattern_path, cif_paths, instrument_name="Aeris-fds-Pixcel1d-Medipix3",
+                                   working_dir=tmpdir)
             self.assertTrue(7.81 < result["Rwp"] < 7.83)

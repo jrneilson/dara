@@ -236,14 +236,14 @@ def make_lattice_parameters_str(
     return lattice_parameters_str
 
 
-def make_peak_parameter_str(gewicht: str, rp: int) -> str:
+def make_peak_parameter_str(k1: str, k2: str, b1: str, gewicht: str, rp: int) -> str:
     """Make the peak parameter string."""
     return (
         f"RP={rp} "
-        f"PARAM=k1=0_0^1 "
-        f"k2=0 "
-        f"PARAM=B1=0_0^0.01 "
-        f"{'PARAM=' if gewicht == '0_0' else ''}GEWICHT={gewicht} //"
+        + (f"PARAM=k1={k1} " if k1 != "fixed" else f"k1=0 ")
+        + (f"PARAM=k2={k2} " if k2 != "fixed" else f"k2=0 ")
+        + (f"PARAM=B1={b1} " if b1 != "fixed" else f"B1=0 ")
+        + (f"GEWICHT={gewicht} //" if gewicht != "0_0" else f"PARAM=GEWICHT=0_0 //")
     )
 
 
@@ -251,9 +251,12 @@ def cif2str(
     cif_path: Path,
     working_dir: Path | None = None,
     *,
-    lattice_range: float = 0.01,
+    lattice_range: float = 0.02,
     gewicht: str = "0_0",
     rp: int = 4,
+    k1: str = "fixed",
+    k2: str = "fixed",
+    b1: str = "0_0^0.01",
 ) -> Path:
     """
     Convert CIF to Str format.
@@ -265,6 +268,9 @@ def cif2str(
         gewicht: the weight fraction of the phase to be refined (preferred oritentation or not.
           If 0_0, then no preferred orientation. Read more on the BGMN manual.)
         rp: the peak function to be used in the refinement. Read more on the BGMN manual.
+        k1: the first peak parameter to be refined. Read more on the BGMN manual.
+        k2: the second peak parameter to be refined. Read more on the BGMN manual.
+        b1: the third peak parameter to be refined. Read more on the BGMN manual.
 
     An example of the output Str file:
     PHASE=BariumzirconiumtinIVoxide105053 // ICSD_43137
@@ -342,7 +348,7 @@ def cif2str(
     )
 
     # add RP
-    str_text += make_peak_parameter_str(gewicht, rp) + "\n"
+    str_text += make_peak_parameter_str(k1, k2, b1, gewicht, rp) + "\n"
 
     # add goals
     str_text += f"GOAL:{phase_name}=GEWICHT*ifthenelse(ifdef(d),exp(my*d*3/4),1) //\nGOAL=GrainSize(1,1,1) //\n"
