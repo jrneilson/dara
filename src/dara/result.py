@@ -10,6 +10,8 @@ import pandas as pd
 import plotly.graph_objects as go
 from pydantic import BaseModel, Field, model_validator
 
+from dara.utils import angular_correction
+
 if TYPE_CHECKING:
     from pathlib import Path
 
@@ -351,9 +353,11 @@ def parse_lst(lst_path: Path) -> LstResult:
     # global goals
     global_parameters_text = re.search(
         r"Global parameters and GOALs\n(.*?)\n(?:\n|\Z)", texts, re.DOTALL
-    ).group(1)
-    global_parameters = parse_section(global_parameters_text)
-    result.update(global_parameters)
+    )
+    if global_parameters_text:
+        global_parameters_text = global_parameters_text.group(1)
+        global_parameters = parse_section(global_parameters_text)
+        result.update(global_parameters)
 
     phases_results = dict(
         re.findall(
@@ -419,6 +423,24 @@ def parse_par(par_file: Path) -> pd.DataFrame:
             columns=["2theta", "intensity", "b1", "b2", "h", "k", "l", "phase"],
         )
 
+    eps1 = re.search(r"EPS1=(\d+(\.\d+)?)", content[0])
+    eps2 = re.search(r"EPS2=([+-]?\d+(\.\d+)?)", content[0])
+    # pol = re.search(r"POL=(\d+(\.\d+)?)", content[0])
+
+    if eps1:
+        eps1 = float(eps1.group(1))
+    else:
+        eps1 = 0.0
+
+    if eps2:
+        eps2 = float(eps2.group(1))
+    else:
+        eps2 = 0.0
+    # if pol:
+    #     pol = float(pol.group(1))
+    # else:
+    #     pol = 1.
+
     peak_num = int(peak_num.group(1))
 
     for i in range(1, peak_num + 1):
@@ -431,6 +453,18 @@ def parse_par(par_file: Path) -> pd.DataFrame:
             rp = int(numbers[0])
             intensity = float(numbers[1])
             d_inv = float(numbers[2])
+            # gsum = float(re.search(r"GSUM=(\d+(\.\d+)?)", content[i]).group(1))
+            # # double sinx2 = std::pow(0.5 * dinv * pl.waveLength, 2.0);
+            # sinx2 = (0.5 * d_inv * 0.15406) ** 2
+            # # double intens = gsum * 360.0 * intens * 0.5 / (M_PI * std::sqrt(1.0 - sinx2) / pl.waveLength);
+            # # if (pl.polarization > 0.0) intens *= (0.5 * (1.0 + pl.polarization * std::pow(1.0 - 2.0 * sinx2, 2.0)));
+
+            # intensity = gsum * 360.0 * intensity * 0.5 / (
+            #     np.pi * np.sqrt(1.0 - sinx2) / 0.15406
+            # )
+            # if pol > 0.0:
+            #     intensity *= (0.5 * (1.0 + pol * (1.0 - 2.0 * sinx2) ** 2.0))
+
             if rp == 2:
                 b1 = 0
                 b2 = 0
@@ -455,7 +489,10 @@ def parse_par(par_file: Path) -> pd.DataFrame:
     # from d_inv to two theta
     two_theta = (
         np.arcsin(0.15406 * np.array([p[0] for p in peak_list]) / 2) * 180 / np.pi * 2
-    ).tolist()
+    )
+
+    # apply eps1 and eps2
+    two_theta += angular_correction(two_theta, eps1, eps2)
     peak_list = [[two_theta[i]] + peak_list[i][1:] for i in range(len(peak_list))]
 
     peak_list = pd.DataFrame(

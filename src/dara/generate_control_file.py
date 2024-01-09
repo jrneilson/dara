@@ -34,6 +34,7 @@ def generate_control_file(
     n_threads: int = 8,
     wmin: float | None = None,
     wmax: float | None = None,
+    eps2: float | str = "0_-0.01^0.01",
 ) -> Path:
     """Generate a control file for BGMN."""
     if working_dir is None:
@@ -78,13 +79,11 @@ def generate_control_file(
     DIAGRAMM={pattern_path.stem}.dia
     % Global parameters for zero point and sample displacement
     EPS1=0
-    PARAM[1]=EPS2=0_-0.01^0.01
+    {f"PARAM[1]=EPS2={eps2}" if isinstance(eps2, str) else f"EPS2={eps2}"}
     NTHREADS={n_threads}
     PROTOKOLL=Y
-    
     sum={"+".join(phase_name for phase_name in phase_names)}
     {phase_fraction_str}
-    
     {goal_str}
     """
     control_file = re.sub(r"^\s+", "", control_file, flags=re.MULTILINE)

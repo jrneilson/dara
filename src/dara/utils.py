@@ -4,6 +4,7 @@ import re
 import shutil
 from pathlib import Path
 
+import numpy as np
 from rxn_network.core import Composition
 from rxn_network.entries.entry_set import GibbsEntrySet
 from rxn_network.utils.funcs import get_logger
@@ -156,3 +157,11 @@ def get_mp_entries(chemsys: str):
 
     with MPRester() as mpr:
         return mpr.get_entries_in_chemsys(chemsys)
+
+
+def angular_correction(tt, eps1, eps2):
+    deps1 = -eps1 * 360.0 / np.pi
+    deps2 = 2.0 * (-eps2 * np.cos(tt * np.pi / 360)) * 180.0 / np.pi
+    # deps3 = -eps3 * np.sin(np.deg2rad(tt)) * 180.0 / np.pi
+
+    return deps1 + deps2  # + deps3

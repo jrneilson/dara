@@ -8,7 +8,7 @@ from pathlib import Path
 from dara.bgmn_worker import BGMNWorker
 from dara.cif2str import cif2str
 from dara.generate_control_file import generate_control_file
-from dara.result import get_result
+from dara.result import get_result, RefinementResult
 from dara.xrdml2xy import xrdml2xy
 
 
@@ -20,7 +20,7 @@ def do_refinement(
     phase_params: dict | None = None,
     refinement_params: dict | None = None,
     show_progress: bool = False,
-):
+) -> RefinementResult:
     """Refine the structure using BGMN."""
     if working_dir is None:
         working_dir = pattern_path.parent / f"refinement_{pattern_path.stem}"
@@ -67,11 +67,17 @@ def do_refinement_no_saving(
     phase_params: dict | None = None,
     refinement_params: dict | None = None,
     show_progress: bool = False,
-):
+) -> RefinementResult:
     """Refine the structure using BGMN in a temporary directory without saving."""
     with tempfile.TemporaryDirectory() as tmpdir:
         working_dir = Path(tmpdir)
 
-        return do_refinement(pattern_path, phase_paths, instrument_name, working_dir=working_dir,
-                             phase_params=phase_params, refinement_params=refinement_params,
-                             show_progress=show_progress)
+        return do_refinement(
+            pattern_path,
+            phase_paths,
+            instrument_name,
+            working_dir=working_dir,
+            phase_params=phase_params,
+            refinement_params=refinement_params,
+            show_progress=show_progress,
+        )
