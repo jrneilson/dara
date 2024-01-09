@@ -72,6 +72,12 @@ def do_refinement_no_saving(
     with tempfile.TemporaryDirectory() as tmpdir:
         working_dir = Path(tmpdir)
 
-        return do_refinement(pattern_path, phase_paths, instrument_name, working_dir=working_dir,
-                             phase_params=phase_params, refinement_params=refinement_params,
-                             show_progress=show_progress)
+        return do_refinement(
+            pattern_path,
+            phase_paths,
+            instrument_name,
+            working_dir=working_dir,
+            phase_params=phase_params,
+            refinement_params=refinement_params,
+            show_progress=show_progress,
+        )

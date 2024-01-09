@@ -57,9 +57,7 @@ class PhasePredictor(MSONable):
         exclude_gases=True,
     ):
         """Write CIFs of the predicted products."""
-        prediction_sorted = collections.OrderedDict(
-            sorted(prediction.items(), key=lambda item: item[1])
-        )
+        prediction_sorted = collections.OrderedDict(sorted(prediction.items(), key=lambda item: item[1]))
         dest_dir = Path(dest_dir)
         if not os.path.exists(dest_dir):
             os.makedirs(dest_dir)
@@ -82,10 +80,7 @@ class PhasePredictor(MSONable):
             copy_and_rename_files(
                 self.db.path_to_icsd,
                 dest_dir,
-                {
-                    f"{data['icsd_code']}.cif": f"{idx}_{formula}_{data['icsd_code']}.cif"
-                    for data in icsd_data
-                },
+                {f"{data['icsd_code']}.cif": f"{idx}_{formula}_{data['icsd_code']}.cif" for data in icsd_data},
             )
 
         if clean:
