@@ -10,8 +10,8 @@ from rxn_network.core import Composition
 from rxn_network.data import COMMON_GASES
 from rxn_network.utils.funcs import get_logger
 
+from dara.filter_icsd import clean_cifs
 from dara.icsd import ICSDDatabase
-from dara.phase_prediction.structure import clean_cifs
 from dara.utils import copy_and_rename_files
 
 logger = get_logger(__name__)

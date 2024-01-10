@@ -222,18 +222,16 @@ class StructureFilter:
         """
         strucs, temps, dates = [], [], []
         for cmpd in os.listdir(self.cif_dir):
+            if ".cif" not in cmpd:
+                continue
             struc = Structure.from_file("%s/%s" % (self.cif_dir, cmpd))
-            if self.enforce_order:
-                if struc.is_ordered:
-                    strucs.append(struc)
-                    t, d = self.parse_measurement_conditions(cmpd)
-                    temps.append(t)
-                    dates.append(d)
-            else:
-                strucs.append(struc)
-                t, d = self.parse_measurement_conditions(cmpd)
-                temps.append(t)
-                dates.append(d)
+            if self.enforce_order and not struc.is_ordered:
+                continue
+
+            strucs.append(struc)
+            t, d = self.parse_measurement_conditions(cmpd)
+            temps.append(t)
+            dates.append(d)
 
         return strucs, temps, dates
 
@@ -256,8 +254,7 @@ class StructureFilter:
                     temp = float(line.split()[-1])
         return temp, date
 
-    @property
-    def unique_struc_info(self):
+    def get_unique_struct_info(self):
         """
         Create distinct lists of Structure objects where each
         list is associated with a unique strucural prototype.
@@ -363,8 +360,7 @@ class StructureFilter:
 
         return grouped_strucs, grouped_temps, grouped_dates
 
-    @property
-    def filtered_refs(self):
+    def get_filtered_refs(self):
         """
         For each list of strucures associated with a strucural prototype,
         choose that which was measured under (or nearest to) ambient conditions
@@ -374,7 +370,7 @@ class StructureFilter:
         -------
             filtered_cmpds: a list of unique pymatgen Structure objects
         """
-        grouped_strucs, grouped_temps, grouped_dates = self.unique_struc_info
+        grouped_strucs, grouped_temps, grouped_dates = self.get_unique_struct_info()
 
         filtered_cmpds = []
         for struc_class, temp_class, date_class in zip(grouped_strucs, grouped_temps, grouped_dates):
@@ -440,7 +436,7 @@ def clean_cifs(
     """Clean CIFs and write to reference directory."""
     # Get unique structures
     struc_filter = StructureFilter(cif_directory, enforce_order)
-    final_refs = struc_filter.filtered_refs
+    final_refs = struc_filter.get_filtered_refs()
 
     # Write unique structures (as CIFs) to reference directory
     write_cifs(final_refs, ref_directory, include_elems)
