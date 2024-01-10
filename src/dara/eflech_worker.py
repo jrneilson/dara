@@ -27,7 +27,13 @@ class EflechWorker:
         os.environ["PATH"] += os.pathsep + self.bgmn_folder.as_posix()
 
     def run_peak_detection(
-        self, pattern: Union[Path, np.ndarray], instrument_name: str, show_progress: bool = False
+        self,
+        pattern: Union[Path, np.ndarray],
+        instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
+        show_progress: bool = False,
+        *,
+        wmin: float = None,
+        wmax: float = None,
     ) -> pd.DataFrame:
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_dir = Path(temp_dir)
@@ -42,7 +48,7 @@ class EflechWorker:
                 pattern_path_temp = temp_dir / pattern.name
 
             control_file_path = self.generate_control_file(
-                pattern_path_temp, instrument_name
+                pattern_path_temp, instrument_name, wmin=wmin, wmax=wmax
             )
 
             self.run_eflech(
@@ -63,12 +69,20 @@ class EflechWorker:
             return peak_list
 
     @staticmethod
-    def generate_control_file(pattern_path: Path, instrument_name: str) -> Path:
+    def generate_control_file(
+        pattern_path: Path,
+        instrument_name: str,
+        *,
+        wmin: float = None,
+        wmax: float = None,
+    ) -> Path:
         control_file_str = f"""
             VERZERR={instrument_name}.geq
             LAMBDA=CU
             % Measured data
             VAL[1]={pattern_path.name}
+            {f"WMIN={wmin}" if wmin is not None else ""}
+            {f"WMAX={wmax}" if wmax is not None else ""}
             NTHREADS=8
             TEST=ND234U
             OUTPUTMASK=output-$
@@ -122,7 +136,9 @@ class EflechWorker:
         peak_list_two_theta = np.column_stack((two_theta, intensity, b1, b2))
         peak_list_two_theta = peak_list_two_theta[peak_list_two_theta[:, 0].argsort()]
 
-        df = pd.DataFrame(peak_list_two_theta, columns=["2theta", "intensity", "b1", "b2"])
+        df = pd.DataFrame(
+            peak_list_two_theta, columns=["2theta", "intensity", "b1", "b2"]
+        )
 
         return df
 
@@ -167,16 +183,3 @@ class EflechWorker:
                 peak_list.append([d_inv, intensity, b1, b2])
 
         return peak_list
-
-
-if __name__ == "__main__":
-    eflech_worker = EflechWorker()
-
-    pattern_path = Path(
-        "/Users/yuxing/projects/ar3l-search/example/test_search/BiFeO3.xy"
-    )
-    instrument_name = "Aeris-fds-Pixcel1d-Medipix3"
-
-    peak_list = eflech_worker.run_peak_detection(pattern_path, instrument_name)
-
-    peak_list.to_pickle(pattern_path.parent / "peak_list.pkl")
