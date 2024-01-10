@@ -120,7 +120,7 @@ def search_phases(
         pm = PeakMatcher(peak_calc, peak_obs)
         peak_matchers[cif_path] = pm
 
-    top_n = 10
+    top_n = 6
     max_phases = 4
 
     best_phases = get_best_phase(peak_matchers, top_n=top_n)
