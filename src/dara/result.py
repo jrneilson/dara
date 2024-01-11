@@ -87,7 +87,7 @@ class RefinementResult(BaseModel):
     plot_data: DiaResult
     peak_data: pd.DataFrame
 
-    def visualize(self):
+    def visualize(self, diff_offset=False):
         """Visualize the result from the refinement. It uses a plotly figure as the backend."""
         colormap = [
             "#1f77b4",
@@ -114,9 +114,7 @@ class RefinementResult(BaseModel):
         fig = go.Figure()
 
         # fix the size of the box
-        fig.update_layout(
-            autosize=True, xaxis=dict(range=[min(plot_data.x), max(plot_data.x)])
-        )
+        fig.update_layout(autosize=True, xaxis=dict(range=[min(plot_data.x), max(plot_data.x)]))
 
         # Adding scatter plot for observed data
         fig.add_trace(
@@ -124,7 +122,7 @@ class RefinementResult(BaseModel):
                 x=plot_data.x,
                 y=plot_data.y_obs,
                 mode="markers",
-                marker=dict(color="blue", size=5, symbol="cross-thin-open"),
+                marker=dict(color="blue", size=3, symbol="cross-thin-open"),
                 name="Observed",
             )
         )
@@ -146,19 +144,24 @@ class RefinementResult(BaseModel):
                 x=plot_data.x,
                 y=plot_data.y_bkg,
                 mode="lines",
-                line=dict(color="red", width=2),
+                line=dict(color="#FF7F7F", width=2),
                 name="Background",
+                opacity=0.5,
             )
         )
+
+        diff = (plot_data.y_obs) - np.array(plot_data.y_calc)
+        diff_offset_val = 1.1 * max(diff) if diff_offset else 0  # 10 percent below
 
         # Adding line plot for difference
         fig.add_trace(
             go.Scatter(
                 x=plot_data.x,
-                y=np.array(plot_data.y_obs) - np.array(plot_data.y_calc),
+                y=diff - diff_offset_val,
                 mode="lines",
-                line=dict(color="#17becf", width=2),
+                line=dict(color="#808080", width=1),
                 name="Difference",
+                opacity=0.7,
             )
         )
 
@@ -329,9 +332,7 @@ def parse_lst(lst_path: Path) -> LstResult:
     with lst_path.open() as f:
         texts = f.read()
 
-    pattern_name = re.search(r"Rietveld refinement to file\(s\) (.+?)\n", texts).group(
-        1
-    )
+    pattern_name = re.search(r"Rietveld refinement to file\(s\) (.+?)\n", texts).group(1)
     result = {"raw_lst": texts, "pattern_name": pattern_name}
 
     num_steps = int(re.search(r"(\d+) iteration steps", texts).group(1))
@@ -339,21 +340,11 @@ def parse_lst(lst_path: Path) -> LstResult:
 
     for var in ["Rp", "Rpb", "R", "Rwp", "Rexp"]:
         result[var] = float(re.search(rf"{var}=(\d+(\.\d+)?)%", texts).group(1))
-    result["d"] = (
-        float(d.group(1))
-        if (d := re.search(r"Durbin-Watson d=(\d+(\.\d+)?)", texts))
-        else None
-    )
-    result["1-rho"] = (
-        float(rho.group(1))
-        if (rho := re.search(r"1-rho=(\d+(\.\d+)?)%", texts))
-        else None
-    )
+    result["d"] = float(d.group(1)) if (d := re.search(r"Durbin-Watson d=(\d+(\.\d+)?)", texts)) else None
+    result["1-rho"] = float(rho.group(1)) if (rho := re.search(r"1-rho=(\d+(\.\d+)?)%", texts)) else None
 
     # global goals
-    global_parameters_text = re.search(
-        r"Global parameters and GOALs\n(.*?)\n(?:\n|\Z)", texts, re.DOTALL
-    )
+    global_parameters_text = re.search(r"Global parameters and GOALs\n(.*?)\n(?:\n|\Z)", texts, re.DOTALL)
     if global_parameters_text:
         global_parameters_text = global_parameters_text.group(1)
         global_parameters = parse_section(global_parameters_text)
@@ -397,9 +388,7 @@ def parse_dia(dia_path: Path) -> DiaResult:
         "y_obs": raw_data[:, 1].tolist(),
         "y_calc": raw_data[:, 2].tolist(),
         "y_bkg": raw_data[:, 3].tolist(),
-        "structs": {
-            name: raw_data[:, i + 4].tolist() for i, name in enumerate(struct_names)
-        },
+        "structs": {name: raw_data[:, i + 4].tolist() for i, name in enumerate(struct_names)},
     }
     return DiaResult(**data)
 
@@ -487,27 +476,17 @@ def parse_par(par_file: Path) -> pd.DataFrame:
             peak_list.append([d_inv, intensity, b1, b2, h, k, l, phase])
 
     # from d_inv to two theta
-    two_theta = (
-        np.arcsin(0.15406 * np.array([p[0] for p in peak_list]) / 2) * 180 / np.pi * 2
-    )
+    two_theta = np.arcsin(0.15406 * np.array([p[0] for p in peak_list]) / 2) * 180 / np.pi * 2
 
     # apply eps1 and eps2
     two_theta += angular_correction(two_theta, eps1, eps2)
     peak_list = [[two_theta[i]] + peak_list[i][1:] for i in range(len(peak_list))]
 
-    peak_list = pd.DataFrame(
-        peak_list, columns=["2theta", "intensity", "b1", "b2", "h", "k", "l", "phase"]
-    )
+    peak_list = pd.DataFrame(peak_list, columns=["2theta", "intensity", "b1", "b2", "h", "k", "l", "phase"])
     return peak_list
 
 
 if __name__ == "__main__":
     from pathlib import Path
 
-    print(
-        parse_par(
-            Path(
-                "/Users/yuxing/projects/ar3l-search/example/Mn7(P2O7)4/Mn7(P2O7)4_recipe19_Pellet.par"
-            )
-        )
-    )
+    print(parse_par(Path("/Users/yuxing/projects/ar3l-search/example/Mn7(P2O7)4/Mn7(P2O7)4_recipe19_Pellet.par")))
