@@ -1,20 +1,273 @@
 """Code for filtering the ICSD for unique reference structures.
-Some of this code is borrowed from AutoXRD package, courtesy Nathan Szymanski.
+Some of this code is adapted from the AutoXRD package, courtesy Nathan Szymanski.
 """
 import math
 import os
 from functools import reduce
+from pathlib import Path
 
 import numpy as np
 from pymatgen.analysis import structure_matcher
 from pymatgen.analysis.diffraction.xrd import XRDCalculator
-from pymatgen.core import PeriodicSite, Structure
+from pymatgen.core import Element, PeriodicSite, Structure
 from pyts import metrics
 from scipy.ndimage import gaussian_filter1d
-from scipy.signal import filtfilt
 from tqdm import tqdm
 
-PATH_TO_ICSD = "/Users/mcdermott/Documents/ICSD"
+
+class ICSDFilter:
+    """
+    Class used to parse a list of ICSD CIFs and choose unique, stoichiometric reference phases that were measured under (or
+    nearest to) ambient conditions.
+    """
+
+    def __init__(self, cif_directory, enforce_ordered: bool = False, cleaned_tag="cleaned"):
+        """
+        Initialize the StructureFilter object.
+
+        Args:
+            cif_directory: path to directory containing the CIF files to be considered
+                as possible reference phases.
+            enforce_order: whether to enforce that the structures are ordered compounds
+            cleaned_tag: tag to append to the directory name where the cleaned CIFs will be written
+        """
+        self.cif_directory = Path(cif_directory)
+        self.enforce_ordered = enforce_ordered
+        self.cleaned_tag = cleaned_tag
+
+    def get_filtered_refs(self, write_cifs=True):
+        """
+        For each list of strucures associated with a strucural prototype,
+        choose that which was measured under (or nearest to) ambient conditions
+        and which was reported most recently. Priority is given to the former.
+
+        Returns
+        -------
+            filtered_cmpds: a list of unique pymatgen Structure objects
+        """
+        grouped_strucs, grouped_temps, grouped_dates, grouped_icsd_ids = self.get_unique_struct_info()
+
+        filtered_cmpds = []
+        for struc_class, temp_class, date_class in zip(grouped_strucs, grouped_temps, grouped_dates):
+            normalized_temps = abs(np.array(temp_class) - 293.0)  # Difference from RT
+            zipped_info = list(zip(struc_class, normalized_temps, date_class))
+            sorted_info = sorted(zipped_info, key=lambda x: x[1])  # Sort by temperature
+            best_entry = sorted_info[0]  # Take the entry measured at the temperature closest to RT
+            candidate_strucs, candidate_dates = [], []
+            for entry in sorted_info:
+                if entry[1] == best_entry[1]:  # If temperature matches best entry
+                    candidate_strucs.append(entry[0])
+                    candidate_dates.append(entry[2])
+            zipped_info = list(zip(candidate_strucs, candidate_dates))
+            try:
+                sorted_info = sorted(zipped_info, key=lambda x: x[1])  ## Sort by date
+                final_struc = sorted_info[-1][0]  # Take the entry that was measured most recently
+            # If no dates available
+            except TypeError:
+                final_struc = zipped_info[-1][0]
+
+            filtered_cmpds.append(final_struc)
+
+        if write_cifs:
+            print("Writing CIFs...")
+            cleaned_dir = self.cif_directory.parent / f"{self.cif_directory.name}_{self.cleaned_tag}"
+
+            if not os.path.isdir(cleaned_dir):
+                os.mkdir(cleaned_dir)
+
+            for struct in filtered_cmpds:
+                formula = struct.composition.reduced_formula
+                try:
+                    sg = struct.get_space_group_info()[1]
+                    filepath = f"{cleaned_dir}/{formula}({sg}).cif"
+                    struct.to(filename=filepath, fmt="cif")
+                except Exception:
+                    try:
+                        print("%s: Space group cannot be determined, lowering tolerance" % str(formula))
+                        sg = struct.get_space_group_info(symprec=0.1, angle_tolerance=5.0)[1]
+                        filepath = f"{cleaned_dir}/{formula}({sg}).cif"
+                        struct.to(filename=filepath, fmt="cif")
+                    except Exception:
+                        print(
+                            "-> %s space group cannot be determined even after lowering tolerance, Setting to None"
+                            % str(formula),
+                        )
+
+        return filtered_cmpds
+
+    def load_structures(self):
+        """
+        Load and filter strucures to include only those which do not have fraction occupancies and are (optionally)
+        ordered. For those phases, tabulate the measurement conditions of the associated CIFs.
+
+        Groups structures by chemical system.
+
+        Returns
+        -------
+            stoich_strucs: a list of (ordered) pymatgen Structure objects temps: temperatures that each were measured at
+            dates: dates the measurements were reported
+        """
+        data = {}
+
+        for fn in os.listdir(self.cif_directory):
+            if ".cif" not in fn:
+                continue
+
+            try:
+                struct = Structure.from_file(self.cif_directory / fn)
+            except Exception as e:
+                print("Error loading structure:", fn, e)
+                continue
+
+            if self.enforce_ordered and not struct.is_ordered:
+                continue
+
+            if not all(type(e) == Element for e in struct.composition.element_composition.elements):
+                continue  # remove structures with dummy species (e.g., deuterium)
+
+            temp, date = self.parse_measurement_conditions(fn)
+            d = {"structure": struct, "temp": temp, "date": date, "icsd_id": int(fn.strip(".cif"))}
+
+            chemsys = struct.composition.chemical_system
+            if chemsys in data:
+                data[chemsys].append(d)
+            else:
+                data[chemsys] = [d]
+
+        return data
+
+    def parse_measurement_conditions(self, filename):
+        """
+        Parse the temperature and date from a CIF file.
+
+        Args:
+            filename: filename of CIF to be parsed
+        Returns:
+            temp: temperature at which measurement was conducted date: date which measurement was reported
+        """
+        temp, date = 0.0, None
+        with open(self.cif_directory / filename) as entry:
+            for line in entry.readlines():
+                if "_audit_creation_date" in line:
+                    date = line.split()[-1]
+                if "_cell_measurement_temperature" in line:
+                    temp = float(line.split()[-1])
+        return temp, date
+
+    def get_unique_struct_info(self):
+        """
+        Create distinct lists of Structure objects where each list is associated with a unique strucural prototype.
+
+        Returns
+        -------
+            grouped_strucs: a list of sub-lists containing pymatgen
+                Structure objects organize by the strucural prototype
+            grouped_temps and grouped_dates: similarly grouped temperatures and dates
+                associated with the corresponding measurements
+        """
+        data = self.load_structures()
+
+        matcher = structure_matcher.StructureMatcher(scale=True, attempt_supercell=True, primitive_cell=False)
+
+        XRD_calculator = XRDCalculator(wavelength="CuKa", symprec=0.0)
+
+        grouped_strucs, grouped_temps, grouped_dates, grouped_icsd_ids = [], [], [], []
+
+        for struct_data in tqdm(data.values()):
+            stoich_strucs = [d["structure"] for d in struct_data]
+            temps = [d["temp"] for d in struct_data]
+            dates = [d["date"] for d in struct_data]
+            icsd_ids = [d["icsd_id"] for d in struct_data]
+
+            unique_frameworks = []
+            for struc_1 in stoich_strucs:
+                unique = True
+                for struc_2 in unique_frameworks:
+                    # Check if structures are identical. If so, exclude.
+                    if matcher.fit(struc_1, struc_2):
+                        unique = False
+
+                    # Check if compositions are similar If so, check structural framework.
+                    temp_struc_1 = struc_1.copy()
+                    reduced_comp_1_dict = temp_struc_1.composition.remove_charges().reduced_composition.to_reduced_dict
+                    divider_1 = 1
+
+                    for key in reduced_comp_1_dict:
+                        divider_1 = max(divider_1, reduced_comp_1_dict[key])
+
+                    reduced_comp_1 = temp_struc_1.composition.remove_charges().reduced_composition / divider_1
+                    temp_struc_2 = struc_2.copy()
+                    reduced_comp_2_dict = temp_struc_2.composition.remove_charges().reduced_composition.to_reduced_dict
+                    divider_2 = 1
+
+                    for key in reduced_comp_2_dict:
+                        divider_2 = max(divider_2, reduced_comp_2_dict[key])
+                    reduced_comp_2 = temp_struc_2.composition.remove_charges().reduced_composition / divider_2
+
+                    if reduced_comp_1.almost_equals(reduced_comp_2, atol=0.5):
+                        # Replace with dummy species (H) for structural framework check.
+                        temp_struc_1 = struc_1.copy()
+                        for index, site in enumerate(temp_struc_1.sites):
+                            site_dict = site.as_dict()
+                            site_dict["species"] = []
+                            site_dict["species"].append(
+                                {"element": "H", "oxidation_state": 0.0, "occu": 1.0}
+                            )  # dummy species
+                            temp_struc_1[index] = PeriodicSite.from_dict(site_dict)
+
+                        temp_struc_2 = struc_2.copy()
+                        for index, site in enumerate(temp_struc_2.sites):
+                            site_dict = site.as_dict()
+                            site_dict["species"] = []
+                            site_dict["species"].append(
+                                {"element": "H", "oxidation_state": 0.0, "occu": 1.0}
+                            )  # dummy species
+                            temp_struc_2[index] = PeriodicSite.from_dict(site_dict)
+
+                        # Checking structural framework.
+                        if matcher.fit(temp_struc_1, temp_struc_2):
+                            # Before excluding, check if their XRD patterns differ.
+                            """
+                            This check is necessary as sometimes materials with identical compositions can adopt the
+                            same structural framework but still differ in their XRD, e.g., when individual site
+                            occupancies differ between them. For example, site inversion in spinels.
+
+                            Accordingly, we still include identical structures/compositions in the cases
+                            where their XRD patterns differ by some predefined amount.
+                            """
+                            y_1 = remap_pattern(
+                                XRD_calculator.get_pattern(struc_1, scaled=True, two_theta_range=(10, 100)).x,
+                                XRD_calculator.get_pattern(struc_1, scaled=True, two_theta_range=(10, 100)).y,
+                            )
+                            y_2 = remap_pattern(
+                                XRD_calculator.get_pattern(struc_2, scaled=True, two_theta_range=(10, 100)).x,
+                                XRD_calculator.get_pattern(struc_2, scaled=True, two_theta_range=(10, 100)).y,
+                            )
+                            reduced_pattern = np.array(get_reduced_pattern(y_1, y_2))
+
+                            # If 20% peak intensity remains after subtracting one pattern from the other.
+                            diff_threshold = 20.0
+                            if (reduced_pattern < diff_threshold).all():
+                                unique = False
+
+                if unique:
+                    unique_frameworks.append(struc_1)
+
+            for framework in unique_frameworks:
+                struc_class, temp_class, date_class, icsd_id_class = [], [], [], []
+                for struc, t, d, icsd_id in zip(stoich_strucs, temps, dates, icsd_ids):
+                    if matcher.fit(framework, struc):
+                        struc_class.append(struc)
+                        temp_class.append(t)
+                        date_class.append(d)
+                        icsd_id_class.append(icsd_id)
+
+                grouped_strucs.append(struc_class)
+                grouped_temps.append(temp_class)
+                grouped_dates.append(date_class)
+                grouped_icsd_ids.append(icsd_id_class)
+
+        return grouped_strucs, grouped_temps, grouped_dates, grouped_icsd_ids
 
 
 def calc_std_dev(two_theta, tau):
@@ -65,30 +318,6 @@ def remap_pattern(angles, intensities):
     norm_signal = 100 * signal / max(signal)
 
     return norm_signal
-
-
-def smooth_spectrum(spectrum, n=20):
-    """
-    Process and remove noise from the spectrum.
-
-    Args:
-        spectrum: list of intensities as a function of 2-theta
-        n: parameters used to control smooth. Larger n means greater smoothing.
-            20 is typically a good number such that noise is reduced while
-            still retaining minor diffraction peaks.
-
-    Returns
-    -------
-        smoothed_ys: processed spectrum after noise removal
-    """
-    # Smoothing parameters defined by n
-    b = [1.0 / n] * n
-    a = 1
-
-    # Filter noise
-    smoothed_ys = filtfilt(b, a, spectrum)
-
-    return smoothed_ys
 
 
 def strip_spectrum(warped_spectrum, orig_y):
@@ -191,210 +420,6 @@ def round_dict_values(data):
     return data
 
 
-class StructureFilter:
-    """
-    Class used to parse a list of CIFs and choose unique,
-    stoichiometric reference phases that were measured
-    under (or nearest to) ambient conditions.
-    """
-
-    def __init__(self, cif_directory, enforce_order):
-        """
-        Args:
-            cif_directory: path to directory containing the CIF files to be considered
-            as possible reference phases.
-        """
-        self.cif_dir = cif_directory
-        self.enforce_order = enforce_order
-
-    @property
-    def stoichiometric_info(self):
-        """
-        Filter strucures to include only those which do not have
-        fraction occupancies and are ordered. For those phases, tabulate
-        the measurement conditions of the associated CIFs.
-
-        Returns
-        -------
-            stoich_strucs: a list of ordered pymatgen Structure objects
-            temps: temperatures that each were measured at
-            dates: dates the measurements were reported
-        """
-        strucs, temps, dates = [], [], []
-        for cmpd in os.listdir(self.cif_dir):
-            if ".cif" not in cmpd:
-                continue
-            struc = Structure.from_file("%s/%s" % (self.cif_dir, cmpd))
-            if self.enforce_order and not struc.is_ordered:
-                continue
-
-            strucs.append(struc)
-            t, d = self.parse_measurement_conditions(cmpd)
-            temps.append(t)
-            dates.append(d)
-
-        return strucs, temps, dates
-
-    def parse_measurement_conditions(self, filename):
-        """
-        Parse the temperature and date from a CIF file.
-
-        Args:
-            filename: filename of CIF to be parsed
-        Returns:
-            temp: temperature at which measurement was conducted
-            date: date which measurement was reported
-        """
-        temp, date = 0.0, None
-        with open("%s/%s" % (self.cif_dir, filename)) as entry:
-            for line in entry.readlines():
-                if "_audit_creation_date" in line:
-                    date = line.split()[-1]
-                if "_cell_measurement_temperature" in line:
-                    temp = float(line.split()[-1])
-        return temp, date
-
-    def get_unique_struct_info(self):
-        """
-        Create distinct lists of Structure objects where each
-        list is associated with a unique strucural prototype.
-
-        Returns
-        -------
-            grouped_strucs: a list of sub-lists containing pymatgen
-                Structure objects organize by the strucural prototype
-            grouped_temps and grouped_dates: similarly grouped temperatures and dates
-                associated with the corresponding measurements
-        """
-        stoich_strucs, temps, dates = self.stoichiometric_info
-
-        matcher = structure_matcher.StructureMatcher(scale=True, attempt_supercell=True, primitive_cell=False)
-
-        XRD_calculator = XRDCalculator(wavelength="CuKa", symprec=0.0)
-
-        unique_frameworks = []
-        for struc_1 in stoich_strucs:
-            unique = True
-            for struc_2 in unique_frameworks:
-                # Check if structures are identical. If so, exclude.
-                if matcher.fit(struc_1, struc_2):
-                    unique = False
-
-                # Check if compositions are similar If so, check structural framework.
-                temp_struc_1 = struc_1.copy()
-                reduced_comp_1_dict = temp_struc_1.composition.remove_charges().reduced_composition.to_reduced_dict
-                divider_1 = 1
-
-                for key in reduced_comp_1_dict:
-                    divider_1 = max(divider_1, reduced_comp_1_dict[key])
-
-                reduced_comp_1 = temp_struc_1.composition.remove_charges().reduced_composition / divider_1
-                temp_struc_2 = struc_2.copy()
-                reduced_comp_2_dict = temp_struc_2.composition.remove_charges().reduced_composition.to_reduced_dict
-                divider_2 = 1
-
-                for key in reduced_comp_2_dict:
-                    divider_2 = max(divider_2, reduced_comp_2_dict[key])
-                reduced_comp_2 = temp_struc_2.composition.remove_charges().reduced_composition / divider_2
-
-                if reduced_comp_1.almost_equals(reduced_comp_2, atol=0.5):
-                    # Replace with dummy species (H) for structural framework check.
-                    temp_struc_1 = struc_1.copy()
-                    for index, site in enumerate(temp_struc_1.sites):
-                        site_dict = site.as_dict()
-                        site_dict["species"] = []
-                        site_dict["species"].append(
-                            {"element": "H", "oxidation_state": 0.0, "occu": 1.0}
-                        )  # dummy species
-                        temp_struc_1[index] = PeriodicSite.from_dict(site_dict)
-                    temp_struc_2 = struc_2.copy()
-                    for index, site in enumerate(temp_struc_2.sites):
-                        site_dict = site.as_dict()
-                        site_dict["species"] = []
-                        site_dict["species"].append(
-                            {"element": "H", "oxidation_state": 0.0, "occu": 1.0}
-                        )  # dummy species
-                        temp_struc_2[index] = PeriodicSite.from_dict(site_dict)
-
-                    # Checking structural framework.
-                    if matcher.fit(temp_struc_1, temp_struc_2):
-                        # Before excluding, check if their XRD patterns differ.
-                        """
-                        This check is necessary as sometimes materials with identical compositions can adopt the
-                        same structural framework but still differ in their XRD, e.g., when individual site
-                        occupancies differ between them. For example, site inversion in spinels.
-
-                        Accordingly, we still include identical structures/compositions in the cases
-                        where their XRD patterns differ by some predefined amount.
-                        """
-                        y_1 = remap_pattern(
-                            XRD_calculator.get_pattern(struc_1, scaled=True, two_theta_range=(10, 100)).x,
-                            XRD_calculator.get_pattern(struc_1, scaled=True, two_theta_range=(10, 100)).y,
-                        )
-                        y_2 = remap_pattern(
-                            XRD_calculator.get_pattern(struc_2, scaled=True, two_theta_range=(10, 100)).x,
-                            XRD_calculator.get_pattern(struc_2, scaled=True, two_theta_range=(10, 100)).y,
-                        )
-                        reduced_pattern = np.array(get_reduced_pattern(y_1, y_2))
-
-                        # If 20% peak intensity remains after subtracting one pattern from the other.
-                        diff_threshold = 20.0
-                        if (reduced_pattern < diff_threshold).all():
-                            unique = False
-
-            if unique:
-                unique_frameworks.append(struc_1)
-
-        grouped_strucs, grouped_temps, grouped_dates = [], [], []
-        for framework in unique_frameworks:
-            struc_class, temp_class, date_class = [], [], []
-            for struc, t, d in zip(stoich_strucs, temps, dates):
-                if matcher.fit(framework, struc):
-                    struc_class.append(struc)
-                    temp_class.append(t)
-                    date_class.append(d)
-
-            grouped_strucs.append(struc_class)
-            grouped_temps.append(temp_class)
-            grouped_dates.append(date_class)
-
-        return grouped_strucs, grouped_temps, grouped_dates
-
-    def get_filtered_refs(self):
-        """
-        For each list of strucures associated with a strucural prototype,
-        choose that which was measured under (or nearest to) ambient conditions
-        and which was reported most recently. Priority is given to the former.
-
-        Returns
-        -------
-            filtered_cmpds: a list of unique pymatgen Structure objects
-        """
-        grouped_strucs, grouped_temps, grouped_dates = self.get_unique_struct_info()
-
-        filtered_cmpds = []
-        for struc_class, temp_class, date_class in zip(grouped_strucs, grouped_temps, grouped_dates):
-            normalized_temps = abs(np.array(temp_class) - 293.0)  # Difference from RT
-            zipped_info = list(zip(struc_class, normalized_temps, date_class))
-            sorted_info = sorted(zipped_info, key=lambda x: x[1])  # Sort by temperature
-            best_entry = sorted_info[0]  # Take the entry measured at the temperature closest to RT
-            candidate_strucs, candidate_dates = [], []
-            for entry in sorted_info:
-                if entry[1] == best_entry[1]:  # If temperature matches best entry
-                    candidate_strucs.append(entry[0])
-                    candidate_dates.append(entry[2])
-            zipped_info = list(zip(candidate_strucs, candidate_dates))
-            try:
-                sorted_info = sorted(zipped_info, key=lambda x: x[1])  ## Sort by date
-                final_struc = sorted_info[-1][0]  # Take the entry that was measured most recently
-            # If no dates available
-            except TypeError:
-                final_struc = zipped_info[-1][0]
-            filtered_cmpds.append(final_struc)
-
-        return filtered_cmpds
-
-
 def write_cifs(unique_strucs, dir, include_elems):
     """
     Write structures to CIF files.
@@ -413,13 +438,13 @@ def write_cifs(unique_strucs, dir, include_elems):
         f = struc.composition.reduced_formula
         try:
             sg = struc.get_space_group_info()[1]
-            filepath = "%s/%s_%s.cif" % (dir, f, sg)
+            filepath = f"{dir}/{f}({sg}).cif"
             struc.to(filename=filepath, fmt="cif")
         except:
             try:
                 print("%s Space group cannot be determined, lowering tolerance" % str(f))
                 sg = struc.get_space_group_info(symprec=0.1, angle_tolerance=5.0)[1]
-                filepath = "%s/%s_%s.cif" % (dir, f, sg)
+                filepath = f"{dir}/{f}({sg}).cif"
                 struc.to(filename=filepath, fmt="cif")
             except:
                 print("%s Space group cannot be determined even after lowering tolerance, Setting to None" % str(f))
@@ -431,37 +456,21 @@ def clean_cifs(
     cif_directory,
     ref_directory,
     include_elems=True,
-    enforce_order=False,
+    enforce_ordered=False,
 ):
     """Clean CIFs and write to reference directory."""
-    # Get unique structures
-    struc_filter = StructureFilter(cif_directory, enforce_order)
+    struc_filter = ICSDFilter(cif_directory, enforce_ordered)
     final_refs = struc_filter.get_filtered_refs()
-
-    # Write unique structures (as CIFs) to reference directory
     write_cifs(final_refs, ref_directory, include_elems)
 
 
-if __name__ == "main":
-    struct_dict = {}
-    for filename in tqdm(sorted(os.listdir(PATH_TO_ICSD))):
-        file_path = os.path.join(PATH_TO_ICSD, filename)
+PATH_TO_ICSD = "/Users/mcdermott/Documents/ICSD"
 
-        try:
-            struct = Structure.from_file(file_path, merge_tol=0.01, occupancy_tolerance=100)
-        except Exception as e:
-            print("Error:", filename, e)
-            continue
-
-        entry = int(filename.strip(".cif"))
-
-        chemsys = struct.composition.chemical_system
-        formula = struct.composition.reduced_formula
-
-        if chemsys in struct_dict:
-            if formula in struct_dict[chemsys]:
-                struct_dict[chemsys][formula].append(entry)
-            else:
-                struct_dict[chemsys][formula] = [entry]
-        else:
-            struct_dict[chemsys] = {formula: [entry]}
+if __name__ == "__main__":
+    print("Cleaning CIFs...")
+    clean_cifs(
+        cif_directory=PATH_TO_ICSD,
+        ref_directory="icsd_cleaned",
+        include_elems=True,
+        enforce_ordered=False,
+    )
