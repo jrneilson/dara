@@ -3,6 +3,7 @@ import os
 import re
 import shutil
 from pathlib import Path
+from typing import Union
 
 import numpy as np
 from rxn_network.core import Composition
@@ -17,12 +18,20 @@ with open(Path(__file__).parent / "data" / "possible_species.txt") as f:
 
 def process_phase_name(phase_name: str) -> str:
     """Process the phase name to remove special characters."""
-    return re.sub(r"[\s_/\\+–\-*]", "", phase_name)
+    return re.sub(r"[\s()_/\\+–\-*]", "", phase_name)
 
 
 def bool2yn(value: bool) -> str:
     """Convert boolean to Y (yes) or N (no)."""
     return "Y" if value else "N"
+
+
+def get_number(s: Union[float, None, tuple[float, float]]) -> Union[float, None]:
+    """Get the number from a float or tuple of floats."""
+    if isinstance(s, tuple):
+        return s[0]
+    else:
+        return s
 
 
 def read_phase_name_from_str(str_path: Path) -> str:
@@ -41,7 +50,7 @@ def read_phase_name_from_str(str_path: Path) -> str:
     E=O-2 Wyckoff=d x=0.000000 y=0.000000 z=0.500000 TDS=0.010000
     """
     text = str_path.read_text()
-    return re.search(r"PHASE=(\w*)", text).group(1)
+    return re.search(r"PHASE=(\S*)", text).group(1)
 
 
 def standardize_coords(x, y, z):

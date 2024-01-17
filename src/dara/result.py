@@ -246,20 +246,28 @@ def get_result(control_file: Path) -> RefinementResult:
 
     :param control_file: the path to the control file (.sav)
     """
+    # get phase names from sav file first
+    # example
+    # STRUC[1]=Bi2Fe4O9.str
+    # STRUC[2]=Bi25FeO39.str
+    # STRUC[3]=BiFeO3.str
+    sav_text = control_file.read_text()
+    phase_names = re.findall(r"STRUC\[\d+]=(.+?)\.str", sav_text)
+
     lst_path = control_file.parent / f"{control_file.stem}.lst"
     dia_path = control_file.parent / f"{control_file.stem}.dia"
     par_path = control_file.parent / f"{control_file.stem}.par"
 
     result = {
-        "lst_data": parse_lst(lst_path),
-        "plot_data": parse_dia(dia_path),
-        "peak_data": parse_par(par_path),
+        "lst_data": parse_lst(lst_path, phase_names=phase_names),
+        "plot_data": parse_dia(dia_path, phase_names=phase_names),
+        "peak_data": parse_par(par_path, phase_names=phase_names),
     }
 
     return RefinementResult(**result)
 
 
-def parse_lst(lst_path: Path) -> LstResult:
+def parse_lst(lst_path: Path, phase_names: list[str]) -> LstResult:
     """
     Get results from the .lst file. This file mainly contains some numbers for the refinement.
 
@@ -369,19 +377,20 @@ def parse_lst(lst_path: Path) -> LstResult:
         global_parameters = parse_section(global_parameters_text)
         result.update(global_parameters)
 
-    phases_results = dict(
-        re.findall(
-            r"Local parameters and GOALs for phase (.+?)\n(.*?)\n(?:\n|\Z)",
-            texts,
-            re.DOTALL,
-        )
+    phases_results = re.findall(
+        r"Local parameters and GOALs for phase .+?\n(.*?)\n(?:\n|\Z)",
+        texts,
+        re.DOTALL,
     )
 
-    result["phases_results"] = {k: parse_section(v) for k, v in phases_results.items()}
+    result["phases_results"] = {
+        phase_name: parse_section(phase_result)
+        for phase_name, phase_result in zip(phase_names, phases_results)
+    }
     return LstResult(**result)
 
 
-def parse_dia(dia_path: Path) -> DiaResult:
+def parse_dia(dia_path: Path, phase_names: list[str]) -> DiaResult:
     """
     Get the results from the .dia file. This file mainly contains curves for the refinement.
 
@@ -399,20 +408,20 @@ def parse_dia(dia_path: Path) -> DiaResult:
     dia_text = dia_path.read_text().split("\n")
     metadata = dia_text[0]
 
-    struct_names = re.findall(r"STRUC\[\d+]=([\w()]+)", metadata)
-
     raw_data = np.loadtxt(dia_text[1:])
     data = {
         "x": raw_data[:, 0].tolist(),
         "y_obs": raw_data[:, 1].tolist(),
         "y_calc": raw_data[:, 2].tolist(),
         "y_bkg": raw_data[:, 3].tolist(),
-        "structs": {name: raw_data[:, i + 4].tolist() for i, name in enumerate(struct_names)},
+        "structs": {
+            name: raw_data[:, i + 4].tolist() for i, name in enumerate(phase_names)
+        },
     }
     return DiaResult(**data)
 
 
-def parse_par(par_file: Path) -> pd.DataFrame:
+def parse_par(par_file: Path, phase_names: list[str]) -> pd.DataFrame:
     """Get the parameters from the .par file (hkl)."""
     content = par_file.read_text().split("\n")
     peak_list = []
@@ -450,6 +459,14 @@ def parse_par(par_file: Path) -> pd.DataFrame:
     #     pol = 1.
 
     peak_num = int(peak_num.group(1))
+
+    # get the mapping between the peak's phase name to the actual phase name
+    all_peak_phase_names = re.findall(r"PHASE=(\w+)", "\n".join(content))
+    peak_phase_names = list(dict.fromkeys(all_peak_phase_names))
+    phase_names_mapping = {
+        peak_phase_name: phase_name
+        for peak_phase_name, phase_name in zip(peak_phase_names, phase_names)
+    }
 
     for i in range(1, peak_num + 1):
         if i >= len(content):
@@ -491,6 +508,7 @@ def parse_par(par_file: Path) -> pd.DataFrame:
             l = int(numbers[-1])
 
             phase = re.search(r"PHASE=(\w+)", content[i]).group(1)
+            phase = phase_names_mapping[phase]
 
             peak_list.append([d_inv, intensity, b1, b2, h, k, l, phase])
 

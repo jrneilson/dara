@@ -43,6 +43,7 @@ dependencies = [
     "reaction-network>=8.2.0",
     "mp_api>=0.3.0",
     "pyts>=0.11.0",
+    "jenkspy>=0.4.0",
 ]
 
 [project.optional-dependencies]

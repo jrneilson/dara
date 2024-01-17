@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import pickle
 from pathlib import Path
 
+import jenkspy
 from tqdm import tqdm
 
 from dara import do_refinement_no_saving
@@ -13,7 +15,9 @@ from dara.search.peak_matcher import PeakMatcher
 def get_best_phase(
     peak_matchers: dict[Path, PeakMatcher], top_n: int = 10
 ) -> list[Path]:
-    return sorted(peak_matchers, key=lambda x: peak_matchers[x].score())[-top_n:]
+    return sorted(peak_matchers, key=lambda x: peak_matchers[x].score(), reverse=True)[
+        :top_n
+    ]
 
 
 def _search_with_phase(
@@ -24,6 +28,7 @@ def _search_with_phase(
     max_phases: int = 4,
     top_n: int = 5,
     last_rwp: float = 100,
+    rwp_threshold: float = 0.1,
 ) -> dict:
     result = do_refinement_no_saving(
         pattern_path,
@@ -40,7 +45,7 @@ def _search_with_phase(
     print(f"Searching with phases {phases} gives {result.lst_data.rwp} %")
 
     # early stopping
-    if result.lst_data.rwp >= last_rwp - 0.01:
+    if result.lst_data.rwp >= last_rwp - rwp_threshold:
         return {}
 
     # reach max phases
@@ -70,13 +75,19 @@ def _search_with_phase(
         )
         results.update(possible_phases)
 
+    # if no better result is found, return the current result
+    if not results:
+        return {tuple(phases): result}
+
     return results
 
 
 def search_phases(
     pattern_path: Path,
-    cif_paths: list[Path] | dict[Path, float],
-    score_cutoff: float = 0.01,
+    cif_paths: list[Path],
+    max_phases: int = 4,
+    top_n: int = 5,
+    rwp_improvement_threshold: float = 0.5,
 ) -> dict:
     """Search for the best phase for a given pattern.
 
@@ -90,12 +101,6 @@ def search_phases(
         Dict
             A dictionary containing the search result.
     """
-    if isinstance(cif_paths, list):
-        cif_paths = {cif_path: 0 for cif_path in cif_paths}
-    else:
-        cif_paths = dict(sorted(cif_paths.items(), key=lambda x: x[1]))
-        cif_paths = {k: v for k, v in cif_paths.items() if v <= score_cutoff}
-
     eflech_worker = EflechWorker()
     peak_list = eflech_worker.run_peak_detection(pattern_path, wmin=10, wmax=60)
     peak_obs = peak_list[["2theta", "intensity"]].values
@@ -120,9 +125,6 @@ def search_phases(
         pm = PeakMatcher(peak_calc, peak_obs)
         peak_matchers[cif_path] = pm
 
-    top_n = 6
-    max_phases = 4
-
     best_phases = get_best_phase(peak_matchers, top_n=top_n)
 
     results = {}
@@ -134,7 +136,16 @@ def search_phases(
             all_phase_results=all_phase_results,
             max_phases=max_phases,
             top_n=top_n,
+            rwp_threshold=rwp_improvement_threshold,
         )
         results.update(result)
+
+    all_rwps = [result.lst_data.rwp for result in results.values()]
+
+    # get the first natural break
+    interval = jenkspy.jenks_breaks(all_rwps, n_classes=2)
+    rwp_cutoff = interval[1]
+
+    results = {k: v for k, v in results.items() if v.lst_data.rwp <= rwp_cutoff}
 
     return results
