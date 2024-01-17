@@ -254,8 +254,8 @@ def cif2str(
     lattice_range: float = 0.02,
     gewicht: str = "0_0",
     rp: int = 4,
-    k1: str = "fixed",
-    k2: str = "fixed",
+    k1: str = "0_0^0.01",
+    k2: str = "0_0^0.01",
     b1: str = "0_0^0.01",
 ) -> Path:
     """
