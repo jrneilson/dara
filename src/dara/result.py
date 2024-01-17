@@ -220,6 +220,25 @@ class RefinementResult(BaseModel):
 
         return fig
 
+    def get_phase_weights(self, normalize=True) -> dict[str, float]:
+        """Return the weights for each phase. Default is to normalize and return weight fractions.
+
+        Args:
+            normalize: Whether to normalize and return weight fractions. Defaults to True.
+
+        Returns
+        -------
+            An ordered dictionary of phase names and their weights.
+        """
+        weights = {}
+        for phase, data in self.lst_data.phases_results.items():
+            weights[phase] = data.gewicht[0]
+
+        if normalize:
+            tot = np.sum(list(weights.values()))
+            weights = {k: v / tot for k, v in weights.items()}
+        return dict(sorted(weights.items(), key=lambda item: item[1], reverse=True))
+
 
 def get_result(control_file: Path) -> RefinementResult:
     """
