@@ -150,7 +150,7 @@ class RefinementResult(BaseModel):
             )
         )
 
-        diff = (plot_data.y_obs) - np.array(plot_data.y_calc)
+        diff = np.array(plot_data.y_obs) - np.array(plot_data.y_calc)
         diff_offset_val = 1.1 * max(diff) if diff_offset else 0  # 10 percent below
 
         # Adding line plot for difference
@@ -359,7 +359,9 @@ def parse_lst(lst_path: Path, phase_names: list[str]) -> LstResult:
     with lst_path.open() as f:
         texts = f.read()
 
-    pattern_name = re.search(r"Rietveld refinement to file\(s\) (.+?)\n", texts).group(1)
+    pattern_name = re.search(r"Rietveld refinement to file\(s\) (.+?)\n", texts).group(
+        1
+    )
     result = {"raw_lst": texts, "pattern_name": pattern_name}
 
     num_steps = int(re.search(r"(\d+) iteration steps", texts).group(1))
@@ -367,11 +369,21 @@ def parse_lst(lst_path: Path, phase_names: list[str]) -> LstResult:
 
     for var in ["Rp", "Rpb", "R", "Rwp", "Rexp"]:
         result[var] = float(re.search(rf"{var}=(\d+(\.\d+)?)%", texts).group(1))
-    result["d"] = float(d.group(1)) if (d := re.search(r"Durbin-Watson d=(\d+(\.\d+)?)", texts)) else None
-    result["1-rho"] = float(rho.group(1)) if (rho := re.search(r"1-rho=(\d+(\.\d+)?)%", texts)) else None
+    result["d"] = (
+        float(d.group(1))
+        if (d := re.search(r"Durbin-Watson d=(\d+(\.\d+)?)", texts))
+        else None
+    )
+    result["1-rho"] = (
+        float(rho.group(1))
+        if (rho := re.search(r"1-rho=(\d+(\.\d+)?)%", texts))
+        else None
+    )
 
     # global goals
-    global_parameters_text = re.search(r"Global parameters and GOALs\n(.*?)\n(?:\n|\Z)", texts, re.DOTALL)
+    global_parameters_text = re.search(
+        r"Global parameters and GOALs\n(.*?)\n(?:\n|\Z)", texts, re.DOTALL
+    )
     if global_parameters_text:
         global_parameters_text = global_parameters_text.group(1)
         global_parameters = parse_section(global_parameters_text)
@@ -429,7 +441,17 @@ def parse_par(par_file: Path, phase_names: list[str]) -> pd.DataFrame:
     if len(content) < 2:
         return pd.DataFrame(
             peak_list,
-            columns=["2theta", "intensity", "b1", "b2", "h", "k", "l", "phase"],
+            columns=[
+                "2theta",
+                "intensity",
+                "b1",
+                "b2",
+                "h",
+                "k",
+                "l",
+                "phase",
+                "phase_idx",
+            ],
         )
 
     peak_num = re.search(r"PEAKZAHL=(\d+)", content[0])
@@ -437,7 +459,17 @@ def parse_par(par_file: Path, phase_names: list[str]) -> pd.DataFrame:
     if not peak_num:
         return pd.DataFrame(
             peak_list,
-            columns=["2theta", "intensity", "b1", "b2", "h", "k", "l", "phase"],
+            columns=[
+                "2theta",
+                "intensity",
+                "b1",
+                "b2",
+                "h",
+                "k",
+                "l",
+                "phase",
+                "phase_idx",
+            ],
         )
 
     eps1 = re.search(r"EPS1=(\d+(\.\d+)?)", content[0])
@@ -464,8 +496,10 @@ def parse_par(par_file: Path, phase_names: list[str]) -> pd.DataFrame:
     all_peak_phase_names = re.findall(r"PHASE=(\w+)", "\n".join(content))
     peak_phase_names = list(dict.fromkeys(all_peak_phase_names))
     phase_names_mapping = {
-        peak_phase_name: phase_name
-        for peak_phase_name, phase_name in zip(peak_phase_names, phase_names)
+        peak_phase_name: (phase_name, i)
+        for i, (peak_phase_name, phase_name) in enumerate(
+            zip(peak_phase_names, phase_names)
+        )
     }
 
     for i in range(1, peak_num + 1):
@@ -508,22 +542,43 @@ def parse_par(par_file: Path, phase_names: list[str]) -> pd.DataFrame:
             l = int(numbers[-1])
 
             phase = re.search(r"PHASE=(\w+)", content[i]).group(1)
-            phase = phase_names_mapping[phase]
+            phase, idx = phase_names_mapping[phase]
 
-            peak_list.append([d_inv, intensity, b1, b2, h, k, l, phase])
+            peak_list.append([d_inv, intensity, b1, b2, h, k, l, phase, idx])
 
     # from d_inv to two theta
-    two_theta = np.arcsin(0.15406 * np.array([p[0] for p in peak_list]) / 2) * 180 / np.pi * 2
+    two_theta = (
+        np.arcsin(0.15406 * np.array([p[0] for p in peak_list]) / 2) * 180 / np.pi * 2
+    )
 
     # apply eps1 and eps2
     two_theta += angular_correction(two_theta, eps1, eps2)
     peak_list = [[two_theta[i]] + peak_list[i][1:] for i in range(len(peak_list))]
 
-    peak_list = pd.DataFrame(peak_list, columns=["2theta", "intensity", "b1", "b2", "h", "k", "l", "phase"])
+    peak_list = pd.DataFrame(
+        peak_list,
+        columns=[
+            "2theta",
+            "intensity",
+            "b1",
+            "b2",
+            "h",
+            "k",
+            "l",
+            "phase",
+            "phase_idx",
+        ],
+    )
     return peak_list
 
 
 if __name__ == "__main__":
     from pathlib import Path
 
-    print(parse_par(Path("/Users/yuxing/projects/ar3l-search/example/Mn7(P2O7)4/Mn7(P2O7)4_recipe19_Pellet.par")))
+    print(
+        parse_par(
+            Path(
+                "/Users/yuxing/projects/ar3l-search/example/Mn7(P2O7)4/Mn7(P2O7)4_recipe19_Pellet.par"
+            )
+        )
+    )
