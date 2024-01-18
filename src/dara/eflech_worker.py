@@ -110,12 +110,14 @@ class EflechWorker:
                 [self.eflech_path.as_posix(), control_file_path.as_posix()],
                 cwd=working_dir.as_posix(),
                 capture_output=not show_progress,
+                timeout=600,
             )
         elif mode == "teil":
             subprocess.run(
                 [self.teil_path.as_posix(), control_file_path.as_posix()],
                 cwd=working_dir.as_posix(),
                 capture_output=not show_progress,
+                timeout=600,
             )
 
     def parse_peak_list(self, par_folder: Path) -> pd.DataFrame:

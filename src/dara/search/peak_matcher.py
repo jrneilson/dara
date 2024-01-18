@@ -224,3 +224,31 @@ class PeakMatcher:
             + np.sum(np.abs(extra_calc[:, 1])) * extra_coeff
             + np.sum(np.abs(missing_obs[:, 1])) * missing_coeff
         )
+
+    def jaccard_index(self):
+        """
+        Calculate the Jaccard index of the matching result.
+
+        Returns:
+            the Jaccard index of the matching result
+        """
+        matched_calc = self.matched[0]
+        wrong_intens_calc = self.wrong_intensity[0]
+        matched_obs = self.matched[1]
+        wrong_intens_obs = self.wrong_intensity[1]
+
+        total_intensity = np.sum(np.abs(self.peak_obs[:, 1])) + np.sum(
+            np.abs(self.peak_calc[:, 1])
+        )
+
+        matched_intensity = np.sum(np.abs(matched_calc[:, 1])) + np.sum(
+            np.abs(matched_obs[:, 1])
+        )
+        wrong_intens_intensity = np.sum(np.abs(wrong_intens_calc[:, 1])) + np.sum(
+            np.abs(wrong_intens_obs[:, 1])
+        )
+
+        if total_intensity == 0:
+            return 0
+
+        return (matched_intensity + wrong_intens_intensity) / total_intensity

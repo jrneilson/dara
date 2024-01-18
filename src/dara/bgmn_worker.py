@@ -38,6 +38,7 @@ class BGMNWorker:
             cwd=control_file.parent.absolute().as_posix(),
             capture_output=not show_progress,
             check=False,
+            timeout=600,
         )
         if cp.returncode:
             raise RuntimeError(

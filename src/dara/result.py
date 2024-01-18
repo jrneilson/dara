@@ -10,7 +10,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from pydantic import BaseModel, Field, model_validator
 
-from dara.utils import angular_correction
+from dara.utils import angular_correction, get_number
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -114,7 +114,9 @@ class RefinementResult(BaseModel):
         fig = go.Figure()
 
         # fix the size of the box
-        fig.update_layout(autosize=True, xaxis=dict(range=[min(plot_data.x), max(plot_data.x)]))
+        fig.update_layout(
+            autosize=True, xaxis=dict(range=[min(plot_data.x), max(plot_data.x)])
+        )
 
         # Adding scatter plot for observed data
         fig.add_trace(
@@ -165,6 +167,7 @@ class RefinementResult(BaseModel):
             )
         )
 
+        weight_fractions = self.get_phase_weights()
         # Adding dashed lines for phases
         for i, (phase_name, phase) in enumerate(plot_data.structs.items()):
             # add area under the curve between the curve and the plot_data["y_bkg"]
@@ -188,7 +191,8 @@ class RefinementResult(BaseModel):
                     mode="lines",
                     line=dict(color=colormap[i], width=1.5),
                     fill="tonexty",
-                    name=phase_name,
+                    name=f"{phase_name}" +
+                         (f" ({weight_fractions[phase_name] * 100:.2f} %)" if len(weight_fractions) > 1 else ""),
                     visible="legendonly",
                 )
             )
@@ -232,7 +236,7 @@ class RefinementResult(BaseModel):
         """
         weights = {}
         for phase, data in self.lst_data.phases_results.items():
-            weights[phase] = data.gewicht[0]
+            weights[phase] = get_number(data.gewicht)
 
         if normalize:
             tot = np.sum(list(weights.values()))
