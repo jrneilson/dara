@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import pickle
 from pathlib import Path
 
 import jenkspy
@@ -12,12 +11,8 @@ from dara.result import RefinementResult
 from dara.search.peak_matcher import PeakMatcher
 
 
-def get_best_phase(
-    peak_matchers: dict[Path, PeakMatcher], top_n: int = 10
-) -> list[Path]:
-    return sorted(peak_matchers, key=lambda x: peak_matchers[x].score(), reverse=True)[
-        :top_n
-    ]
+def get_best_phase(peak_matchers: dict[Path, PeakMatcher], top_n: int = 10) -> list[Path]:
+    return sorted(peak_matchers, key=lambda x: peak_matchers[x].score(), reverse=True)[:top_n]
 
 
 def _search_with_phase(
@@ -42,7 +37,10 @@ def _search_with_phase(
             "rp": 4,
         },
     )
-    print(f"Searching with phases {phases} gives {result.lst_data.rwp} %")
+    output = f"Rwp = {result.lst_data.rwp}%: "
+    for p in phases:
+        output += f"{p.name} "
+    print(output)
 
     # early stopping
     if result.lst_data.rwp >= last_rwp - rwp_threshold:

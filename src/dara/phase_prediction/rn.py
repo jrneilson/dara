@@ -1,4 +1,4 @@
-"""An interface for rxn_network and other engines for predicting products in a chemical reaction."""
+"""An interface for rxn_network for predicting products in a chemical reaction."""
 from __future__ import annotations
 
 import collections
@@ -80,18 +80,12 @@ class ReactionNetworkEngine(PredictionEngine):
 
         if open_elem == "O_air":
             open_elem = "O"
-            chempot = (
-                0.5 * 8.617e-5 * temp * math.log(0.21)
-            )  # oxygen atmospheric partial pressure
+            chempot = 0.5 * 8.617e-5 * temp * math.log(0.21)  # oxygen atmospheric partial pressure
 
         if computed_entries is None:
-            computed_entries = get_mp_entries(
-                get_chemsys_from_formulas([p.reduced_formula for p in precursors_comp])
-            )
+            computed_entries = get_mp_entries(get_chemsys_from_formulas([p.reduced_formula for p in precursors_comp]))
 
-        gibbs, precursors_no_open = self._get_entries(
-            precursors_comp, computed_entries, open_elem, e_hull_cutoff, temp
-        )
+        gibbs, precursors_no_open = self._get_entries(precursors_comp, computed_entries, open_elem, e_hull_cutoff, temp)
 
         rxns = self._enumerate_reactions(precursors_no_open, gibbs, open_elem, chempot)
         data = self._get_rxn_data(precursors_no_open, rxns, open_elem)
@@ -99,9 +93,7 @@ class ReactionNetworkEngine(PredictionEngine):
 
         rereact_formulas = list(ranked_formulas.keys())[: self.max_rereact]
 
-        rereact_rxns = self._enumerate_reactions(
-            rereact_formulas, gibbs, open_elem, chempot
-        )
+        rereact_rxns = self._enumerate_reactions(rereact_formulas, gibbs, open_elem, chempot)
         rereact_data = self._get_rxn_data(rereact_formulas, rereact_rxns, open_elem)
         rereact_ranked_formulas = self._rank_formulas(rereact_data, cf)
 
@@ -112,13 +104,9 @@ class ReactionNetworkEngine(PredictionEngine):
             )
             for key in set(ranked_formulas) | set(rereact_ranked_formulas)
         }
-        return collections.OrderedDict(
-            sorted(merged_dict.items(), key=lambda item: item[1])
-        )
+        return collections.OrderedDict(sorted(merged_dict.items(), key=lambda item: item[1]))
 
-    def _get_entries(
-        self, precursors, computed_entries, open_elem, e_hull_cutoff, temp
-    ):
+    def _get_entries(self, precursors, computed_entries, open_elem, e_hull_cutoff, temp):
         gibbs = GibbsEntrySet.from_computed_entries(
             computed_entries,
             300,
@@ -131,9 +119,7 @@ class ReactionNetworkEngine(PredictionEngine):
 
         if open_elem:
             precursors_no_open_set = precursors_no_open_set - {
-                Composition(
-                    Composition(open_elem).reduced_formula
-                )  # remove open element formula
+                Composition(Composition(open_elem).reduced_formula)  # remove open element formula
             }
 
         precursors_no_open = list(precursors_no_open_set)
@@ -150,9 +136,7 @@ class ReactionNetworkEngine(PredictionEngine):
 
     def _enumerate_reactions(self, precursors_no_open, gibbs, open_elem, chempot):
         rxns = BasicEnumerator(precursors=precursors_no_open).enumerate(gibbs)
-        rxns = rxns.add_rxn_set(
-            MinimizeGibbsEnumerator(precursors=precursors_no_open).enumerate(gibbs)
-        )
+        rxns = rxns.add_rxn_set(MinimizeGibbsEnumerator(precursors=precursors_no_open).enumerate(gibbs))
 
         if open_elem:
             rxns = rxns.add_rxn_set(
@@ -168,9 +152,7 @@ class ReactionNetworkEngine(PredictionEngine):
                     precursors=precursors_no_open,
                 ).enumerate(gibbs)
             )
-            rxns = ReactionSet.from_rxns(
-                rxns, rxns.entries, open_elem=open_elem, chempot=chempot
-            )
+            rxns = ReactionSet.from_rxns(rxns, rxns.entries, open_elem=open_elem, chempot=chempot)
 
         return rxns.filter_duplicates()
 
@@ -238,9 +220,7 @@ class ReactionNetworkEngine(PredictionEngine):
             min_cost = cf.evaluate(min_cost_rxn)
             ranked_formulas[formula] = min_cost
 
-        return collections.OrderedDict(
-            sorted(ranked_formulas.items(), key=lambda item: item[1])
-        )
+        return collections.OrderedDict(sorted(ranked_formulas.items(), key=lambda item: item[1]))
 
     @staticmethod
     def _get_probabilities(ranked_formulas):
@@ -248,15 +228,10 @@ class ReactionNetworkEngine(PredictionEngine):
         phases, costs = ranked_formulas.keys(), ranked_formulas.values()
         inverse_rankings = [1 / (cost - min(costs) + 1) for cost in costs]
         total_inverse_rankings = sum(inverse_rankings)
-        probabilities = [
-            inv_rank / total_inverse_rankings for inv_rank in inverse_rankings
-        ]
+        probabilities = [inv_rank / total_inverse_rankings for inv_rank in inverse_rankings]
         return collections.OrderedDict(
             sorted(
-                {
-                    k.reduced_formula: round(v, 4)
-                    for k, v in zip(phases, probabilities)
-                }.items(),
+                {k.reduced_formula: round(v, 4) for k, v in zip(phases, probabilities)}.items(),
                 key=lambda item: item[1],
                 reverse=True,
             )
