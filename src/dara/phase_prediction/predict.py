@@ -10,7 +10,6 @@ from rxn_network.core import Composition
 from rxn_network.data import COMMON_GASES
 from rxn_network.utils.funcs import get_logger
 
-from dara.filter_icsd import clean_cifs
 from dara.icsd import ICSDDatabase
 from dara.utils import copy_and_rename_files
 
@@ -51,9 +50,8 @@ class PhasePredictor(MSONable):
         self,
         prediction,
         cost_cutoff=0.01,
+        e_hull_filter=0.2,
         dest_dir="cifs",
-        clean=True,
-        unique=True,
         exclude_gases=True,
     ):
         """Write CIFs of the predicted products."""
@@ -73,16 +71,17 @@ class PhasePredictor(MSONable):
                 logger.info("Skipping common gas: %s", formula)
                 continue
 
-            icsd_data = self.db.get_formula_data(formula, unique=unique)
+            icsd_data = self.db.get_formula_data(formula)
             if not icsd_data:
                 continue
 
-            copy_and_rename_files(
-                self.db.path_to_icsd,
-                dest_dir,
-                {f"{data['icsd_code']}.cif": f"{idx}_{formula}_{data['icsd_code']}.cif" for data in icsd_data},
-            )
+            file_map = {}
+            for formula, code, sg, e_hull in icsd_data:
+                if e_hull is not None and e_hull > e_hull_filter:
+                    print(f"Skipping high-energy phase: {code} ({formula}, {sg}): e_hull = {e_hull}")
+                    continue
 
-        if clean:
-            logger.info("Cleaning cifs... (this may take a second!)")
-            clean_cifs(dest_dir, str(dest_dir) + "_cleaned")
+                e_hull_value = round(1000 * e_hull) if e_hull is not None else None
+                file_map[f"{code}.cif"] = f"{formula}_{sg}_({code}),{e_hull_value}.cif"
+
+            copy_and_rename_files(self.db.path_to_icsd, dest_dir, file_map)

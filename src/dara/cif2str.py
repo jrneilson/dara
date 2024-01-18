@@ -38,9 +38,7 @@ def process_specie_string(sp: str | Specie | Element | DummySpecie) -> str:
         # remove the valence and try again
         specie = re.search(r"[A-Z]+", specie).group(0)
         if specie not in POSSIBLE_SPECIES:
-            raise ValueError(
-                f"Unknown species {specie}, the original specie string is {sp}"
-            )
+            raise ValueError(f"Unknown species {specie}, the original specie string is {sp}")
     return specie
 
 
@@ -137,11 +135,7 @@ def get_std_position(
             aeval = Interpreter(use_numpy=False, symtable=variable_dict)
             wx, wy, wz = (aeval.eval(constraint) for constraint in constraints)
             logger.debug([position, (wx, wy, wz)])
-            if (
-                fuzzy_compare(wx, position[0])
-                and fuzzy_compare(wy, position[1])
-                and fuzzy_compare(wz, position[2])
-            ):
+            if fuzzy_compare(wx, position[0]) and fuzzy_compare(wy, position[1]) and fuzzy_compare(wz, position[2]):
                 return position, True
     logger.debug(
         f"Cannot find the standard position for {wyckoff_letter} {std_notations}, using the first position. "
@@ -189,8 +183,7 @@ def check_wyckoff(
         else:
             sorted_species = sorted(site.species)
             species_string = ",".join(
-                f"{process_specie_string(ssp)}({site.species[ssp]:.6f})"
-                for ssp in sorted_species
+                f"{process_specie_string(ssp)}({site.species[ssp]:.6f})" for ssp in sorted_species
             )
             species_string = f"({species_string})"
 
@@ -209,9 +202,7 @@ def check_wyckoff(
 
 def make_spacegroup_setting_str(spacegroup_setting: dict[str, Any]) -> str:
     """Make the spacegroup setting string."""
-    return (
-        " ".join([f"{k}={v}" for k, v in spacegroup_setting["setting"].items()]) + " //"
-    )
+    return " ".join([f"{k}={v}" for k, v in spacegroup_setting["setting"].items()]) + " //"
 
 
 def make_lattice_parameters_str(
@@ -221,14 +212,11 @@ def make_lattice_parameters_str(
 ) -> str:
     """Make the lattice parameters string."""
     crystal_system = spacegroup_setting["setting"]["Lattice"]
-    lattice_parameters = get_lattice_parameters_from_lattice(
-        structure.lattice, crystal_system
-    )
+    lattice_parameters = get_lattice_parameters_from_lattice(structure.lattice, crystal_system)
 
     lattice_parameters_str = " ".join(
         [
-            f"PARAM={k}={v:.5f}_{v * (1 - lattice_range):.5f}^"
-            f"{v * (1 + lattice_range):.5f}"
+            f"PARAM={k}={v:.5f}_{v * (1 - lattice_range):.5f}^{v * (1 + lattice_range):.5f}"
             for k, v in lattice_parameters.items()
         ]
     )
@@ -240,10 +228,10 @@ def make_peak_parameter_str(k1: str, k2: str, b1: str, gewicht: str, rp: int) ->
     """Make the peak parameter string."""
     return (
         f"RP={rp} "
-        + (f"PARAM=k1={k1} " if k1 != "fixed" else f"k1=0 ")
-        + (f"PARAM=k2={k2} " if k2 != "fixed" else f"k2=0 ")
-        + (f"PARAM=B1={b1} " if b1 != "fixed" else f"B1=0 ")
-        + (f"GEWICHT={gewicht} //" if gewicht != "0_0" else f"PARAM=GEWICHT=0_0 //")
+        + (f"PARAM=k1={k1} " if k1 != "fixed" else "k1=0 ")
+        + (f"PARAM=k2={k2} " if k2 != "fixed" else "k2=0 ")
+        + (f"PARAM=B1={b1} " if b1 != "fixed" else "B1=0 ")
+        + (f"GEWICHT={gewicht} //" if gewicht != "0_0" else "PARAM=GEWICHT=0_0 //")
     )
 
 
@@ -265,14 +253,15 @@ def cif2str(
         cif_path: the path to the CIF file
         working_dir: the folder to hold the processed str file
         lattice_range: the range of the lattice parameters to be refined
-        gewicht: the weight fraction of the phase to be refined (preferred oritentation or not.
-          If 0_0, then no preferred orientation. Read more on the BGMN manual.)
-        rp: the peak function to be used in the refinement. Read more on the BGMN manual.
-        k1: the first peak parameter to be refined. Read more on the BGMN manual.
-        k2: the second peak parameter to be refined. Read more on the BGMN manual.
-        b1: the third peak parameter to be refined. Read more on the BGMN manual.
+        gewicht: the weight fraction of the phase to be refined. Options: 0_0, SPHAR0, and SPHAR2. If 0_0, then no
+            preferred orientation. Read more in the BGMN manual.
+        rp: the peak function to be used in the refinement. Read more in the BGMN manual.
+        k1: the first peak parameter to be refined. Read more in the BGMN manual.
+        k2: the second peak parameter to be refined. Read more in the BGMN manual.
+        b1: the third peak parameter to be refined. Read more in the BGMN manual.
 
-    An example of the output Str file:
+    An example of the output .str file:
+
     PHASE=BariumzirconiumtinIVoxide105053 // ICSD_43137
     Reference=ICSD_43137 //
     Formula=Ba1_O3_Sn0.5_Zr0.5 //
@@ -285,11 +274,7 @@ def cif2str(
     E=O-2 Wyckoff=d x=0.500000 y=0.000000 z=0.000000 TDS=0.010000
 
     """
-    str_path = (
-        cif_path.parent / f"{cif_path.stem}.str"
-        if working_dir is None
-        else working_dir / f"{cif_path.stem}.str"
-    )
+    str_path = cif_path.parent / f"{cif_path.stem}.str" if working_dir is None else working_dir / f"{cif_path.stem}.str"
 
     structure = SpacegroupAnalyzer(
         Structure.from_file(cif_path.as_posix(), site_tolerance=1e-3)
@@ -299,9 +284,7 @@ def cif2str(
     structure: SymmetrizedStructure = spg.get_symmetrized_structure()
 
     hall_number = str(spg.get_symmetry_dataset()["hall_number"])
-    with (Path(__file__).parent / "data" / "spglib_db" / "spg.json").open(
-        "r", encoding="utf-8"
-    ) as f:
+    with (Path(__file__).parent / "data" / "spglib_db" / "spg.json").open("r", encoding="utf-8") as f:
         spg_group_db = json.load(f)
     settings = spg_group_db[hall_number]["settings"]
 
@@ -319,13 +302,9 @@ def cif2str(
     if error_count > 0:
         logger.debug(f"CIF file: {cif_path.read_text()}")
         logger.debug(f"Symmetry dataset: {spg.get_symmetry_dataset()}")
-        raise ValueError(
-            f"Cannot find a valid lattice symmetry setting for {cif_path}."
-        )
+        raise ValueError(f"Cannot find a valid lattice symmetry setting for {cif_path}.")
 
-    logger.debug(
-        f"Using setting {spacegroup_setting['setting']} for {cif_path}, with {error_count} errors"
-    )
+    logger.debug(f"Using setting {spacegroup_setting['setting']} for {cif_path}, with {error_count} errors")
 
     # start to construct the str file string
     str_text = ""
@@ -340,12 +319,7 @@ def cif2str(
     str_text += make_spacegroup_setting_str(spacegroup_setting) + "\n"
 
     # add lattice
-    str_text += (
-        make_lattice_parameters_str(
-            spacegroup_setting, structure, lattice_range=lattice_range
-        )
-        + "\n"
-    )
+    str_text += make_lattice_parameters_str(spacegroup_setting, structure, lattice_range=lattice_range) + "\n"
 
     # add RP
     str_text += make_peak_parameter_str(k1, k2, b1, gewicht, rp) + "\n"
@@ -355,8 +329,7 @@ def cif2str(
 
     # add wyckoff positions
     element_settings_str = [
-        " ".join([f"{k}={v}" for k, v in element_setting.items()])
-        for element_setting in element_settings
+        " ".join([f"{k}={v}" for k, v in element_setting.items()]) for element_setting in element_settings
     ]
     str_text += "\n".join(element_settings_str)
 

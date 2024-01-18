@@ -8,7 +8,7 @@ from pathlib import Path
 from dara.bgmn_worker import BGMNWorker
 from dara.cif2str import cif2str
 from dara.generate_control_file import generate_control_file
-from dara.result import get_result, RefinementResult
+from dara.result import RefinementResult, get_result
 from dara.xrdml2xy import xrdml2xy
 
 

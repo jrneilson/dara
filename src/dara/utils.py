@@ -115,7 +115,7 @@ def fuzzy_compare(a: float, b: float):
     return is_close(fa, fb)
 
 
-def copy_and_rename_files(src_directory, dest_directory, file_map):
+def copy_and_rename_files(src_directory, dest_directory, file_map, verbose=True):
     """Copy specific files from the source directory to the destination directory with new names.
 
     :param src_directory: Path to the source directory
@@ -134,9 +134,11 @@ def copy_and_rename_files(src_directory, dest_directory, file_map):
         # Check if file exists and is a file (not a directory)
         if os.path.isfile(src_file):
             shutil.copy(src_file, dest_file)
-            print(f"Copied {src_filename} to {dest_filename} in {dest_directory}")
+            if verbose:
+                print(f"Copied {src_filename} to {dest_filename} in {dest_directory}")
         else:
-            print(f"File {src_filename} not found in {src_directory}")
+            if verbose:
+                print(f"File {src_filename} not found in {src_directory}")
 
 
 def get_entry_by_formula(gibbs_entries: GibbsEntrySet, formula: str):
@@ -144,9 +146,7 @@ def get_entry_by_formula(gibbs_entries: GibbsEntrySet, formula: str):
     try:
         entry = gibbs_entries.get_min_entry_by_formula(formula)
     except:
-        entry = gibbs_entries.get_interpolated_entry(
-            formula
-        )  # if entry is missing, use interpolated one
+        entry = gibbs_entries.get_interpolated_entry(formula)  # if entry is missing, use interpolated one
     return entry
 
 
