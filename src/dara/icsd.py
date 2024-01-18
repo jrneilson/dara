@@ -55,7 +55,7 @@ class ICSDDatabase:
                 continue
 
             e_hull_value = round(1000 * e_hull) if e_hull is not None else None
-            file_map[f"{code}.cif"] = f"{formula}_{sg}_({code}),{e_hull_value}.cif"
+            file_map[f"{code}.cif"] = f"{formula}_{sg}_({code})-{e_hull_value}.cif"
 
         if copy_files:
             copy_and_rename_files(self.path_to_icsd, f"{chemsys}", file_map)
