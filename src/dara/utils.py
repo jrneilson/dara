@@ -18,7 +18,7 @@ with open(Path(__file__).parent / "data" / "possible_species.txt") as f:
 
 def process_phase_name(phase_name: str) -> str:
     """Process the phase name to remove special characters."""
-    return re.sub(r"[\s()_/\\+–\-*]", "", phase_name)
+    return re.sub(r"[\s()_/\\+–\-*.]", "", phase_name)
 
 
 def bool2yn(value: bool) -> str:
