@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 
 from dara.generate_control_file import copy_instrument_files, copy_xy_pattern
+from dara.xrdml2xy import xrdml2xy
 
 
 class EflechWorker:
@@ -44,8 +45,14 @@ class EflechWorker:
                 np.savetxt(pattern_path_temp.as_posix(), pattern, fmt="%.6f")
                 print(pattern_path_temp.read_text())
             else:
-                copy_xy_pattern(pattern, temp_dir)
-                pattern_path_temp = temp_dir / pattern.name
+                if pattern.suffix == ".xy":
+                    copy_xy_pattern(pattern, temp_dir)
+                    pattern_path_temp = temp_dir / pattern.name
+                elif pattern.suffix == ".xrdml":
+                    pattern_path_temp = temp_dir / pattern.with_suffix(".xy").name
+                    xrdml2xy(pattern, temp_dir)
+                else:
+                    raise ValueError(f"Unknown pattern file type: {pattern.suffix}")
 
             control_file_path = self.generate_control_file(
                 pattern_path_temp, instrument_name, wmin=wmin, wmax=wmax
