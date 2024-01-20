@@ -1,4 +1,6 @@
 """Utility functions for the dara package."""
+from __future__ import annotations
+
 import os
 import re
 import shutil
@@ -174,3 +176,41 @@ def angular_correction(tt, eps1, eps2):
     # deps3 = -eps3 * np.sin(np.deg2rad(tt)) * 180.0 / np.pi
 
     return deps1 + deps2  # + deps3
+
+
+def rwp(y_calc: np.ndarray, y_obs: np.ndarray) -> float:
+    """
+    Calculate the Rietveld weighted profile (RWP) for a refinement.
+
+    The result is in percentage.
+
+    Args:
+        y_calc: the calculated intensity
+        y_obs: the observed intensity
+    Returns:
+        the RWP
+    """
+    y_calc = np.array(y_calc)
+    y_obs = np.array(y_obs)
+    return np.sqrt(
+        np.sum(
+            (y_calc - y_obs) ** 2 / y_obs
+        ) / np.sum(y_obs)
+    ) * 100
+
+
+def rpb(y_calc: np.ndarray, y_obs: np.ndarray, y_bkg) -> float:
+    """
+    Calculate the Rietveld profile bias (RPB) for a refinement.
+
+    The result is in percentage.
+
+    Args:
+        y_calc: the calculated intensity
+        y_obs: the observed intensity
+    Returns:
+        the RPB
+    """
+    y_calc = np.array(y_calc)
+    y_obs = np.array(y_obs)
+    return np.sum(np.abs(y_calc - y_obs)) / np.sum(np.abs(y_obs - y_bkg)) * 100
