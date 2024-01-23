@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
 from asteval import Interpreter
-from pymatgen.core import Lattice, Structure
+from pymatgen.core import Lattice, Structure, SymmOp
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
 from dara.utils import (
@@ -252,7 +252,7 @@ def cif2str(
 
     Args:
         cif_path: the path to the CIF file
-        phase_name_prefix: the prefix of the phase name
+        phase_name_suffix: the prefix of the phase name
         working_dir: the folder to hold the processed str file
         lattice_range: the range of the lattice parameters to be refined
         gewicht: the weight fraction of the phase to be refined. Options: 0_0, SPHAR0, and SPHAR2. If 0_0, then no

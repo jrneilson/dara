@@ -10,7 +10,7 @@ def xrdml2xy(file: Path, target_folder: Path = None) -> Path:
     """Convert xrdml file to x and y arrays."""
     if target_folder is None:
         target_folder = file.parent
-    target_path = target_folder / (file.stem + ".xy")
+    target_path = target_folder / file.with_suffix(".xy").name
 
     with file.open("r", encoding="utf-8") as f:
         xrd_dict = xmltodict.parse(f.read())

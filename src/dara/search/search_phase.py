@@ -36,14 +36,18 @@ def _remote_do_refinement_no_saving(
     instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
     phase_params: dict[str, Any] | None = None,
     refinement_params: dict[str, float] | None = None,
-) -> RefinementResult:
-    result = do_refinement_no_saving(
-        pattern_path,
-        cif_paths,
-        instrument_name=instrument_name,
-        phase_params=phase_params,
-        refinement_params=refinement_params,
-    )
+) -> RefinementResult | None:
+    try:
+        result = do_refinement_no_saving(
+            pattern_path,
+            cif_paths,
+            instrument_name=instrument_name,
+            phase_params=phase_params,
+            refinement_params=refinement_params,
+        )
+    except Exception as e:
+        print(pattern_path, cif_paths, e)
+        return None
     return result
 
 
@@ -332,12 +336,14 @@ def search_phases(
             batch_refine(pattern_path, [[cif_path] for cif_path in cif_paths]),
         )
     )
+    all_phase_results = {k: v for k, v in all_phase_results.items() if v}
+
     peak_matchers = {
         cif_path: PeakMatcher(
             all_phase_results[cif_path].peak_data[["2theta", "intensity"]].values,
             peak_obs,
         )
-        for cif_path in cif_paths
+        for cif_path in all_phase_results
     }
 
     best_phases = get_best_phase(peak_matchers, top_n=top_n)
