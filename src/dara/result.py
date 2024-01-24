@@ -27,7 +27,7 @@ class PhaseResult(BaseModel):
     xray_density: Optional[float] = Field(alias="XrayDensity")
     rphase: Optional[float] = Field(alias="Rphase")
     unit: str = Field(alias="UNIT")
-    gewicht: Union[float, tuple[float, float]] = Field(alias="GEWICHT")
+    gewicht: Union[float, tuple[float, float], None] = Field(alias="GEWICHT")
     gewicht_name: Optional[str] = Field(alias="GEWICHT_NAME")
 
     a: Optional[Union[float, tuple[float, float]]] = Field(None, alias="A")

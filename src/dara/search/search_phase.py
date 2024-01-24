@@ -48,6 +48,8 @@ def _remote_do_refinement_no_saving(
     except Exception as e:
         print(pattern_path, cif_paths, e)
         return None
+    if result.lst_data.rpb == 100:
+        return None
     return result
 
 
@@ -223,8 +225,14 @@ def _search_with_phase(
             continue
 
         # not yet reach the maximum number of phases
-        if len(phases) < max_phases - 1:
+        if len(phases) < max_phases:
             subtree_to_be_expanded[best_phase] = result
+
+        if any(
+            not wt_frac or wt_frac < 0.01
+            for wt_frac in result.get_phase_weights().values()
+        ):
+            continue
 
     if subtree_to_be_expanded:
         subtree_to_be_expanded = disambiguate_phases(subtree_to_be_expanded)
@@ -234,6 +242,10 @@ def _search_with_phase(
         new_peak_matcher = PeakMatcher(
             result.peak_data[["2theta", "intensity"]].values, peak_obs
         )
+        if new_peak_matcher.missing.shape[0] == 0:
+            results[tuple(list(phases) + [best_phase])] = result
+            continue
+
         possible_phases = _search_with_phase(
             phases + [best_phase],
             new_peak_matcher,
