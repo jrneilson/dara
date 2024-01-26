@@ -6,9 +6,8 @@ from pathlib import Path
 
 from monty.serialization import loadfn
 from rxn_network.core import Composition
-from rxn_network.utils.funcs import clean_icsd_code, get_logger
 
-from dara.utils import copy_and_rename_files
+from dara.utils import clean_icsd_code, copy_and_rename_files, get_logger
 
 logger = get_logger(__name__)
 
