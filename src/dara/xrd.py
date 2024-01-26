@@ -1,4 +1,4 @@
-"""Load and process XRD data files (.xrdml, .xy)"""
+"""Load and process XRD data files (.xrdml, .xy)."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -124,11 +124,12 @@ def get_xrdml_data(xrd_dict: dict) -> tuple[np.ndarray, np.ndarray]:
     return angles, intensities
 
 
-def xrdml2xy(file: Path, target_folder: Path = None) -> Path:
+def xrdml2xy(fn: str | Path, target_folder: Path = None) -> Path:
     """Convert xrdml file to .xy file."""
+    fn = Path(fn)
     if target_folder is None:
-        target_folder = file.parent
-    target_path = target_folder / file.with_suffix(".xy").name
+        target_folder = fn.parent
+    target_path = target_folder / fn.with_suffix(".xy").name
 
-    XRDMLFile.from_file(file).to_xy_file(target_path)
+    XRDMLFile.from_file(fn).to_xy_file(target_path)
     return target_path
