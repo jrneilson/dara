@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 import time
 from pathlib import Path
 from typing import Any
@@ -15,18 +14,13 @@ from dara import do_refinement_no_saving
 from dara.eflech_worker import EflechWorker
 from dara.result import RefinementResult
 from dara.search.peak_matcher import PeakMatcher
-from dara.utils import get_number, rpb
+from dara.utils import get_logger, get_number, rpb
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+logger = get_logger(__name__)
 
 
-def get_best_phase(
-    peak_matchers: dict[Path, PeakMatcher], top_n: int = 10
-) -> list[Path]:
-    return sorted(peak_matchers, key=lambda x: peak_matchers[x].score(), reverse=True)[
-        :top_n
-    ]
+def get_best_phase(peak_matchers: dict[Path, PeakMatcher], top_n: int = 10) -> list[Path]:
+    return sorted(peak_matchers, key=lambda x: peak_matchers[x].score(), reverse=True)[:top_n]
 
 
 @ray.remote(num_cpus=1)
@@ -61,7 +55,7 @@ def batch_refine(
         _remote_do_refinement_no_saving.remote(
             pattern_path,
             cif_paths,
-            refinement_params={"wmin": 10, "wmax": 60},
+            refinement_params={"wmin": 10, "wmax": 70},
             phase_params={
                 "gewicht": "0_0",
                 "k1": "0_0^0.01",
@@ -96,10 +90,7 @@ def fom(phase_path: Path, result: RefinementResult) -> float:
     initial_lattice_abc = np.array(initial_lattice_abc) / 10  # convert to nm
     refined_lattice_abc = np.array(refined_lattice_abc)
 
-    delta_u = (
-        np.sum(np.abs(initial_lattice_abc - refined_lattice_abc) / initial_lattice_abc)
-        * 100
-    )
+    delta_u = np.sum(np.abs(initial_lattice_abc - refined_lattice_abc) / initial_lattice_abc) * 100
 
     if delta_u <= 1:
         a = 0
@@ -134,9 +125,7 @@ def group_phases(
 
     for phase, result in phases.items():
         all_peaks = result.peak_data
-        peaks.append(
-            all_peaks[all_peaks["phase"] == phase.stem][["2theta", "intensity"]].values
-        )
+        peaks.append(all_peaks[all_peaks["phase"] == phase.stem][["2theta", "intensity"]].values)
 
     # get distance matrix
     distance_matrix = np.zeros((len(phases), len(phases)))
@@ -166,9 +155,7 @@ def group_phases(
     return list(clusters.values())
 
 
-def disambiguate_phases(
-    phases: dict[Path, RefinementResult]
-) -> dict[Path, RefinementResult]:
+def disambiguate_phases(phases: dict[Path, RefinementResult]) -> dict[Path, RefinementResult]:
     if not phases:
         return {}
     elif len(phases) == 1:
@@ -214,9 +201,7 @@ def _search_with_phase(
 
     best_phases = get_best_phase(peak_matchers, top_n=top_n)
 
-    refinement_results = batch_refine(
-        pattern_path, [phases + [best_phase] for best_phase in best_phases]
-    )
+    refinement_results = batch_refine(pattern_path, [phases + [best_phase] for best_phase in best_phases])
     subtree_to_be_expanded = {}
 
     for best_phase, result in zip(best_phases, refinement_results):
@@ -228,10 +213,7 @@ def _search_with_phase(
         if len(phases) < max_phases:
             subtree_to_be_expanded[best_phase] = result
 
-        if any(
-            not wt_frac or wt_frac < 0.01
-            for wt_frac in result.get_phase_weights().values()
-        ):
+        if any(not wt_frac or wt_frac < 0.01 for wt_frac in result.get_phase_weights().values()):
             continue
 
     if subtree_to_be_expanded:
@@ -239,9 +221,7 @@ def _search_with_phase(
 
     results = {}
     for best_phase, result in subtree_to_be_expanded.items():
-        new_peak_matcher = PeakMatcher(
-            result.peak_data[["2theta", "intensity"]].values, peak_obs
-        )
+        new_peak_matcher = PeakMatcher(result.peak_data[["2theta", "intensity"]].values, peak_obs)
         if new_peak_matcher.missing.shape[0] == 0:
             results[tuple(list(phases) + [best_phase])] = result
             continue
@@ -263,9 +243,7 @@ def _search_with_phase(
     return results
 
 
-def remove_unnecessary_phases(
-    result: RefinementResult, cif_paths: list[Path], rpb_threshold: float = 1
-) -> list[Path]:
+def remove_unnecessary_phases(result: RefinementResult, cif_paths: list[Path], rpb_threshold: float = 1) -> list[Path]:
     """
     Remove unnecessary phases from the result.
 
@@ -295,7 +273,7 @@ def remove_unnecessary_phases(
 
 
 def remove_duplicate_results(
-    results: dict[tuple[Path, ...], RefinementResult]
+    results: dict[tuple[Path, ...], RefinementResult],
 ) -> dict[tuple[Path, ...], RefinementResult]:
     """
     Remove duplicate results.
@@ -334,11 +312,9 @@ def search_phases(
     """
     timer = time.time()
     logger.info(f"Searching for {pattern_path.stem}...")
-    logger.info(f"Start peak detection...")
+    logger.info("Start peak detection...")
     eflech_worker = EflechWorker()
-    peak_list = eflech_worker.run_peak_detection(
-        pattern_path, wmin=10, wmax=60
-    )
+    peak_list = eflech_worker.run_peak_detection(pattern_path, wmin=10, wmax=60)
     logger.info(f"Peak detection finished. In total {len(peak_list)} peaks found.")
     peak_obs = peak_list[["2theta", "intensity"]].values
 
@@ -360,9 +336,7 @@ def search_phases(
 
     best_phases = get_best_phase(peak_matchers, top_n=top_n)
 
-    best_phases = list(
-        disambiguate_phases({phase: all_phase_results[phase] for phase in best_phases})
-    )
+    best_phases = list(disambiguate_phases({phase: all_phase_results[phase] for phase in best_phases}))
 
     results = {}
     for best_phase in best_phases:

@@ -21,6 +21,7 @@ class PhaseResult(BaseModel):
 
     class Config:  # noqa: D106
         extra = "allow"
+        populate_by_name = True
 
     spacegroup_no: Optional[int] = Field(alias="SpacegroupNo")
     hermann_mauguin: Optional[str] = Field(alias="HermannMauguin")
@@ -54,8 +55,12 @@ class PhaseResult(BaseModel):
 class LstResult(BaseModel):
     """Refinement result parsed from the .lst file."""
 
+    class Config:  # noqa: D106
+        populate_by_name = True
+
     raw_lst: str
     pattern_name: str
+
     num_steps: int
     rp: float = Field(alias="Rp")
     rpb: float = Field(alias="Rpb")
@@ -70,6 +75,9 @@ class LstResult(BaseModel):
 class DiaResult(BaseModel):
     """Refinement result parsed from the .dia file. Mainly some x-y data for plotting."""
 
+    class Config:  # noqa: D106
+        populate_by_name = True
+
     x: list[float]
     y_obs: list[float]
     y_calc: list[float]
@@ -82,6 +90,7 @@ class RefinementResult(BaseModel):
 
     class Config:  # noqa: D106
         arbitrary_types_allowed = True
+        populate_by_name = True
 
     lst_data: LstResult
     plot_data: DiaResult
@@ -191,8 +200,12 @@ class RefinementResult(BaseModel):
                     mode="lines",
                     line=dict(color=colormap[i], width=1.5),
                     fill="tonexty",
-                    name=f"{phase_name}" +
-                         (f" ({weight_fractions[phase_name] * 100:.2f} %)" if len(weight_fractions) > 1 else ""),
+                    name=f"{phase_name}"
+                    + (
+                        f" ({weight_fractions[phase_name] * 100:.2f} %)"
+                        if len(weight_fractions) > 1
+                        else ""
+                    ),
                     visible="legendonly",
                 )
             )

@@ -55,7 +55,9 @@ class PhasePredictor(MSONable):
         exclude_gases: bool = True,
     ):
         """Write CIFs of the predicted products."""
-        prediction_sorted = collections.OrderedDict(sorted(prediction.items(), key=lambda item: item[1]))
+        prediction_sorted = collections.OrderedDict(
+            sorted(prediction.items(), key=lambda item: item[1])
+        )
         dest_dir = Path(dest_dir)
         if not os.path.exists(dest_dir):
             os.makedirs(dest_dir)
@@ -78,10 +80,14 @@ class PhasePredictor(MSONable):
             file_map = {}
             for formula, code, sg, e_hull in icsd_data:
                 if e_hull is not None and e_hull > e_hull_filter:
-                    print(f"Skipping high-energy phase: {code} ({formula}, {sg}): e_hull = {e_hull}")
+                    print(
+                        f"Skipping high-energy phase: {code} ({formula}, {sg}): e_hull = {e_hull}"
+                    )
                     continue
 
                 e_hull_value = round(1000 * e_hull) if e_hull is not None else None
-                file_map[f"icsd_{clean_icsd_code(code)}.cif"] = f"{formula}_{sg}_({code})-{e_hull_value}.cif"
+                file_map[
+                    f"icsd_{clean_icsd_code(code)}.cif"
+                ] = f"{formula}_{sg}_({code})-{e_hull_value}.cif"
 
             copy_and_rename_files(self.db.path_to_icsd, dest_dir, file_map)
