@@ -11,7 +11,7 @@ from rxn_network.data import COMMON_GASES
 from rxn_network.utils.funcs import get_logger
 
 from dara.icsd import ICSDDatabase
-from dara.utils import copy_and_rename_files
+from dara.utils import clean_icsd_code, copy_and_rename_files
 
 logger = get_logger(__name__)
 
@@ -29,11 +29,11 @@ class PhasePredictor(MSONable):
 
     def predict(
         self,
-        precursors,
-        temp=1000,
+        precursors: list[str],
+        temp: float = 1000,
         computed_entries=None,
         open_elem=None,
-        chempot=0.0,
+        chempot: float = 0.0,
         e_hull_cutoff=0.05,
     ) -> dict[str, float]:
         """Predict and rank the probability of appearance of products of a chemical reaction."""
@@ -48,11 +48,11 @@ class PhasePredictor(MSONable):
 
     def write_cifs_from_formulas(
         self,
-        prediction,
-        cost_cutoff=0.01,
-        e_hull_filter=0.2,
-        dest_dir="cifs",
-        exclude_gases=True,
+        prediction: dict,
+        cost_cutoff: float = 0.025,
+        e_hull_filter: float = 0.1,
+        dest_dir: str = "cifs",
+        exclude_gases: bool = True,
     ):
         """Write CIFs of the predicted products."""
         prediction_sorted = collections.OrderedDict(sorted(prediction.items(), key=lambda item: item[1]))
@@ -82,6 +82,6 @@ class PhasePredictor(MSONable):
                     continue
 
                 e_hull_value = round(1000 * e_hull) if e_hull is not None else None
-                file_map[f"{code}.cif"] = f"{formula}_{sg}_({code})-{e_hull_value}.cif"
+                file_map[f"icsd_{clean_icsd_code(code)}.cif"] = f"{formula}_{sg}_({code})-{e_hull_value}.cif"
 
             copy_and_rename_files(self.db.path_to_icsd, dest_dir, file_map)

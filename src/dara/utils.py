@@ -1,9 +1,11 @@
 """Utility functions for the dara package."""
 from __future__ import annotations
 
+import logging
 import os
 import re
 import shutil
+import sys
 from pathlib import Path
 from typing import Union
 
@@ -192,11 +194,7 @@ def rwp(y_calc: np.ndarray, y_obs: np.ndarray) -> float:
     """
     y_calc = np.array(y_calc)
     y_obs = np.array(y_obs)
-    return np.sqrt(
-        np.sum(
-            (y_calc - y_obs) ** 2 / y_obs
-        ) / np.sum(y_obs)
-    ) * 100
+    return np.sqrt(np.sum((y_calc - y_obs) ** 2 / y_obs) / np.sum(y_obs)) * 100
 
 
 def rpb(y_calc: np.ndarray, y_obs: np.ndarray, y_bkg) -> float:
@@ -214,3 +212,35 @@ def rpb(y_calc: np.ndarray, y_obs: np.ndarray, y_bkg) -> float:
     y_calc = np.array(y_calc)
     y_obs = np.array(y_obs)
     return np.sum(np.abs(y_calc - y_obs)) / np.sum(np.abs(y_obs - y_bkg)) * 100
+
+
+def get_logger(
+    name: str,
+    level=logging.DEBUG,
+    log_format="%(asctime)s %(levelname)s %(name)s %(message)s",
+    stream=sys.stdout,
+):
+    """Code borrowed from the atomate package.
+
+    Helper method for acquiring logger.
+    """
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+
+    formatter = logging.Formatter(log_format)
+
+    if logger.hasHandlers():
+        logger.handlers.clear()
+
+    sh = logging.StreamHandler(stream=stream)
+    sh.setFormatter(formatter)
+
+    logger.addHandler(sh)
+
+    return logger
+
+
+def clean_icsd_code(icsd_code):
+    """Add leading zeros to the ICSD code."""
+    code = str(int(icsd_code))
+    return (6 - len(code)) * "0" + code

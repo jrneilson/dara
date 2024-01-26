@@ -215,7 +215,8 @@ class ReactionNetworkEngine(PredictionEngine):
     @staticmethod
     def _rank_formulas(data, cf):
         ranked_formulas = {}
-        for formula, rxns in data.items():
+        for comp, rxns in data.items():
+            formula = comp.reduced_formula
             min_cost_rxn = min(rxns, key=lambda rxn: cf.evaluate(rxn))
             min_cost = cf.evaluate(min_cost_rxn)
             ranked_formulas[formula] = min_cost
