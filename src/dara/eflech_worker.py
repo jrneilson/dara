@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 
 from dara.generate_control_file import copy_instrument_files, copy_xy_pattern
-from dara.xrdml2xy import xrdml2xy
+from dara.xrd import xrdml2xy
 
 
 class EflechWorker:
