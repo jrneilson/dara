@@ -3,20 +3,30 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import dict2xml
 import matplotlib.pyplot as plt
 import numpy as np
 import xmltodict
+from dict2xml import dict2xml
 from monty.json import MSONable
 
 
 class XRDData(MSONable):
     """General XRD data class; this is the base class for XRDMLFile and XYFile."""
 
-    def __init__(self, angles: np.ndarray, intensities: np.ndarray):
+    def __init__(self, angles: list | np.ndarray, intensities: list | np.ndarray):
         """Initialize XRD data from angles (2-theta values) and intensities/counts."""
-        self.angles = angles
-        self.intensities = intensities
+        self._angles = np.array(angles)
+        self._intensities = np.array(intensities)
+
+    @property
+    def angles(self) -> np.ndarray:
+        """2-theta values."""
+        return self._angles
+
+    @property
+    def intensities(self) -> np.ndarray:
+        """Intensity values (counts)."""
+        return self._intensities
 
     def plot(self, style="line", ax=None, **kwargs):
         """Plot XRD data.
@@ -49,22 +59,37 @@ class XRDData(MSONable):
         """Load data from file. To be implemented in subclasses."""
         raise NotImplementedError
 
-    def to_xy_file(self, fn: str | Path = "xrd_data.xy"):
-        """Save as a .xy file."""
+    def to_xy_file(self, fn: str | Path = "xrd_data.xy") -> None:
+        """Save as a .xy file.
+
+        Args:
+            fn: filename to save to. Defaults to "xrd_data.xy".
+
+        Returns
+        -------
+            filename of saved file
+        """
         np.savetxt(
             Path(fn).as_posix(),
-            np.column_stack((self, self.angles, self.intensities)),
+            np.column_stack((self.angles, self.intensities)),
             fmt="%f",
         )
 
 
 class XRDMLFile(XRDData):
-    """XRDML file class, useful for loading .xrdml data."""
+    """XRDML file class, useful for loading .xrdml data. This is the file type used by the Aeris instrument."""
 
     def __init__(self, angles, intensities, xrdml_dict: dict | None = None):
-        """Initialize andXRDML file; providing dictionary allows one to serialize and deserialize the XRDML file."""
+        """Initialize an XRDMLFile object; providing dictionary allows one to serialize
+        and deserialize the XRDML file.
+        """
         super().__init__(angles, intensities)
-        self.xrdml_dict = xrdml_dict
+        self._xrdml_dict = xrdml_dict
+
+    @property
+    def xrdml_dict(self) -> dict | None:
+        """Dictionary representation of the XRDML file."""
+        return self._xrdml_dict
 
     @classmethod
     def from_file(cls, path: str | Path) -> XRDMLFile:
@@ -73,10 +98,14 @@ class XRDMLFile(XRDData):
         angles, intensities = get_xrdml_data(xrdml_dict)
         return cls(angles=angles, intensities=intensities, xrdml_dict=xrdml_dict)
 
-    def to_file(self, fn: str | Path = "xrd_data.xrdml"):
-        """Save as an XRDML file."""
+    def to_xrdml_file(self, fn: str | Path = "xrd_data.xrdml") -> None:
+        """Save as an XRDML file.
+
+        Args:
+            fn: filename to save to. Defaults to "xrd_data.xrdml".
+        """
         with open(Path(fn), "w") as f:
-            f.write(dict2xml(self.xrd_dict))
+            f.write(dict2xml(self.xrdml_dict))
 
 
 class XYFile(XRDData):
@@ -91,10 +120,6 @@ class XYFile(XRDData):
         path = Path(path)
         angles, intensities = np.loadtxt(Path(path), unpack=True)
         return cls(angles, intensities)
-
-    def to_file(self, fn: str | Path = "xrd_data.xy"):
-        """Save as a .xy file."""
-        return self.to_xy_file(fn)
 
 
 def load_xrdml(file: Path) -> dict:
@@ -125,7 +150,7 @@ def get_xrdml_data(xrd_dict: dict) -> tuple[np.ndarray, np.ndarray]:
 
 
 def xrdml2xy(fn: str | Path, target_folder: Path = None) -> Path:
-    """Convert xrdml file to .xy file."""
+    """Convert .xrdml file to .xy file (and save)."""
     fn = Path(fn)
     if target_folder is None:
         target_folder = fn.parent

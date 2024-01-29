@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
 from asteval import Interpreter
-from pymatgen.core import Lattice, Structure, SymmOp
+from pymatgen.core import Lattice, Structure
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
 from dara.utils import (
@@ -240,7 +240,7 @@ def cif2str(
     phase_name_suffix: str = "",
     working_dir: Path | None = None,
     *,
-    lattice_range: float = 0.02,
+    lattice_range: float = 0.1,
     gewicht: str = "0_0",
     rp: int = 4,
     k1: str = "0_0^0.01",

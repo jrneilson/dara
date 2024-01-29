@@ -6,6 +6,7 @@ import os
 import re
 import shutil
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Union
 
@@ -246,3 +247,8 @@ def clean_icsd_code(icsd_code):
     """Add leading zeros to the ICSD code."""
     code = str(int(icsd_code))
     return (6 - len(code)) * "0" + code
+
+
+def datetime_str() -> str:
+    """Get a string representation of the current time."""
+    return str(datetime.utcnow())
