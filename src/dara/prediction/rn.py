@@ -8,8 +8,7 @@ import math
 import sys
 import typing
 
-from pymatgen.core.composition import Element
-from rxn_network.core import Composition
+from pymatgen.core import Composition, Element
 from rxn_network.costs.calculators import (
     PrimaryCompetitionCalculator,
     SecondaryCompetitionCalculator,
@@ -24,8 +23,8 @@ from rxn_network.enumerators.minimize import (
 from rxn_network.reactions.hull import InterfaceReactionHull
 from rxn_network.reactions.reaction_set import ReactionSet
 
-from dara.phase_prediction.base import PredictionEngine
-from dara.utils import get_chemsys_from_formulas, get_entry_by_formula, get_mp_entries
+from dara.prediction.base import PredictionEngine
+from dara.utils import get_chemsys_from_formulas, get_mp_entries
 
 if typing.TYPE_CHECKING:
     from pymatgen.entries.computed_entries import ComputedStructureEntry
@@ -262,3 +261,14 @@ class ReactionNetworkEngine(PredictionEngine):
                 reverse=True,
             )
         )
+
+
+def get_entry_by_formula(gibbs_entries: GibbsEntrySet, formula: str):
+    """Either returns the minimum energy entry or a new interpolated entry."""
+    try:
+        entry = gibbs_entries.get_min_entry_by_formula(formula)
+    except:
+        entry = gibbs_entries.get_interpolated_entry(
+            formula
+        )  # if entry is missing, use interpolated one
+    return entry

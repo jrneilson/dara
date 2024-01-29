@@ -61,6 +61,9 @@ strict = [
     "plotly==5.18.0",
     "reaction-network>=8.2.0"
 ]
+workflows = [
+    "jobflow==0.1.15",
+]
 
 [project.urls]
 homepage = "https://github.com/idocx/dara"

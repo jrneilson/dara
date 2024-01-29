@@ -77,7 +77,9 @@ class XRDData(MSONable):
 
 
 class XRDMLFile(XRDData):
-    """XRDML file class, useful for loading .xrdml data. This is the file type used by the Aeris instrument."""
+    """XRDML file class, useful for loading .xrdml data. This is the file type used by
+    the Aeris instrument.
+    """
 
     def __init__(self, angles, intensities, xrdml_dict: dict | None = None):
         """Initialize an XRDMLFile object; providing dictionary allows one to serialize

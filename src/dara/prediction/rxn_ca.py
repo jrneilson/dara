@@ -5,7 +5,7 @@ import logging
 import sys
 import typing
 
-from dara.phase_prediction.base import PredictionEngine
+from dara.prediction.base import PredictionEngine
 
 if typing.TYPE_CHECKING:
     from pymatgen.entries.computed_entries import ComputedStructureEntry

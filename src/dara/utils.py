@@ -11,9 +11,9 @@ from pathlib import Path
 from typing import Union
 
 import numpy as np
-from rxn_network.core import Composition
-from rxn_network.entries.entry_set import GibbsEntrySet
-from rxn_network.utils.funcs import get_logger
+from pymatgen.core import Composition
+
+from dara.utils import get_logger
 
 logger = get_logger(__name__)
 
@@ -144,17 +144,6 @@ def copy_and_rename_files(src_directory, dest_directory, file_map, verbose=True)
         else:
             if verbose:
                 print(f"File {src_filename} not found in {src_directory}")
-
-
-def get_entry_by_formula(gibbs_entries: GibbsEntrySet, formula: str):
-    """Either returns the minimum energy entry or a new interpolated entry."""
-    try:
-        entry = gibbs_entries.get_min_entry_by_formula(formula)
-    except:
-        entry = gibbs_entries.get_interpolated_entry(
-            formula
-        )  # if entry is missing, use interpolated one
-    return entry
 
 
 def get_chemsys_from_formulas(formulas: list[str]):
