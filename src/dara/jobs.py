@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 from monty.serialization import dumpfn
 from pymatgen.core import Composition
 
+from dara.cif import Cif
 from dara.prediction.core import PhasePredictor
 from dara.refine import do_refinement, do_refinement_no_saving
 from dara.schema import PhaseSearchDocument, RefinementDocument
@@ -17,7 +18,6 @@ from dara.search import search_phases
 from dara.utils import get_logger
 
 if TYPE_CHECKING:
-    from dara.cif import Cif
     from dara.xrd import XRDData
 
 try:
@@ -85,6 +85,7 @@ class RefinementMaker(Maker):
         return RefinementDocument(
             task_label=self.name,
             result=result,
+            rwp=result.lst_data.rwp,
             xrd_data=xrd_data,
             input_cifs=cifs,
             refinement_params=self.refinement_params,
@@ -149,7 +150,7 @@ class PhaseSearchMaker(Maker):
 
             if self.phase_predictor is None:
                 logger.info(
-                    "Phase prediction disabled; using all known phases in the chemical system."
+                    "Phase prediction disabled; using all ICSD phases in the chemical system."
                 )
                 elems = {
                     str(elem) for p in precursors for elem in Composition(p).elements
@@ -162,6 +163,7 @@ class PhaseSearchMaker(Maker):
         results = search_phases(
             pattern_path=pattern_path,
             cif_paths=list(cifs_path.glob("*.cif")),
+            **search_kwargs,
         )
         self._save_results(results)
 
@@ -189,14 +191,14 @@ class PhaseSearchMaker(Maker):
             dumpfn(final_refinement_params, best_dir_path / "phase_params.json")
 
             logger.info("Performing final refinement on best result...")
-            result = do_refinement(
+            best_result = do_refinement(
                 pattern_path=best_dir_path / "xrd_data.xy",
                 phase_paths=best_dir_path.glob("*.cif"),
                 phase_params=final_refinement_params,
                 show_progress=True,
             )
             new_best_dir_path = (
-                str(best_dir_path) + f"_rwp_{round(result.lst_data.rwp, 2)}"
+                str(best_dir_path) + f"_rwp_{round(best_result.lst_data.rwp, 2)}"
             )
 
             if os.path.exists(new_best_dir_path):
@@ -204,7 +206,24 @@ class PhaseSearchMaker(Maker):
 
             os.rename(best_dir_path, new_best_dir_path)
 
-        return PhaseSearchDocument(results=results)
+        parsed_results = {(Cif.from_file(f) for f in k): v for k, v in results.items()}
+        best_rwp = min([v.lst_data.rwp for v in parsed_results.values()])
+
+        return PhaseSearchDocument(
+            task_label=self.name,
+            results=parsed_results,
+            final_result=best_result,
+            best_rwp=best_rwp,
+            xrd_data=xrd_data,
+            input_cifs=cifs,
+            precursors=precursors,
+            phase_predictor=self.phase_predictor,
+            predict_kwargs=predict_kwargs,
+            search_kwargs=search_kwargs,
+            final_refinement_params=final_refinement_params,
+            run_final_refinement=self.run_final_refinement,
+            cifs_folder_name=self.cifs_folder_name,
+        )
 
     def _predict_folder(self, precursors, cifs_path, **kwargs) -> dict:
         if self.phase_predictor is None:
@@ -215,7 +234,10 @@ class PhaseSearchMaker(Maker):
         cost_cutoff = 0.05
 
         if any("CO3" in f for f in precursors):
-            print("Carbonate compound detected, raising cost threshold.")
+            logger.info(
+                "Carbonate compound detected, raising cost threshold to account for "
+                "incorrectly modeled thermodynamics of CO2 production."
+            )
             cost_cutoff = 0.5
 
         self.phase_predictor.write_cifs_from_formulas(
@@ -239,11 +261,11 @@ class PhaseSearchMaker(Maker):
                     else:
                         os.remove(main_folder / fn)
 
-                    print("Removing old result:", fn)
+                    logger.info(f"Removing old result: {fn}")
 
             os.mkdir(folder_path)
 
             for p in paths:
                 shutil.copy(p, folder_path)
 
-            print(f"Successfully saved result {idx+1}")
+            logger.info(f"Successfully saved result {idx+1}")

@@ -13,10 +13,6 @@ from typing import Union
 import numpy as np
 from pymatgen.core import Composition
 
-from dara.utils import get_logger
-
-logger = get_logger(__name__)
-
 with open(Path(__file__).parent / "data" / "possible_species.txt") as f:
     POSSIBLE_SPECIES = {sp.strip() for sp in f}
 
@@ -140,10 +136,12 @@ def copy_and_rename_files(src_directory, dest_directory, file_map, verbose=True)
         if os.path.isfile(src_file):
             shutil.copy(src_file, dest_file)
             if verbose:
-                print(f"Copied {src_filename} to {dest_filename} in {dest_directory}")
+                print(
+                    f"Successfully copied {src_filename} to {dest_filename} in {dest_directory}"
+                )
         else:
             if verbose:
-                print(f"File {src_filename} not found in {src_directory}")
+                print(f"ERROR: File {src_filename} not found in {src_directory}")
 
 
 def get_chemsys_from_formulas(formulas: list[str]):
@@ -157,7 +155,6 @@ def get_chemsys_from_formulas(formulas: list[str]):
 
 def get_mp_entries(chemsys: str):
     """Download ComputedStructureEntry objects from Materials Project."""
-    logger.info("Downloading entries from Materials Project...")
     from mp_api.client import MPRester
 
     with MPRester() as mpr:

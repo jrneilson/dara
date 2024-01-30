@@ -25,6 +25,9 @@ class PhasePredictor(MSONable):
             self.engine = ReactionNetworkEngine(**kwargs)
             self.db = ICSDDatabase(path_to_icsd)
 
+        self.path_to_icsd = path_to_icsd
+        self.engine_name = engine
+
     def predict(
         self,
         precursors: list[str],

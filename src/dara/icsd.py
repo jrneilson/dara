@@ -8,14 +8,17 @@ from monty.serialization import loadfn
 from pymatgen.core import Composition
 
 from dara import SETTINGS
+from dara.data import COMMON_GASES
 from dara.utils import clean_icsd_code, copy_and_rename_files, get_logger
 
 logger = get_logger(__name__)
 
 
 class ICSDDatabase:
-    """Class that represents the ICSD database. Note that the ICSD database is not publicly available, and you must have
-    a local copy stored at the specified path.
+    """Class that represents the ICSD database.
+
+    WARNING: the ICSD database is not publicly available, and you must have a local copy
+    stored at the specified path.
     """
 
     def __init__(self, path_to_icsd: str = SETTINGS.PATH_TO_ICSD):
@@ -45,7 +48,7 @@ class ICSDDatabase:
         for formula in formulas:
             all_data.extend(self.get_formula_data(formula))
 
-        file_map = self._generate_file_map(all_data, e_hull_filter)
+        file_map = self._generate_file_map(all_data, e_hull_filter, exclude_gases)
 
         if copy_files:
             copy_and_rename_files(self.path_to_icsd, dest_dir, file_map)
@@ -75,7 +78,7 @@ class ICSDDatabase:
                 if sub_chemsys in self.icsd_dict:
                     all_data.extend(self.icsd_dict[sub_chemsys])
 
-        file_map = self._generate_file_map(all_data, e_hull_filter)
+        file_map = self._generate_file_map(all_data, e_hull_filter, exclude_gases)
 
         if copy_files:
             copy_and_rename_files(self.path_to_icsd, dest_dir, file_map)
@@ -97,15 +100,20 @@ class ICSDDatabase:
             return []
 
         formula_data = [i for i in icsd_chemsys if i[0] == formula_reduced]
+
         if not formula_data:
             logger.warning(f"No ICSD codes found for {formula}!")
             return []
 
         return formula_data
 
-    def _generate_file_map(self, all_data, e_hull_filter):
+    def _generate_file_map(self, all_data, e_hull_filter, exclude_gases):
         file_map = {}
         for formula, code, sg, e_hull in all_data:
+            if exclude_gases and formula in COMMON_GASES:
+                logger.info("Skipping common gas: %s", formula)
+                continue
+
             if e_hull is not None and e_hull > e_hull_filter:
                 print(
                     f"Skipping high-energy phase: {code} ({formula}, {sg}): e_hull = {e_hull}"

@@ -3,9 +3,7 @@ from __future__ import annotations
 
 import collections
 import itertools
-import logging
 import math
-import sys
 import typing
 
 from pymatgen.core import Composition, Element
@@ -24,13 +22,12 @@ from rxn_network.reactions.hull import InterfaceReactionHull
 from rxn_network.reactions.reaction_set import ReactionSet
 
 from dara.prediction.base import PredictionEngine
-from dara.utils import get_chemsys_from_formulas, get_mp_entries
+from dara.utils import get_chemsys_from_formulas, get_logger, get_mp_entries
 
 if typing.TYPE_CHECKING:
     from pymatgen.entries.computed_entries import ComputedStructureEntry
 
-logger = logging.getLogger()
-logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+logger = get_logger(__name__)
 
 
 class ReactionNetworkEngine(PredictionEngine):
@@ -88,10 +85,12 @@ class ReactionNetworkEngine(PredictionEngine):
                 get_chemsys_from_formulas([p.reduced_formula for p in precursors_comp])
             )
 
+        logger.info("Downloading entries from Materials Project...")
         gibbs, precursors_no_open = self._get_entries(
             precursors_comp, computed_entries, open_elem, e_hull_cutoff, temp
         )
 
+        logger.info("Enumerating all possible reactions...")
         rxns = self._enumerate_reactions(precursors_no_open, gibbs, open_elem, chempot)
         data = self._get_rxn_data(precursors_no_open, rxns, open_elem)
         ranked_formulas = self._rank_formulas(data, cf)
