@@ -40,7 +40,7 @@ def do_refinement(
     str_paths = []
     for i, phase_path in enumerate(phase_paths):
         if phase_path.suffix == ".cif":
-            str_path = cif2str(phase_path, f"{i:03d}", working_dir, **phase_params)
+            str_path = cif2str(phase_path, f"", working_dir, **phase_params)
         else:
             if phase_path.parent != working_dir:
                 shutil.copy(phase_path, working_dir)

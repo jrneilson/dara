@@ -42,9 +42,9 @@ dependencies = [
     "toml>=0.10.2",
     "reaction-network>=8.2.0",
     "mp_api>=0.3.0",
-    "pyts>=0.11.0",
     "jenkspy>=0.4.0",
     "dict2xml>=1.7.0",
+    "treelib>=1.6.1",
 ]
 
 [project.optional-dependencies]

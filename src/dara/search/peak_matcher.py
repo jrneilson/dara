@@ -225,7 +225,7 @@ class PeakMatcher:
             + np.sum(np.abs(missing_obs[:, 1])) * missing_coeff
         )
 
-    def jaccard_index(self):
+    def jaccard_index(self) -> float:
         """
         Calculate the Jaccard index of the matching result.
 
@@ -252,3 +252,66 @@ class PeakMatcher:
             return 0
 
         return (matched_intensity + wrong_intens_intensity) / total_intensity
+
+    def visualize(self):
+        import matplotlib.pyplot as plt
+
+        missing_obs = self.missing
+        matched_obs = self.matched[1]
+        wrong_intensity_obs = self.wrong_intensity[1]
+
+        extra_calc = self.extra
+        matched_calc = self.matched[0]
+        wrong_intensity_calc = self.wrong_intensity[0]
+
+        extra_calc[:, 1] *= -1
+        matched_calc[:, 1] *= -1
+        wrong_intensity_calc[:, 1] *= -1
+
+        extra_peaks = extra_calc
+        missing_peaks = missing_obs
+        matched_peaks = np.concatenate([matched_calc, matched_obs])
+        wrong_intensity_peaks = np.concatenate(
+            [wrong_intensity_calc, wrong_intensity_obs]
+        )
+
+        fig, ax = plt.subplots()
+
+        ax.vlines(
+            missing_peaks[:, 0],
+            0,
+            missing_peaks[:, 1],
+            color="red",
+            alpha=0.5,
+            label="missing",
+        )
+        ax.vlines(
+            matched_peaks[:, 0],
+            0,
+            matched_peaks[:, 1],
+            color="green",
+            alpha=0.5,
+            label="matched",
+        )
+        ax.vlines(
+            extra_peaks[:, 0],
+            0,
+            extra_peaks[:, 1],
+            color="blue",
+            alpha=0.5,
+            label="extra",
+        )
+        ax.vlines(
+            wrong_intensity_peaks[:, 0],
+            0,
+            wrong_intensity_peaks[:, 1],
+            color="orange",
+            alpha=0.5,
+            label="wrong intens",
+        )
+
+        ax.set_xlabel("2theta")
+        ax.set_ylabel("Intensity")
+        ax.legend()
+
+        return fig

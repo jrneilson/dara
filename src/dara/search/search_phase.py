@@ -1,275 +1,19 @@
 from __future__ import annotations
 
-import time
+import logging
+import os
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Any
 
 import jenkspy
-import numpy as np
-import ray
-from pymatgen.core import Structure
-from sklearn.cluster import AgglomerativeClustering
 
-from dara import do_refinement_no_saving
-from dara.eflech_worker import EflechWorker
 from dara.result import RefinementResult
-from dara.search.peak_matcher import PeakMatcher
-from dara.utils import get_logger, get_number, rpb
+from dara.search.tree import SearchTree
 
-logger = get_logger(__name__)
-
-
-def get_best_phase(peak_matchers: dict[Path, PeakMatcher], top_n: int = 10) -> list[Path]:
-    return sorted(peak_matchers, key=lambda x: peak_matchers[x].score(), reverse=True)[:top_n]
-
-
-@ray.remote(num_cpus=1)
-def _remote_do_refinement_no_saving(
-    pattern_path: Path,
-    cif_paths: list[Path],
-    instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
-    phase_params: dict[str, Any] | None = None,
-    refinement_params: dict[str, float] | None = None,
-) -> RefinementResult | None:
-    try:
-        result = do_refinement_no_saving(
-            pattern_path,
-            cif_paths,
-            instrument_name=instrument_name,
-            phase_params=phase_params,
-            refinement_params=refinement_params,
-        )
-    except Exception as e:
-        print(pattern_path, cif_paths, e)
-        return None
-    if result.lst_data.rpb == 100:
-        return None
-    return result
-
-
-def batch_refine(
-    pattern_path: Path,
-    all_cif_paths: list[list[Path]],
-) -> list[RefinementResult]:
-    handles = [
-        _remote_do_refinement_no_saving.remote(
-            pattern_path,
-            cif_paths,
-            refinement_params={"wmin": 10, "wmax": 70},
-            phase_params={
-                "gewicht": "0_0",
-                "k1": "0_0^0.01",
-                "k2": "0_0^0.01",
-                "b1": "0_0^0.01",
-                "rp": 4,
-            },
-        )
-        for cif_paths in all_cif_paths
-    ]
-    return ray.get(handles)
-
-
-def fom(phase_path: Path, result: RefinementResult) -> float:
-    a = b = c = d = 1.0
-    b1_threshold = 2e-2
-    k2_threshold = 1e-5
-
-    initial_lattice_abc = Structure.from_file(phase_path.as_posix()).lattice.abc
-
-    refined_a = result.lst_data.phases_results[phase_path.stem].a
-    refined_b = result.lst_data.phases_results[phase_path.stem].b
-    refined_c = result.lst_data.phases_results[phase_path.stem].c
-
-    refined_lattice_abc = [
-        refined_a,
-        refined_b if refined_b is not None else refined_a,
-        refined_c if refined_c is not None else refined_a,
-    ]
-    refined_lattice_abc = [get_number(x) for x in refined_lattice_abc]
-
-    initial_lattice_abc = np.array(initial_lattice_abc) / 10  # convert to nm
-    refined_lattice_abc = np.array(refined_lattice_abc)
-
-    delta_u = np.sum(np.abs(initial_lattice_abc - refined_lattice_abc) / initial_lattice_abc) * 100
-
-    if delta_u <= 1:
-        a = 0
-
-    geweicht = result.lst_data.phases_results[phase_path.stem].gewicht
-    geweicht = get_number(geweicht)
-
-    b1 = get_number(result.lst_data.phases_results[phase_path.stem].B1)
-    k2 = get_number(result.lst_data.phases_results[phase_path.stem].k2)
-
-    if b1 is None or b1 < b1_threshold:
-        c = 0
-    else:
-        c /= b1
-    if k2 is None or k2 < k2_threshold:
-        d = 0
-    else:
-        d *= k2
-
-    return (1 / (result.lst_data.rwp + a * delta_u + 1e-4) + b * geweicht) / (1 + c + d)
-
-
-def similarity_score(peaks1: np.ndarray, peaks2: np.ndarray) -> float:
-    pm = PeakMatcher(peaks1, peaks2)
-    return 1 - pm.jaccard_index()
-
-
-def group_phases(
-    phases: dict[Path, RefinementResult], distance_threshold: float = 0.1
-) -> list[dict[Path, RefinementResult]]:
-    peaks = []
-
-    for phase, result in phases.items():
-        all_peaks = result.peak_data
-        peaks.append(all_peaks[all_peaks["phase"] == phase.stem][["2theta", "intensity"]].values)
-
-    # get distance matrix
-    distance_matrix = np.zeros((len(phases), len(phases)))
-
-    for i in range(len(phases)):
-        for j in range(len(phases)):
-            distance_matrix[i, j] = similarity_score(peaks[i], peaks[j])
-
-    # current peak matching algorithm is not a symmetric metric.
-    distance_matrix = (distance_matrix + distance_matrix.T) / 2
-
-    # clustering
-    clusterer = AgglomerativeClustering(
-        n_clusters=None,
-        distance_threshold=distance_threshold,
-        metric="precomputed",
-        linkage="average",
-    )
-    clusterer.fit(distance_matrix)
-
-    clusters = {}
-    for i, cluster in enumerate(clusterer.labels_):
-        if cluster not in clusters:
-            clusters[cluster] = {}
-        clusters[cluster][list(phases.keys())[i]] = list(phases.values())[i]
-
-    return list(clusters.values())
-
-
-def disambiguate_phases(phases: dict[Path, RefinementResult]) -> dict[Path, RefinementResult]:
-    if not phases:
-        return {}
-    elif len(phases) == 1:
-        return phases
-
-    phases_group = group_phases(phases)
-
-    result = {}
-
-    for group in phases_group:
-        all_fom = np.array([fom(phase, phases[phase]) for phase in group])
-        all_phases = list(group.keys())
-
-        best_phases = [all_phases[i] for i in np.where(all_fom == np.max(all_fom))[0]]
-
-        for best_phase in best_phases:
-            result[best_phase] = group[best_phase]
-
-    return result
-
-
-def _search_with_phase(
-    phases: list[Path],
-    peak_matcher: PeakMatcher,
-    pattern_path: Path,
-    all_phase_results: dict[Path, RefinementResult],
-    max_phases: int = 5,
-    top_n: int = 5,
-    rpb_threshold: float = 1,
-) -> dict[tuple[Path, ...], RefinementResult]:
-    peak_obs = peak_matcher.peak_obs
-    missing_obs = peak_matcher.missing
-    peak_matchers = {}
-
-    phases_set = set(phases)
-    for phase, phase_result in all_phase_results.items():
-        # skip the phase that has been used
-        if phase in phases_set:
-            continue
-        peak_calc = phase_result.peak_data[["2theta", "intensity"]].values
-        pm = PeakMatcher(peak_calc, missing_obs)
-        peak_matchers[phase] = pm
-
-    best_phases = get_best_phase(peak_matchers, top_n=top_n)
-
-    refinement_results = batch_refine(pattern_path, [phases + [best_phase] for best_phase in best_phases])
-    subtree_to_be_expanded = {}
-
-    for best_phase, result in zip(best_phases, refinement_results):
-        necessary_phases = remove_unnecessary_phases(result, phases + [best_phase], rpb_threshold=rpb_threshold)
-        if len(necessary_phases) != len(result.lst_data.phases_results):
-            continue
-
-        # not yet reach the maximum number of phases
-        if len(phases) < max_phases:
-            subtree_to_be_expanded[best_phase] = result
-
-        if any(not wt_frac or wt_frac < 0.01 for wt_frac in result.get_phase_weights().values()):
-            continue
-
-    if subtree_to_be_expanded:
-        subtree_to_be_expanded = disambiguate_phases(subtree_to_be_expanded)
-
-    results = {}
-    for best_phase, result in subtree_to_be_expanded.items():
-        new_peak_matcher = PeakMatcher(result.peak_data[["2theta", "intensity"]].values, peak_obs)
-        if new_peak_matcher.missing.shape[0] == 0:
-            results[tuple(list(phases) + [best_phase])] = result
-            continue
-
-        possible_phases = _search_with_phase(
-            phases + [best_phase],
-            new_peak_matcher,
-            pattern_path,
-            all_phase_results,
-            max_phases=max_phases,
-            top_n=top_n,
-            rpb_threshold=rpb_threshold,
-        )
-        if possible_phases:
-            results.update(possible_phases)
-        else:
-            results[tuple(list(phases) + [best_phase])] = result
-
-    return results
-
-
-def remove_unnecessary_phases(result: RefinementResult, cif_paths: list[Path], rpb_threshold: float = 1) -> list[Path]:
-    """
-    Remove unnecessary phases from the result.
-
-    If a phase cannot cause increase in RWP, it will be removed.
-    """
-    phases_results = {k: np.array(v) for k, v in result.plot_data.structs.items()}
-    y_obs = np.array(result.plot_data.y_obs)
-    y_calc = np.array(result.plot_data.y_calc)
-    y_bkg = np.array(result.plot_data.y_bkg)
-
-    cif_paths_dict = {cif_path.stem: cif_path for cif_path in cif_paths}
-
-    original_rpb = rpb(y_calc, y_obs, y_bkg)
-
-    new_phases = []
-
-    for excluded_phase in phases_results:
-        y_calc_excl = y_calc.copy()
-        y_calc_excl -= phases_results[excluded_phase]
-
-        new_rpb = rpb(y_calc_excl, y_obs, y_bkg)
-
-        if new_rpb > original_rpb + rpb_threshold:
-            new_phases.append(cif_paths_dict[excluded_phase])
-
-    return new_phases
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 
 def remove_duplicate_results(
@@ -294,76 +38,56 @@ def remove_duplicate_results(
 def search_phases(
     pattern_path: Path,
     cif_paths: list[Path],
-    max_phases: int = 5,
-    top_n: int = 8,
+    included_phases: list[Path] | None = None,
+    max_phases: int = 3,
+    top_n: int = 4,
     rpb_threshold: float = 1,
-) -> dict:
-    """Search for the best phase for a given pattern.
+    return_search_tree: bool = False,
+) -> dict[tuple[Path, ...], RefinementResult] | SearchTree:
+    """Search for the best phases to use for refinement."""
 
-    Args:
-        pattern_path : Path to the pattern file.
-        cif_paths : List[Path]
-            List of paths to the cif files.
-
-    Returns
-    -------
-        Dict
-            A dictionary containing the search result.
-    """
-    timer = time.time()
-    logger.info(f"Searching for {pattern_path.stem}...")
-    logger.info("Start peak detection...")
-    eflech_worker = EflechWorker()
-    peak_list = eflech_worker.run_peak_detection(pattern_path, wmin=10, wmax=60)
-    logger.info(f"Peak detection finished. In total {len(peak_list)} peaks found.")
-    peak_obs = peak_list[["2theta", "intensity"]].values
-
-    all_phase_results = dict(
-        zip(
-            cif_paths,
-            batch_refine(pattern_path, [[cif_path] for cif_path in cif_paths]),
-        )
-    )
-    all_phase_results = {k: v for k, v in all_phase_results.items() if v}
-
-    peak_matchers = {
-        cif_path: PeakMatcher(
-            all_phase_results[cif_path].peak_data[["2theta", "intensity"]].values,
-            peak_obs,
-        )
-        for cif_path in all_phase_results
+    phase_params = {
+        "gewicht": "0_0",
+        "lattice_range": 0.01,
+        "k1": "0_0^0.01",
+        "k2": "0_0^0.01",
+        "b1": "0_0^0.01",
+        "rp": 4,
     }
+    # TODO: determine wmin and wmax from the pattern
+    refinement_params = {"wmin": 10, "wmax": 60, "n_threads": 8}
 
-    best_phases = get_best_phase(peak_matchers, top_n=top_n)
+    # build the search tree
+    search_tree = SearchTree(
+        max_phases=max_phases,
+        pattern_path=pattern_path,
+        cif_paths=cif_paths,
+        pinned_phases=included_phases,
+        top_n=top_n,
+        rpb_threshold=rpb_threshold,
+        refine_params=refinement_params,
+        phase_params=phase_params,
+    )
 
-    best_phases = list(disambiguate_phases({phase: all_phase_results[phase] for phase in best_phases}))
+    with ThreadPoolExecutor(max_workers=os.cpu_count() // top_n) as executor:
+        pending = {executor.submit(search_tree.expand_node, search_tree.root)}
+        while pending:
+            done = {f for f in pending if f.done()}
+            pending = pending - done
+            for future in done:
+                nodes = future.result()
+                for node in nodes:
+                    logger.info(f"Expanding node {node}")
+                    pending.add(executor.submit(search_tree.expand_node, node))
 
-    results = {}
-    for best_phase in best_phases:
-        result = _search_with_phase(
-            [best_phase],
-            peak_matchers[best_phase],
-            pattern_path=pattern_path,
-            all_phase_results=all_phase_results,
-            max_phases=max_phases,
-            top_n=top_n,
-            rpb_threshold=rpb_threshold,
-        )
-        if result:
-            results.update(result)
-        else:
-            results[tuple([best_phase])] = all_phase_results[best_phase]
-
-    all_rhos = [result.lst_data.rho for result in results.values()]
-
-    # get the first natural break
-    interval = jenkspy.jenks_breaks(all_rhos, n_classes=2)
-    rho_cutoff = interval[1]
-    results = {k: v for k, v in results.items() if v.lst_data.rho <= rho_cutoff}
-
-    # remove duplicate combinations
-    results = remove_duplicate_results(results)
-
-    logger.info(f"Search time: {time.time() - timer:.2f} s, {len(results)} results found")
-
-    return results
+    if not return_search_tree:
+        results = search_tree.get_search_results()
+        all_rhos = [result.lst_data.rho for result in results.values()]
+        # get the first natural break
+        interval = jenkspy.jenks_breaks(all_rhos, n_classes=2)
+        rho_cutoff = interval[1]
+        results = {k: v for k, v in results.items() if v.lst_data.rho <= rho_cutoff}
+        results = remove_duplicate_results(results)
+        return results
+    else:
+        return search_tree
