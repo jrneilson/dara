@@ -8,10 +8,13 @@ import shutil
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Union
+from typing import TYPE_CHECKING, Union
 
 import numpy as np
 from pymatgen.core import Composition
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 with open(Path(__file__).parent / "data" / "possible_species.txt") as f:
     POSSIBLE_SPECIES = {sp.strip() for sp in f}
@@ -33,6 +36,33 @@ def get_number(s: Union[float, None, tuple[float, float]]) -> Union[float, None]
         return s[0]
     else:
         return s
+
+
+def get_optimal_max_two_theta(
+    peak_data: pd.DataFrame, fraction: float = 0.8, intensity_filter=0.01
+) -> float:
+    """Get the optimal 2theta max given detected peaks. The range is determined by
+    proportion of the detected peaks.
+
+    Args:
+        fraction: The fraction of the detected peaks. Defaults to 0.8.
+
+    Returns
+    -------
+        A tuple of the optimal 2theta range.
+    """
+    max_intensity = peak_data.intensity.max()
+    peak_data = peak_data[peak_data.intensity > intensity_filter * max_intensity]
+    peak_data = peak_data.sort_values("2theta")
+    peak_data = peak_data.reset_index(drop=True)
+
+    num_peaks = len(peak_data)
+    end_idx = round(fraction * num_peaks) - 1
+    if end_idx < 0:
+        end_idx = 0
+
+    buffer = 0.01
+    return round(peak_data["2theta"].iloc[end_idx], 2) + buffer
 
 
 def read_phase_name_from_str(str_path: Path) -> str:

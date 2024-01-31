@@ -58,7 +58,6 @@ def search_phases(
         "b1": "0_0^0.01",
         "rp": 4,
     }
-    # TODO: determine wmin and wmax from the pattern
     refinement_params = {"wmin": 10, "wmax": 60, "n_threads": 8}
 
     # build the search tree

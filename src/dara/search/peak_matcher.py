@@ -18,7 +18,8 @@ def absolute_log_error(x: np.ndarray, y: np.ndarray) -> np.ndarray:
         x: array 1
         y: array 2
 
-    Returns:
+    Returns
+    -------
         the absolute error in log space
     """
     x = np.clip(x, 1e-10, None)
@@ -38,7 +39,8 @@ def distance_matrix(peaks1: np.ndarray, peaks2: np.ndarray) -> np.ndarray:
         peaks1: (n, 2) array of peaks with [position, intensity]
         peaks2: (m, 2) array of peaks with [position, intensity]
 
-    Returns:
+    Returns
+    -------
         (n, m) distance matrix
     """
     position_distance = (
@@ -64,13 +66,16 @@ def find_best_match(peak_calc: np.ndarray, peak_obs: np.ndarray) -> dict[str, An
         peak_calc: the calculated peaks, (n, 2) array of peaks with [position, intensity]
         peak_obs: the observed peaks, (m, 2) array of peaks with [position, intensity]
 
-    Returns:
+    Returns
+    -------
         missing[j]: the indices of the missing peaks in the `obs peaks`
-        matched[i, j]: the indices of both the matched peaks in the `calculated peaks` and the `observed peaks`
-        extra[i]: the indices of the extra peaks in the `calculated peaks`
-        wrong_intensity[i, j]: the indices of the peaks with wrong intensities in both the
-          `calculated peaks` and the `observed peaks`
-        residual_peaks (N_peak_obs, 2): the residual peaks after matching (not including extra peaks in peak_calc)
+        matched[i, j]: the indices of both the matched peaks in the `calculated peaks`
+            and the `observed peaks` extra[i]: the indices of the extra peaks in the
+            `calculated peaks`
+        wrong_intensity[i, j]: the indices of the peaks with wrong intensities in both
+          the `calculated peaks` and the `observed peaks`
+        residual_peaks (N_peak_obs, 2): the residual peaks after matching (not including
+            extra peaks in peak_calc)
 
     """
     matched = []
@@ -210,7 +215,8 @@ class PeakMatcher:
             missing_coeff: the coefficient of the missing peaks
             extra_coeff: the coefficient of the extra peaks
 
-        Returns:
+        Returns
+        -------
             the score of the matching result
         """
         matched_obs = self.matched[1]
@@ -229,7 +235,8 @@ class PeakMatcher:
         """
         Calculate the Jaccard index of the matching result.
 
-        Returns:
+        Returns
+        -------
             the Jaccard index of the matching result
         """
         matched_calc = self.matched[0]

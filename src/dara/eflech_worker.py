@@ -13,6 +13,8 @@ from dara.xrd import xrdml2xy
 
 
 class EflechWorker:
+    """Functionality for running peak detection using BGMN's eflech and teil executables."""
+
     def __init__(self):
         self.bgmn_folder = (
             Path(__file__).parent.parent.parent / "bgmn" / "BGMNwin"
@@ -118,6 +120,7 @@ class EflechWorker:
                 cwd=working_dir.as_posix(),
                 capture_output=not show_progress,
                 timeout=600,
+                check=False,
             )
         elif mode == "teil":
             subprocess.run(
@@ -125,6 +128,7 @@ class EflechWorker:
                 cwd=working_dir.as_posix(),
                 capture_output=not show_progress,
                 timeout=600,
+                check=False,
             )
 
     def parse_peak_list(self, par_folder: Path) -> pd.DataFrame:
