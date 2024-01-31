@@ -16,7 +16,7 @@ from dara.eflech_worker import EflechWorker
 from dara.result import RefinementResult
 from dara.search.node import SearchNodeData
 from dara.search.peak_matcher import PeakMatcher
-from dara.utils import get_number, rpb
+from dara.utils import get_number, get_optimal_max_two_theta, rpb
 
 
 @ray.remote(num_cpus=1)
@@ -263,11 +263,20 @@ class SearchTree(Tree):
         eflech_worker = EflechWorker()
         peak_list = eflech_worker.run_peak_detection(
             self.pattern_path,
-            wmin=self.refinement_params.get("wmin", None),
-            wmax=self.refinement_params.get("wmax", None),
+            wmin=10,
+            wmax=100,
         )
-        peak_obs = peak_list[["2theta", "intensity"]].values
-        return peak_obs
+        optimal_wmax = get_optimal_max_two_theta(peak_list)
+        print(f"Adjusted wmax: {optimal_wmax}")
+        self.refinement_params["wmax"] = optimal_wmax
+
+        peak_list = eflech_worker.run_peak_detection(
+            self.pattern_path,
+            wmin=10,
+            wmax=optimal_wmax,
+        )
+
+        return peak_list[["2theta", "intensity"]].values
 
     def _create_root_node(self) -> Node:
         pinned_phases_set = set(self.pinned_phases)

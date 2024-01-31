@@ -113,6 +113,7 @@ class PhaseSearchMaker(Maker):
         predict_kwargs: dict | None = None,
         search_kwargs: dict | None = None,
         final_refinement_params: dict | None = None,
+        computed_entries=None,
     ):
         """Perform phase search."""
         directory = Path(os.getcwd())
@@ -159,7 +160,12 @@ class PhaseSearchMaker(Maker):
                 _ = self.db.get_cifs_by_chemsys(elems, dest_dir=cifs_path)
             else:
                 logger.info("Predicting phases...")
-                self._predict_folder(precursors, cifs_path=cifs_path, **predict_kwargs)
+                self._predict_folder(
+                    precursors,
+                    cifs_path=cifs_path,
+                    computed_entries=computed_entries,
+                    **predict_kwargs,
+                )
 
         results = search_phases(
             pattern_path=pattern_path,

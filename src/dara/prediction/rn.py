@@ -83,11 +83,11 @@ class ReactionNetworkEngine(PredictionEngine):
             )  # oxygen atmospheric partial pressure
 
         if computed_entries is None:
+            logger.info("Downloading entries from Materials Project...")
             computed_entries = get_mp_entries(
                 get_chemsys_from_formulas([p.reduced_formula for p in precursors_comp])
             )
 
-        logger.info("Downloading entries from Materials Project...")
         gibbs, precursors_no_open = self._get_entries(
             precursors_comp, computed_entries, open_elem, e_hull_cutoff, temp
         )

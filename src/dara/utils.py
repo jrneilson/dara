@@ -39,13 +39,15 @@ def get_number(s: Union[float, None, tuple[float, float]]) -> Union[float, None]
 
 
 def get_optimal_max_two_theta(
-    peak_data: pd.DataFrame, fraction: float = 0.8, intensity_filter=0.01
+    peak_data: pd.DataFrame, fraction: float = 0.7, intensity_filter=0.1
 ) -> float:
     """Get the optimal 2theta max given detected peaks. The range is determined by
     proportion of the detected peaks.
 
     Args:
-        fraction: The fraction of the detected peaks. Defaults to 0.8.
+        fraction: The fraction of the detected peaks. Defaults to 0.7.
+        intensity_filter: The intensity filter; the fraction of the max intensity that
+            is required for a peak to be acknowledged in this analysis. Defaults to 0.1.
 
     Returns
     -------

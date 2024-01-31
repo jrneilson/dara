@@ -1,5 +1,4 @@
 """APIs for running BGMN executable from Python."""
-import asyncio
 import os
 from pathlib import Path
 from subprocess import run
