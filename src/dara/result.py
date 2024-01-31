@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Optional, Union
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from dara.utils import angular_correction, get_number
 
@@ -96,8 +96,16 @@ class RefinementResult(BaseModel):
     plot_data: DiaResult
     peak_data: pd.DataFrame
 
+    @field_validator("peak_data", mode="before")
+    @classmethod
+    def transform(cls, data: dict) -> pd.DataFrame:
+        """Create pandas dataframe from peak data dict."""
+        return pd.DataFrame(data)
+
     def visualize(self, diff_offset=False):
-        """Visualize the result from the refinement. It uses a plotly figure as the backend."""
+        """Visualize the result from the refinement. It uses plotly as the backend
+        engine.
+        """
         colormap = [
             "#1f77b4",
             "#aec7e8",

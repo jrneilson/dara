@@ -16,7 +16,7 @@ from dara.eflech_worker import EflechWorker
 from dara.result import RefinementResult
 from dara.search.node import SearchNodeData
 from dara.search.peak_matcher import PeakMatcher
-from dara.utils import rpb, get_number
+from dara.utils import get_number, rpb
 
 
 @ray.remote(num_cpus=1)

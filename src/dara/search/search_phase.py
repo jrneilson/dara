@@ -83,7 +83,7 @@ def search_phases(
         results = search_tree.get_search_results()
         all_rhos = [result.lst_data.rho for result in results.values()]
         # get the first natural break
-        if len(all_rhos) <= 2:
+        if len(all_rhos) < 2:
             return remove_duplicate_results(results)
 
         interval = jenkspy.jenks_breaks(all_rhos, n_classes=2)
