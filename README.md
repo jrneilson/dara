@@ -31,7 +31,8 @@ For example, installing BGMN on Lawrencium (or perhaps another older Linux clust
 
     version `GLIBC_2.29 not found (required by …)
 
-To fix, we need to install GLIBC 2.29. Based on: <https://stackoverflow.com/questions/52223076/getting-error-while-compiling-glibc-2-28-on-lfs-fifth-module>:
+To fix, we need to install GLIBC 2.29. Based on:
+<https://stackoverflow.com/questions/50564999/lib64-libc-so-6-version-glibc-2-14-not-found-why-am-i-getting-this-error>
 
 ```bash
 mkdir ~/glibc229
