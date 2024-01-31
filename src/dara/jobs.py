@@ -150,7 +150,8 @@ class PhaseSearchMaker(Maker):
 
             if self.phase_predictor is None:
                 logger.info(
-                    "Phase prediction disabled; using all ICSD phases in the chemical system."
+                    "Phase prediction disabled; using all ICSD phases in the chemical "
+                    "system."
                 )
                 elems = {
                     str(elem) for p in precursors for elem in Composition(p).elements
@@ -167,6 +168,7 @@ class PhaseSearchMaker(Maker):
         )
         self._save_results(results)
 
+        best_result = None
         if self.run_final_refinement:
             logger.info("Re-refining best result...")
 
@@ -206,8 +208,15 @@ class PhaseSearchMaker(Maker):
 
             os.rename(best_dir_path, new_best_dir_path)
 
-        parsed_results = {(Cif.from_file(f) for f in k): v for k, v in results.items()}
-        best_rwp = min([v.lst_data.rwp for v in parsed_results.values()])
+        parsed_results = [
+            ([Cif.from_file(f) for f in k], v) for k, v in results.items()
+        ]
+        all_rwp = [i[1].lst_data.rwp for i in parsed_results]
+
+        if self.run_final_refinement and best_result is not None:
+            all_rwp.append(best_result.lst_data.rwp)
+
+        best_rwp = min(all_rwp, default=None)
 
         return PhaseSearchDocument(
             task_label=self.name,

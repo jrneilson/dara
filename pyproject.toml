@@ -59,7 +59,11 @@ strict = [
     "xmltodict==0.13.0",
     "dict2xml==1.7.4",
     "plotly==5.18.0",
-    "reaction-network>=8.2.0"
+    "reaction-network==8.2.0",
+    "mp_api==0.3.0",
+    "jenkspy==0.4.0",
+    "dict2xml==1.7.0",
+    "treelib==1.6.1",
 ]
 workflows = [
     "jobflow==0.1.15",

@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import collections
+import os
+import shutil
 
 from monty.json import MSONable
 from rxn_network.utils.funcs import get_logger
@@ -64,6 +66,10 @@ class PhasePredictor(MSONable):
         formulas = [
             formula for formula, cost in prediction_sorted.items() if cost < cost_cutoff
         ]
+        if os.path.exists(dest_dir):
+            logger.info(f"Removing existing CIFs directory {dest_dir}")
+            shutil.rmtree(dest_dir)
+
         return self.db.get_cifs_by_formulas(
             formulas=formulas,
             e_hull_filter=e_hull_filter,

@@ -117,7 +117,8 @@ def fuzzy_compare(a: float, b: float):
 
 
 def copy_and_rename_files(src_directory, dest_directory, file_map, verbose=True):
-    """Copy specific files from the source directory to the destination directory with new names.
+    """Copy specific files from the source directory to the destination directory with
+    new names.
 
     :param src_directory: Path to the source directory
     :param dest_directory: Path to the destination directory
