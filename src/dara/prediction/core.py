@@ -21,14 +21,16 @@ class PhasePredictor(MSONable):
         self, path_to_icsd=SETTINGS.PATH_TO_ICSD, engine="reaction_network", **kwargs
     ):
         """Initialize the engine."""
+        self.engine = None
         if engine == "reaction_network":
             from dara.prediction.rn import ReactionNetworkEngine
 
             self.engine = ReactionNetworkEngine(**kwargs)
-            self.db = ICSDDatabase(path_to_icsd)
 
+        self.db = ICSDDatabase(path_to_icsd)
         self.path_to_icsd = path_to_icsd
-        self.engine_name = engine
+        if self.engine is None:
+            raise ValueError(f"Unknown engine provided: {engine}")
 
     def predict(
         self,
