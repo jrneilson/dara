@@ -1,14 +1,19 @@
+"""Phase search module."""
 from __future__ import annotations
 
 import logging
 import os
 from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 import jenkspy
 
-from dara.result import RefinementResult
 from dara.search.tree import SearchTree
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from dara.result import RefinementResult
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"

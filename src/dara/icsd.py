@@ -18,16 +18,16 @@ class ICSDDatabase:
     """Class that represents the ICSD database.
 
     WARNING: the ICSD database is not publicly available, and you must have a local copy
-    stored at the specified path.
+    stored at the specified path. The default path is set in SETTINGS.PATH_TO_ICSD.
     """
 
-    def __init__(self, path_to_icsd: str = SETTINGS.PATH_TO_ICSD):
+    def __init__(self, path_to_icsd: str | None = None):
         """
         Initialize the ICSD database.
 
         :param path_to_icsd: Path to the ICSD database
         """
-        self.path_to_icsd = Path(path_to_icsd)
+        self.path_to_icsd = path_to_icsd
         self.icsd_dict = loadfn(
             Path(__file__).parent / "data/icsd_filtered_info_2024.json.gz"
         )
@@ -51,7 +51,7 @@ class ICSDDatabase:
         file_map = self._generate_file_map(all_data, e_hull_filter, exclude_gases)
 
         if copy_files:
-            copy_and_rename_files(self.path_to_icsd, dest_dir, file_map)
+            copy_and_rename_files(self.icsd_path, dest_dir, file_map)
 
         return [data[1] for data in all_data]
 
@@ -81,13 +81,13 @@ class ICSDDatabase:
         file_map = self._generate_file_map(all_data, e_hull_filter, exclude_gases)
 
         if copy_files:
-            copy_and_rename_files(self.path_to_icsd, dest_dir, file_map)
+            copy_and_rename_files(self.icsd_path, dest_dir, file_map)
 
         return [data[1] for data in all_data]
 
     def get_file_path(self, icsd_code: str | int):
         """Get the path to a CIF file in the ICSD database."""
-        return self.path_to_icsd / f"icsd_{clean_icsd_code(icsd_code)}.cif"
+        return self.icsd_path / f"icsd_{clean_icsd_code(icsd_code)}.cif"
 
     def get_formula_data(self, formula: str):
         """Get a list of ICSD codes corresponding to a formula."""
@@ -106,6 +106,17 @@ class ICSDDatabase:
             return []
 
         return formula_data
+
+    @property
+    def icsd_path(self):
+        """Path to the ICSD database. Automatically uses the default path if not
+        provided.
+        """
+        path = SETTINGS.PATH_TO_ICSD
+        if self.path_to_icsd is not None:
+            path = self.path_to_icsd
+
+        return Path(path)
 
     def _generate_file_map(self, all_data, e_hull_filter, exclude_gases):
         file_map = {}

@@ -38,7 +38,8 @@ class ReactionNetworkEngine(PredictionEngine):
 
         Args:
             cost_function: Cost function to use for ranking (default: weighted sum)
-            max_rereact: Maximum number of phases to consider for followup reactions within the cost function
+            max_rereact: Maximum number of phases to consider for followup reactions
+                within the cost function
         """
         self.cost_function = cost_function
         self.max_rereact = max_rereact
@@ -54,7 +55,8 @@ class ReactionNetworkEngine(PredictionEngine):
         e_hull_cutoff: float = 0.05,
     ):
         """
-        Interface with reaction-network package for phase prediction based on interface reaction hulls.
+        Interface with reaction-network package for phase prediction based on interface
+        reaction hulls.
 
         Args:
             precursors: List of precursor formulas (no stoichiometry required)
