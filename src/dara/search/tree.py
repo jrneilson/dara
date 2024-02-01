@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from itertools import zip_longest
 from pathlib import Path
 from subprocess import TimeoutExpired
@@ -46,33 +47,46 @@ def remote_do_refinement_no_saving(
 
 @ray.remote(num_cpus=1)
 def remote_peak_matching(
-    peak_calc: np.ndarray,
-    missing_peaks: np.ndarray,
+    batch: list[tuple[np.ndarray, np.ndarray]],
     return_type: Literal["PeakMatcher", "score", "jaccard"],
-) -> PeakMatcher | float:
-    pm = PeakMatcher(peak_calc, missing_peaks)
-    if return_type == "PeakMatcher":
-        return pm
-    elif return_type == "score":
-        return pm.score()
-    elif return_type == "jaccard":
-        return pm.jaccard_index()
-    else:
-        raise ValueError(f"return_type {return_type} is not supported.")
+) -> list[PeakMatcher | float]:
+    results = []
+
+    for peak_calc, peak_obs in batch:
+        pm = PeakMatcher(peak_calc, peak_obs)
+
+        if return_type == "PeakMatcher":
+            results.append(pm)
+        elif return_type == "score":
+            results.append(pm.score())
+        elif return_type == "jaccard":
+            results.append(pm.jaccard_index())
+        else:
+            raise ValueError(f"Unknown return type {return_type}")
+
+    return results
 
 
 def batch_peak_matching(
     peak_calcs: list[np.ndarray],
     peak_obs: np.ndarray | list[np.ndarray],
     return_type: Literal["PeakMatcher", "score", "jaccard"] = "PeakMatcher",
+    batch_size: int = 100,
 ) -> list[PeakMatcher | float]:
     if isinstance(peak_obs, np.ndarray):
         peak_obs = [peak_obs] * len(peak_calcs)
-    handles = [
-        remote_peak_matching.remote(peak_calc, peak_obs_, return_type=return_type)
-        for peak_calc, peak_obs_ in zip_longest(peak_calcs, peak_obs, fillvalue=None)
+
+    if len(peak_calcs) != len(peak_obs):
+        raise ValueError("Length of peak_calcs and peak_obs must be the same.")
+
+    all_data = list(zip_longest(peak_calcs, peak_obs, fillvalue=None))
+    batches = [
+        all_data[i : i + batch_size] for i in range(0, len(all_data), batch_size)
     ]
-    return ray.get(handles)
+    handles = [
+        remote_peak_matching.remote(batch, return_type=return_type) for batch in batches
+    ]
+    return sum(ray.get(handles), [])
 
 
 def batch_refinement(
@@ -96,9 +110,8 @@ def batch_refinement(
 
 
 def calculate_fom(phase_path: Path, result: RefinementResult) -> float:
-    a = b = c = d = 1.0
+    a = b = c = 1.0
     b1_threshold = 2e-2
-    k2_threshold = 1e-5
 
     initial_lattice_abc = Structure.from_file(phase_path.as_posix()).lattice.abc
 
@@ -110,7 +123,6 @@ def calculate_fom(phase_path: Path, result: RefinementResult) -> float:
     geweicht = get_number(geweicht)
 
     b1 = get_number(result.lst_data.phases_results[phase_path.stem].B1) or 0
-    k2 = get_number(result.lst_data.phases_results[phase_path.stem].k2) or 0
 
     if refined_a is None or geweicht is None:
         return 0
@@ -137,12 +149,8 @@ def calculate_fom(phase_path: Path, result: RefinementResult) -> float:
         c = 0
     else:
         c /= b1
-    if k2 is None or k2 < k2_threshold:
-        d = 0
-    else:
-        d *= k2
 
-    return (1 / (result.lst_data.rwp + a * delta_u + 1e-4) + b * geweicht) / (1 + c + d)
+    return (1 / (result.lst_data.rho + a * delta_u + 1e-4) + b * geweicht) / (1 + c)
 
 
 def similarity_score(peaks1: np.ndarray, peaks2: np.ndarray) -> float:
@@ -260,23 +268,24 @@ class SearchTree(Tree):
         self._create_root_node()
 
     def _detect_peak_in_pattern(self) -> np.ndarray:
+        if self.refinement_params.get("wmax", None) is not None:
+            warnings.warn(
+                f"The wmax ({self.refinement_params['wmax']}) in refinement_params "
+                f"will be ignored. The wmax will be automatically adjusted."
+            )
         eflech_worker = EflechWorker()
         peak_list = eflech_worker.run_peak_detection(
-            self.pattern_path,
-            wmin=10,
-            wmax=100,
+            self.pattern_path, wmin=self.refinement_params.get("wmin", None), wmax=None
         )
         optimal_wmax = get_optimal_max_two_theta(peak_list)
         print(f"Adjusted wmax: {optimal_wmax}")
         self.refinement_params["wmax"] = optimal_wmax
 
-        peak_list = eflech_worker.run_peak_detection(
-            self.pattern_path,
-            wmin=10,
-            wmax=optimal_wmax,
-        )
+        peak_list_array = peak_list[["2theta", "intensity"]].values
 
-        return peak_list[["2theta", "intensity"]].values
+        return peak_list_array[
+            np.where(peak_list_array[:, 0] < self.refinement_params["wmax"])
+        ]
 
     def _create_root_node(self) -> Node:
         pinned_phases_set = set(self.pinned_phases)
@@ -404,11 +413,21 @@ class SearchTree(Tree):
 
     def get_search_results(self) -> dict[tuple[Path, ...], RefinementResult]:
         results = {}
+        all_phases = {}
+        for nid, node in self.nodes.items():
+            all_phases.setdefault(frozenset(node.data.current_phases), []).append(nid)
+
         for node in self.nodes.values():
             if node.data.status in {"expanded", "max_depth"} and all(
                 child.data.status not in {"expanded", "max_depth"}
                 for child in self.children(node.identifier)
             ):
+                other_phases = all_phases[frozenset(node.data.current_phases)]
+                if any(
+                    self.get_node(nid).data.status not in {"expanded", "max_depth"}
+                    for nid in other_phases
+                ):
+                    continue
                 results[tuple(node.data.current_phases)] = node.data.current_result
         return results
 

@@ -45,7 +45,7 @@ def search_phases(
     cif_paths: list[Path],
     included_phases: list[Path] | None = None,
     max_phases: int = 3,
-    top_n: int = 4,
+    top_n: int = 8,
     rpb_threshold: float = 1,
     return_search_tree: bool = False,
 ) -> dict[tuple[Path, ...], RefinementResult] | SearchTree:
@@ -54,11 +54,11 @@ def search_phases(
         "gewicht": "0_0",
         "lattice_range": 0.01,
         "k1": "0_0^0.01",
-        "k2": "0_0^0.01",
-        "b1": "0_0^0.01",
+        "k2": "fixed",
+        "b1": "0_0^0.0025",
         "rp": 4,
     }
-    refinement_params = {"wmin": 10, "wmax": 60, "n_threads": 8}
+    refinement_params = {"n_threads": 8}
 
     # build the search tree
     search_tree = SearchTree(
@@ -72,12 +72,14 @@ def search_phases(
         phase_params=phase_params,
     )
 
-    with ThreadPoolExecutor(max_workers=os.cpu_count() // top_n) as executor:
+    with ThreadPoolExecutor(max_workers=os.cpu_count() // top_n * 2 + 1) as executor:
         pending = {executor.submit(search_tree.expand_node, search_tree.root)}
         while pending:
             done = {f for f in pending if f.done()}
             pending = pending - done
             for future in done:
+                if future.exception():
+                    executor.shutdown(wait=False, cancel_futures=True)
                 nodes = future.result()
                 for node in nodes:
                     logger.info(f"Expanding node {node}")
