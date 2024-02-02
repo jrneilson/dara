@@ -151,7 +151,7 @@ class EflechWorker:
 
         df = pd.DataFrame(
             peak_list_two_theta, columns=["2theta", "intensity", "b1", "b2"]
-        )
+        ).astype(float)
 
         return df
 
