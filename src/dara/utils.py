@@ -63,7 +63,7 @@ def get_optimal_max_two_theta(
     if end_idx < 0:
         end_idx = 0
 
-    buffer = 0.01
+    buffer = 1  # include the full last peak
     return round(peak_data["2theta"].iloc[end_idx], 2) + buffer
 
 
