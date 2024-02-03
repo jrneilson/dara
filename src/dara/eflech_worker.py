@@ -137,7 +137,7 @@ class EflechWorker:
         for par_file in all_par_files:
             peak_list.extend(self.parse_par_file(par_file))
 
-        peak_list = np.array(peak_list)
+        peak_list = np.array(peak_list).reshape(-1, 4)
 
         d_inv = peak_list[:, 0]
         intensity = peak_list[:, 1]
@@ -151,7 +151,7 @@ class EflechWorker:
 
         df = pd.DataFrame(
             peak_list_two_theta, columns=["2theta", "intensity", "b1", "b2"]
-        )
+        ).astype(float)
 
         return df
 
@@ -169,6 +169,9 @@ class EflechWorker:
             return peak_list
 
         peak_num = int(peak_num.group(1))
+
+        if peak_num == 0:
+            return peak_list
 
         for i in range(1, peak_num + 1):
             if i >= len(content):

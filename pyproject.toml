@@ -45,6 +45,7 @@ dependencies = [
     "jenkspy>=0.4.0",
     "dict2xml>=1.7.0",
     "treelib>=1.6.1",
+    "scikit-learn>=1.3.2",
 ]
 
 [project.optional-dependencies]
@@ -64,6 +65,7 @@ strict = [
     "jenkspy==0.4.0",
     "dict2xml==1.7.0",
     "treelib==1.6.1",
+    "scikit-learn==1.3.2",
 ]
 workflows = [
     "jobflow==0.1.15",

@@ -460,42 +460,45 @@ def parse_dia(dia_path: Path, phase_names: list[str]) -> DiaResult:
 
 def parse_par(par_file: Path, phase_names: list[str]) -> pd.DataFrame:
     """Get the parameters from the .par file (hkl)."""
+
+    def _make_dataframe(peak_list) -> pd.DataFrame:
+        return pd.DataFrame(
+            peak_list,
+            columns=[
+                "2theta",
+                "intensity",
+                "b1",
+                "b2",
+                "h",
+                "k",
+                "l",
+                "phase",
+                "phase_idx",
+            ],
+        ).astype(
+            {
+                "2theta": float,
+                "intensity": float,
+                "b1": float,
+                "b2": float,
+                "h": int,
+                "k": int,
+                "l": int,
+                "phase": str,
+                "phase_idx": int,
+            }
+        )
+
     content = par_file.read_text().split("\n")
     peak_list = []
 
     if len(content) < 2:
-        return pd.DataFrame(
-            peak_list,
-            columns=[
-                "2theta",
-                "intensity",
-                "b1",
-                "b2",
-                "h",
-                "k",
-                "l",
-                "phase",
-                "phase_idx",
-            ],
-        )
+        return _make_dataframe(peak_list)
 
     peak_num = re.search(r"PEAKZAHL=(\d+)", content[0])
 
     if not peak_num:
-        return pd.DataFrame(
-            peak_list,
-            columns=[
-                "2theta",
-                "intensity",
-                "b1",
-                "b2",
-                "h",
-                "k",
-                "l",
-                "phase",
-                "phase_idx",
-            ],
-        )
+        return _make_dataframe(peak_list)
 
     eps1 = re.search(r"EPS1=(\d+(\.\d+)?)", content[0])
     eps2 = re.search(r"EPS2=([+-]?\d+(\.\d+)?)", content[0])
@@ -533,6 +536,7 @@ def parse_par(par_file: Path, phase_names: list[str]) -> pd.DataFrame:
 
         numbers = re.split(r"\s+", content[i])
 
+        # TODO: do the intensity correction
         if numbers:
             rp = int(numbers[0])
             intensity = float(numbers[1])
@@ -580,21 +584,7 @@ def parse_par(par_file: Path, phase_names: list[str]) -> pd.DataFrame:
     two_theta += angular_correction(two_theta, eps1, eps2)
     peak_list = [[two_theta[i]] + peak_list[i][1:] for i in range(len(peak_list))]
 
-    peak_list = pd.DataFrame(
-        peak_list,
-        columns=[
-            "2theta",
-            "intensity",
-            "b1",
-            "b2",
-            "h",
-            "k",
-            "l",
-            "phase",
-            "phase_idx",
-        ],
-    )
-    return peak_list
+    return _make_dataframe(peak_list)
 
 
 if __name__ == "__main__":

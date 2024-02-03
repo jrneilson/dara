@@ -6,12 +6,15 @@ import os
 import re
 import shutil
 import sys
+import warnings
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Union
 
 import numpy as np
-from pymatgen.core import Composition
+from pymatgen.core import Composition, Structure
+from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
+from pymatgen.symmetry.structure import SymmetrizedStructure
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -36,6 +39,21 @@ def get_number(s: Union[float, None, tuple[float, float]]) -> Union[float, None]
         return s[0]
     else:
         return s
+
+
+def load_symmetrized_structure(
+    cif_path: Path,
+) -> tuple[SymmetrizedStructure, SpacegroupAnalyzer]:
+    # suppress the warnings from pymatgen
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore")
+        structure = SpacegroupAnalyzer(
+            Structure.from_file(cif_path.as_posix(), site_tolerance=1e-3)
+        ).get_refined_structure()
+
+    spg = SpacegroupAnalyzer(structure)
+    structure: SymmetrizedStructure = spg.get_symmetrized_structure()
+    return structure, spg
 
 
 def get_optimal_max_two_theta(
