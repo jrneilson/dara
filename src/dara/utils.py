@@ -15,9 +15,13 @@ import numpy as np
 from pymatgen.core import Composition, Structure
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.symmetry.structure import SymmetrizedStructure
+from scipy import signal
 
 if TYPE_CHECKING:
     import pandas as pd
+
+
+DEPRECATED = "DEPRECATED"
 
 with open(Path(__file__).parent / "data" / "possible_species.txt") as f:
     POSSIBLE_SPECIES = {sp.strip() for sp in f}
@@ -239,7 +243,7 @@ def rwp(y_calc: np.ndarray, y_obs: np.ndarray) -> float:
 
 def rpb(y_calc: np.ndarray, y_obs: np.ndarray, y_bkg) -> float:
     """
-    Calculate the Rietveld profile bias (RPB) for a refinement.
+    Calculate the Rietveld profile without background (RPB) for a refinement.
 
     The result is in percentage.
 
@@ -289,3 +293,18 @@ def clean_icsd_code(icsd_code):
 def datetime_str() -> str:
     """Get a string representation of the current time."""
     return str(datetime.utcnow())
+
+
+def find_optimal_score_threshold(
+    scores: list[float] | np.ndarray,
+) -> tuple[float, np.ndarray]:
+    """Find the inflection point from a list of scores. We will calculate the percentile first"""
+    if len(scores) == 0:
+        return 0.0, np.array([]).reshape(-1)
+
+    scores = np.array(scores)
+    score_percentile = np.percentile(scores, np.arange(0, 101))
+    score_percentile = signal.savgol_filter(score_percentile, 5, 1)
+
+    second_derivative = np.diff(score_percentile, n=2)
+    return score_percentile[np.argmax(second_derivative)].item(), score_percentile
