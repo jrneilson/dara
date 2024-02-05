@@ -25,13 +25,20 @@ from dara.utils import (
     get_logger,
     find_optimal_score_threshold,
     get_composition_distance,
+    get_composition_from_filename,
 )
 
-logger = get_logger(__name__)
+logger = get_logger(__name__, level="INFO")
 
 
 @ray.remote(num_cpus=0)
 class ExploredPhasesSet:
+    """
+    This is a remote actor to keep track of the explored phases in the search tree.
+
+    This is used to avoid exploring the same phase combinations multiple times.
+    """
+
     def __init__(self):
         self._set: set[frozenset[Path]] = set()
 
@@ -43,11 +50,26 @@ class ExploredPhasesSet:
         return [frozenset(phases) in self._set for phases in phases]
 
     def contains_and_update(self, phases: list[tuple[Path, ...]]) -> list[bool]:
+        """
+        Check if the set contains the phases and update the set. This is an atomic operation.
+
+        Args:
+            phases: the phases to check
+
+        Returns:
+            a list of boolean values indicating whether the set contains the phases
+        """
         contains = self.multiple_contains(phases)
         self.update(phases)
         return contains
 
     def get(self) -> frozenset[frozenset[Path]]:
+        """
+        Get the set of explored phases.
+
+        Returns:
+            the set of explored phases
+        """
         return frozenset(self._set)
 
 
@@ -59,6 +81,11 @@ def remote_do_refinement_no_saving(
     phase_params: dict[str, ...] | None,
     refinement_params: dict[str, float] | None,
 ) -> RefinementResult | None:
+    """
+    Perform the actual refinement in the remote process.
+
+    If the refinement fails, None will be returned.
+    """
     if len(cif_paths) == 0:
         return None
     try:
@@ -141,6 +168,17 @@ def batch_refinement(
 
 
 def calculate_fom(phase_path: Path, result: RefinementResult) -> float:
+    """
+    Calculate the figure of merit for a phase.
+
+    For more detail, refer to https://journals.iucr.org/j/issues/2019/03/00/nb5231/.
+    Args:
+        phase_path: the path to the phase (cif file)
+        result: the refinement result
+
+    Returns:
+        the figure of merit of the target phase. If it cannot be calculated, return 0.
+    """
     a = b = c = 1.0
     b1_threshold = 2e-2
 
@@ -192,6 +230,18 @@ def group_phases(
     all_phases_result: dict[Path, RefinementResult | None],
     distance_threshold: float = 0.1,
 ) -> dict[Path, dict[str, float | int]]:
+    """
+    Group the phases based on their similarity.
+
+    The similarity includes both the peak matching and the compositional similarity.
+
+    Args:
+        all_phases_result: the result of all the phases
+        distance_threshold: the distance threshold for clustering, default to 0.1
+
+    Returns:
+        a dictionary containing the group id and the figure of merit for each phase
+    """
     grouped_result = {}
 
     # handle the case where there is no result for a phase
@@ -211,15 +261,15 @@ def group_phases(
             for phase, result in all_phases_result.items()
         }
 
-    peaks: list[np.ndarray] = []
-    compositions: list[str] = []
+    peaks = []
+    compositions = []
 
     for phase, result in all_phases_result.items():
         all_peaks = result.peak_data
         peaks.append(
             all_peaks[all_peaks["phase"] == phase.stem][["2theta", "intensity"]].values
         )
-        compositions.append(phase.stem.split("_")[0])
+        compositions.append(get_composition_from_filename(phase))
 
     pairwise_similarity = batch_peak_matching(
         [p for p in peaks for _ in peaks],
@@ -299,6 +349,21 @@ def remove_unnecessary_phases(
 
 
 class BaseSearchTree(Tree):
+    """
+    A base class for the search tree. It is not intended to be used directly.
+
+    Args:
+        pattern_path: the path to the pattern
+        all_phases_result: the result of all the phases
+        peak_obs: the observed peaks
+        rpb_threshold: the minimum RPB improvement in each step
+        refine_params: the refinement parameters, it will be passed to the refinement function.
+        phase_params: the phase parameters, it will be passed to the refinement function.
+        instrument_name: the name of the instrument, it will be passed to the refinement function.
+        maximum_grouping_distance: the maximum grouping distance, default to 0.1
+        max_phases: the maximum number of phases
+    """
+
     def __init__(
         self,
         pattern_path: Path,
@@ -337,6 +402,17 @@ class BaseSearchTree(Tree):
     def expand_node(
         self, nid: str, explored_phases_set: ExploredPhasesSet | None = None
     ) -> list[str]:
+        """
+        Expand a node in the search tree.
+
+        This method will first do a naive search match method to find the best matched phases. Then it will refine the
+        best matched phases and add the results to the search tree.
+
+        Args:
+            nid: the node id
+            explored_phases_set: the set of explored phases. If it is not None, it will be used to avoid exploring the
+                 same phase combinations multiple times.
+        """
         node: Node = self.get_node(nid)
         if node is None:
             raise ValueError(f"Node with id {nid} does not exist.")
@@ -454,13 +530,20 @@ class BaseSearchTree(Tree):
 
         node.data.status = "expanded"
 
-        return [
-            child.identifier
-            for child in self.children(nid)
-            if self.get_node(child.identifier).data.status == "pending"
-        ]
+        return self.get_expandable_children(nid)
 
     def get_expandable_children(self, nid: str) -> list[str]:
+        """
+        Get the expandable children of a node.
+
+        The expandable children are the children that have not been expanded yet, which is marked as "pending".
+
+        Args:
+            nid: the node id
+
+        Returns:
+            a list of node ids that are expandable
+        """
         if not self.contains(nid):
             raise ValueError(f"Node with id {nid} does not exist.")
 
@@ -473,9 +556,24 @@ class BaseSearchTree(Tree):
     def expand_root(
         self, explored_phases_set: ExploredPhasesSet | None = None
     ) -> list[str]:
+        """
+        Expand the root node.
+
+        Args:
+            explored_phases_set: the set of explored phases. If it is not None, it will be used to avoid exploring the
+                    same phase combinations multiple times.
+        """
         return self.expand_node(self.root, explored_phases_set=explored_phases_set)
 
     def get_search_results(self) -> dict[tuple[Path, ...], RefinementResult]:
+        """
+        Get the search results.
+
+        The search results are the results of the nodes that have been expanded and have no expandable children.
+
+        Returns:
+            a dictionary containing the phase combinations and their results
+        """
         results = {}
         all_phases = {}
         for nid, node in self.nodes.items():
@@ -500,6 +598,21 @@ class BaseSearchTree(Tree):
         all_phases_result: dict[Path, RefinementResult],
         current_result: RefinementResult | None = None,
     ) -> tuple[list[Path], dict[Path, float], float]:
+        """
+        Get the best matched phases.
+
+        This is a naive search-match method based on the peak matching score. It will return the best matched phases,
+        all phases' scores, and the score's threshold.
+
+        The threshold is determined by finding the inflection point of the percentile of the scores.
+
+        Args:
+            all_phases_result: the result of all the phases
+            current_result: the current result
+
+        Returns:
+            a tuple containing the best matched phases, all phases' scores, and the score's threshold
+        """
         if current_result is None:
             missing_peaks = self.peak_obs
         else:
@@ -543,6 +656,16 @@ class BaseSearchTree(Tree):
     def get_all_phases_result(
         self, phases: list[Path], pinned_phases: list[Path] | None = None
     ) -> dict[Path, RefinementResult | None]:
+        """
+        Get the result of all the phases.
+
+        Args:
+            phases: the phases
+            pinned_phases: the pinned phases thta will be included in all the refinement
+
+        Returns:
+            a dictionary containing the phase and its result
+        """
         if pinned_phases is None:
             pinned_phases = []
 
@@ -587,6 +710,16 @@ class BaseSearchTree(Tree):
     def from_search_tree(
         cls, root_nid: str, search_tree: BaseSearchTree
     ) -> BaseSearchTree:
+        """
+        Create a new search tree from an existing search tree.
+
+        Args:
+            root_nid: the node id that will be used as the root node for the new search tree
+            search_tree: the search tree that will be used to create the new search tree
+
+        Returns:
+            the new search tree
+        """
         root_node = search_tree.get_node(root_nid)
         if root_node is None:
             raise ValueError(f"Node with id {root_nid} does not exist.")
@@ -607,12 +740,45 @@ class BaseSearchTree(Tree):
         return new_search_tree
 
     def add_subtree(self, anchor_nid: str, search_tree: BaseSearchTree):
+        """
+        Add a subtree to the search tree.
+
+        Args:
+            anchor_nid: the node id that the subtree will be added to
+            search_tree: the search tree that will be added to the search tree
+
+        Returns:
+            the merged search tree
+        """
         # update the data from the search tree
+        if (
+            search_tree.get_node(search_tree.root).data.current_phases
+            != self.get_node(anchor_nid).data.current_phases
+        ):
+            raise ValueError(
+                "The root node of the subtree must have the same current_phases as the anchor node."
+            )
+
         self.merge(nid=anchor_nid, new_tree=search_tree, deep=False)
         self.update_node(anchor_nid, data=search_tree.get_node(search_tree.root).data)
 
 
 class SearchTree(BaseSearchTree):
+    """
+    A class for the search tree.
+
+    Args:
+        pattern_path: the path to the pattern
+        cif_paths: the paths to the CIF files
+        pinned_phases: the phases that will be included in all the refinement
+        rpb_threshold: the minimum RPB improvement in each step
+        refine_params: the refinement parameters, it will be passed to the refinement function.
+        phase_params: the phase parameters, it will be passed to the refinement function.
+        instrument_name: the name of the instrument, it will be passed to the refinement function.
+        maximum_grouping_distance: the maximum grouping distance, default to 0.1
+        max_phases: the maximum number of phases
+    """
+
     def __init__(
         self,
         pattern_path: Path,

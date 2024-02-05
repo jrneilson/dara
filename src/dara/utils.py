@@ -280,6 +280,7 @@ def get_logger(
     sh.setFormatter(formatter)
 
     logger.addHandler(sh)
+    logger.propagate = False
 
     return logger
 
@@ -308,6 +309,33 @@ def find_optimal_score_threshold(
 
     second_derivative = np.diff(score_percentile, n=2)
     return score_percentile[np.argmax(second_derivative)].item(), score_percentile
+
+
+def get_composition_from_filename(file_name: str | Path) -> Composition:
+    """
+    Get the composition from the filename. The composition is assumed to be the first
+    part of the filename. For example, "BaSnO3_01.xrdml" will return "BaSnO3".
+    """
+    if isinstance(file_name, str):
+        file_name = Path(file_name)
+
+    return Composition(file_name.stem.split("_")[0])
+
+
+def get_composition_distance(
+    comp1: Composition | str, comp2: Composition | str, order: int = 1
+) -> float:
+    """
+    Calculate the distance between two compositions.
+
+    The default is the Manhattan.
+    """
+    comp1 = Composition(comp1, allow_negative=True).fractional_composition
+    comp2 = Composition(comp2, allow_negative=True).fractional_composition
+
+    delta_composition = comp1 - comp2
+
+    return np.linalg.norm(np.array(list(delta_composition.values())), ord=order)
 
 
 def get_composition_distance(

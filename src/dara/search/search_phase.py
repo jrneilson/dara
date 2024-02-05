@@ -8,15 +8,12 @@ import jenkspy
 import ray
 
 from dara.search.tree import SearchTree, BaseSearchTree, ExploredPhasesSet
-from dara.utils import DEPRECATED, get_logger
+from dara.utils import DEPRECATED
 
 if TYPE_CHECKING:
     from pathlib import Path
 
     from dara.result import RefinementResult
-
-
-logger = get_logger(__name__)
 
 
 def remove_duplicate_results(
@@ -36,6 +33,26 @@ def remove_duplicate_results(
             appeared_phases.add(frozenset(phases))
 
     return results_
+
+
+def get_natural_break_results(
+    results: dict[tuple[Path, ...], RefinementResult]
+) -> dict[tuple[Path, ...], RefinementResult]:
+    all_rhos = None
+
+    # remove results that are too bad (dead end in the tree search)
+    while all_rhos is None or max(all_rhos) > min(all_rhos) + 10:
+        all_rhos = [result.lst_data.rho for result in results.values()]
+
+        if len(set(all_rhos)) >= 2:
+            # get the first natural break
+            interval = jenkspy.jenks_breaks(all_rhos, n_classes=2)
+            rho_cutoff = interval[1]
+            results = {k: v for k, v in results.items() if v.lst_data.rho <= rho_cutoff}
+        else:
+            break
+
+    return results
 
 
 @ray.remote
@@ -64,7 +81,20 @@ def search_phases(
     return_search_tree: bool = False,
     top_n: int = DEPRECATED,
 ) -> dict[tuple[Path, ...], RefinementResult] | SearchTree:
-    """Search for the best phases to use for refinement."""
+    """
+    Search for the best phases to use for refinement.
+
+    Args:
+        pattern_path: the path to the pattern file. It has to be either in `.xrdml` or `.xy` format
+        cif_paths: the paths to the CIF files
+        pinned_phases: the paths to the pinned phases, which will be included in all the results
+        max_phases: the maximum number of phases to refine
+        rpb_threshold: the RPB threshold. At each step, we will expect the rpb to be higher than this
+            threshold (improvement)
+        return_search_tree: whether to return the search tree. This is mainly used for debugging purposes.
+        top_n: the number of top results to keep. This is deprecated and will be removed in the future.
+            Currently, it has no effect and a warning will be raised if it is not DEPRECATED.
+    """
     phase_params = {
         "gewicht": "0_0",
         "lattice_range": 0.01,
@@ -109,17 +139,8 @@ def search_phases(
             pending.append(remote_expand_node(search_tree, nid, explored_phases_set))
 
     if not return_search_tree:
-        results = search_tree.get_search_results()
-        all_rhos = [result.lst_data.rho for result in results.values()]
-
-        # TODO: use a better method to remove bad results
-        if len(all_rhos) > 5:
-            # get the first natural break
-            interval = jenkspy.jenks_breaks(all_rhos, n_classes=2)
-            rho_cutoff = interval[1]
-            results = {k: v for k, v in results.items() if v.lst_data.rho <= rho_cutoff}
-
-        results = remove_duplicate_results(results)
-        return results
+        return remove_duplicate_results(
+            get_natural_break_results(search_tree.get_search_results())
+        )
     else:
         return search_tree
