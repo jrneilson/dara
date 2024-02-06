@@ -323,7 +323,7 @@ def get_composition_from_filename(file_name: str | Path) -> Composition:
 
 
 def get_composition_distance(
-    comp1: Composition | str, comp2: Composition | str, order: int = 1
+    comp1: Composition | str, comp2: Composition | str, order: int = 2
 ) -> float:
     """
     Calculate the distance between two compositions.
@@ -334,21 +334,8 @@ def get_composition_distance(
     comp2 = Composition(comp2, allow_negative=True).fractional_composition
 
     delta_composition = comp1 - comp2
-
-    return np.linalg.norm(np.array(list(delta_composition.values())), ord=order)
-
-
-def get_composition_distance(
-    comp1: Composition | str, comp2: Composition | str, order: int = 1
-) -> float:
-    """
-    Calculate the distance between two compositions.
-
-    The default is the Manhattan.
-    """
-    comp1 = Composition(comp1, allow_negative=True).fractional_composition
-    comp2 = Composition(comp2, allow_negative=True).fractional_composition
-
-    delta_composition = comp1 - comp2
+    delta_composition = {
+        k: v / (comp1[k] + comp2[k]) for k, v in delta_composition.items()
+    }
 
     return np.linalg.norm(np.array(list(delta_composition.values())), ord=order)
