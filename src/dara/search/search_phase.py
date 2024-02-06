@@ -15,6 +15,16 @@ if TYPE_CHECKING:
 
     from dara.result import RefinementResult
 
+DEFAULT_PHASE_PARAMS = {
+    "gewicht": "0_0",
+    "lattice_range": 0.01,
+    "k1": "0_0^0.01",
+    "k2": "fixed",
+    "b1": "0_0^0.005",
+    "rp": 4,
+}
+DEFAULT_REFINEMENT_PARAMS = {"n_threads": 8}
+
 
 def remove_duplicate_results(
     results: dict[tuple[Path, ...], RefinementResult],
@@ -78,6 +88,8 @@ def search_phases(
     pinned_phases: list[Path] | None = None,
     max_phases: int = 5,
     rpb_threshold: float = 2,
+    phase_params: dict[str, ...] | None = None,
+    refinement_params: dict[str, ...] | None = None,
     return_search_tree: bool = False,
     top_n: int = DEPRECATED,
 ) -> dict[tuple[Path, ...], RefinementResult] | SearchTree:
@@ -91,19 +103,20 @@ def search_phases(
         max_phases: the maximum number of phases to refine
         rpb_threshold: the RPB threshold. At each step, we will expect the rpb to be higher than this
             threshold (improvement)
+        phase_params: the parameters for the phase search
+        refinement_params: the parameters for the refinement
         return_search_tree: whether to return the search tree. This is mainly used for debugging purposes.
         top_n: the number of top results to keep. This is deprecated and will be removed in the future.
             Currently, it has no effect and a warning will be raised if it is not DEPRECATED.
     """
-    phase_params = {
-        "gewicht": "0_0",
-        "lattice_range": 0.01,
-        "k1": "0_0^0.01",
-        "k2": "fixed",
-        "b1": "0_0^0.005",
-        "rp": 4,
-    }
-    refinement_params = {"n_threads": 8}
+    if phase_params is None:
+        phase_params = {}
+
+    if refinement_params is None:
+        refinement_params = {}
+
+    phase_params = {**DEFAULT_PHASE_PARAMS, **phase_params}
+    refinement_params = {**DEFAULT_REFINEMENT_PARAMS, **refinement_params}
 
     # TODO: remove top_n in the future
     # build the search tree
