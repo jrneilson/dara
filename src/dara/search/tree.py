@@ -418,6 +418,10 @@ class BaseSearchTree(Tree):
                  same phase combinations multiple times.
         """
         node: Node = self.get_node(nid)
+        logger.info(
+            f"Expanding node {nid} with current phases {node.data.current_phases}, "
+            f"Rwp = {node.data.current_result.lst_data.rwp if node.data.current_result is not None else None}"
+        )
         if node is None:
             raise ValueError(f"Node with id {nid} does not exist.")
         if node.data is None or node.data.status != "pending":
