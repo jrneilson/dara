@@ -880,6 +880,11 @@ class SearchTree(BaseSearchTree):
             if result is not None
         }
 
+        logger.info(
+            f"Finished refining {len(all_phases_result)} phases, "
+            f"with {len(cif_paths) - len(all_phases_result)} phases removed."
+        )
+
         return all_phases_result
 
     def _clone(self, identifier=None, with_tree=False, deep=False):
