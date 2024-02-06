@@ -776,7 +776,7 @@ class SearchTree(BaseSearchTree):
         phase_params: the phase parameters, it will be passed to the refinement function.
         instrument_name: the name of the instrument, it will be passed to the refinement function.
         maximum_grouping_distance: the maximum grouping distance, default to 0.1
-        max_phases: the maximum number of phases
+        max_phases: the maximum number of phases, note that the pinned phases are COUNTED as well
     """
 
     def __init__(
@@ -795,6 +795,12 @@ class SearchTree(BaseSearchTree):
     ):
         self.pinned_phases = pinned_phases if pinned_phases is not None else []
         self.cif_paths = cif_paths
+
+        if len(self.pinned_phases) >= max_phases:
+            raise ValueError(
+                "The number of pinned phases must be less than the max_phases, "
+                "as the pinned phases are counted in the max_phases."
+            )
 
         super().__init__(
             pattern_path=pattern_path,
@@ -873,4 +879,4 @@ class SearchTree(BaseSearchTree):
         return all_phases_result
 
     def _clone(self, identifier=None, with_tree=False, deep=False):
-        raise NotImplementedError("SearchTree cannot be cloned.")
+        raise NotImplementedError(f"{self.__class__.__name__} cannot be cloned.")
