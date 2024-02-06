@@ -596,7 +596,8 @@ class BaseSearchTree(Tree):
             ):
                 other_phases = all_phases[frozenset(node.data.current_phases)]
                 if any(
-                    self.get_node(nid).data.status not in {"expanded", "max_depth"}
+                    self.get_node(nid).data.status
+                    not in {"expanded", "max_depth", "duplicate"}
                     for nid in other_phases
                 ):
                     continue
