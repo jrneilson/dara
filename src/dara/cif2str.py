@@ -27,6 +27,12 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.WARNING)
 
 
+class CIF2StrError(Exception):
+    """CIF2Str error."""
+
+    pass
+
+
 def process_specie_string(sp: str | Specie | Element | DummySpecie) -> str:
     """Reverse the charge notation of a species."""
     specie = re.sub(r"(\d+)([+-])", r"\2\1", str(sp))
@@ -38,7 +44,7 @@ def process_specie_string(sp: str | Specie | Element | DummySpecie) -> str:
         # remove the valence and try again
         specie = re.search(r"[A-Z]+", specie).group(0)
         if specie not in POSSIBLE_SPECIES:
-            raise ValueError(
+            raise CIF2StrError(
                 f"Unknown species {specie}, the original specie string is {sp}"
             )
     return specie
@@ -106,7 +112,7 @@ def get_lattice_parameters_from_lattice(
             "A": lattice.a / 10,
         }
 
-    raise ValueError(f"Unknown crystal system {crystal_system}")
+    raise CIF2StrError(f"Unknown crystal system {crystal_system}")
 
 
 def get_std_position(
@@ -119,7 +125,7 @@ def get_std_position(
 
     if not wyckoff:
         logger.debug(f"Spacegroup setting: {spacegroup_setting}")
-        raise ValueError(f"Cannot find the wyckoff letter {wyckoff_letter}")
+        raise CIF2StrError(f"Cannot find the wyckoff letter {wyckoff_letter}")
 
     std_notations = wyckoff["std_notations"]
 
@@ -316,7 +322,7 @@ def cif2str(
     if error_count > 0:
         logger.debug(f"CIF file: {cif_path.read_text()}")
         logger.debug(f"Symmetry dataset: {spg.get_symmetry_dataset()}")
-        raise ValueError(
+        raise CIF2StrError(
             f"Cannot find a valid lattice symmetry setting for {cif_path}."
         )
 

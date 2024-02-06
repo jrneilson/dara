@@ -4,7 +4,7 @@ import warnings
 from itertools import zip_longest
 from pathlib import Path
 from subprocess import TimeoutExpired
-from typing import Literal
+from typing import Literal, TYPE_CHECKING
 
 import numpy as np
 import ray
@@ -12,8 +12,8 @@ from sklearn.cluster import AgglomerativeClustering
 from treelib import Node, Tree
 
 from dara import do_refinement_no_saving
+from dara.cif2str import CIF2StrError
 from dara.eflech_worker import EflechWorker
-from dara.result import RefinementResult
 from dara.search.node import SearchNodeData
 from dara.search.peak_matcher import PeakMatcher
 from dara.utils import (
@@ -27,6 +27,10 @@ from dara.utils import (
     get_composition_distance,
     get_composition_from_filename,
 )
+
+if TYPE_CHECKING:
+    from dara.result import RefinementResult
+
 
 logger = get_logger(__name__, level="INFO")
 
@@ -96,7 +100,7 @@ def remote_do_refinement_no_saving(
             phase_params=phase_params,
             refinement_params=refinement_params,
         )
-    except (RuntimeError, TimeoutExpired):
+    except (RuntimeError, TimeoutExpired, CIF2StrError):
         return None
     if result.lst_data.rpb == 100:
         return None
