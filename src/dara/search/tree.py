@@ -7,6 +7,7 @@ from pathlib import Path
 from subprocess import TimeoutExpired
 from typing import Literal, TYPE_CHECKING
 
+import jenkspy
 import numpy as np
 import ray
 from sklearn.cluster import AgglomerativeClustering
@@ -358,6 +359,26 @@ def remove_unnecessary_phases(
     return new_phases
 
 
+def get_natural_break_results(
+    results: dict[tuple[Path, ...], RefinementResult]
+) -> dict[tuple[Path, ...], RefinementResult]:
+    all_rhos = None
+
+    # remove results that are too bad (dead end in the tree search)
+    while all_rhos is None or max(all_rhos) > min(all_rhos) + 10:
+        all_rhos = [result.lst_data.rho for result in results.values()]
+
+        if len(set(all_rhos)) >= 2:
+            # get the first natural break
+            interval = jenkspy.jenks_breaks(all_rhos, n_classes=2)
+            rho_cutoff = interval[1]
+            results = {k: v for k, v in results.items() if v.lst_data.rho <= rho_cutoff}
+        else:
+            break
+
+    return results
+
+
 class BaseSearchTree(Tree):
     """
     A base class for the search tree. It is not intended to be used directly.
@@ -442,7 +463,7 @@ class BaseSearchTree(Tree):
                 for phase, result in self.all_phases_result.items()
                 if phase not in current_phases_set
             }
-            best_phases, scores, threshold = self.get_best_matched_phases(
+            best_phases, scores, threshold = self.score_phases(
                 all_phases_result, node.data.current_result
             )
 
@@ -473,7 +494,7 @@ class BaseSearchTree(Tree):
             node.data.peak_matcher_scores = scores
             node.data.peak_matcher_score_threshold = threshold
 
-            new_results = self.get_all_phases_result(
+            new_results = self.refine_phases(
                 best_phases, pinned_phases=node.data.current_phases
             )
 
@@ -606,9 +627,9 @@ class BaseSearchTree(Tree):
                 ):
                     continue
                 results[tuple(node.data.current_phases)] = node.data.current_result
-        return results
+        return get_natural_break_results(results)
 
-    def get_best_matched_phases(
+    def score_phases(
         self,
         all_phases_result: dict[Path, RefinementResult],
         current_result: RefinementResult | None = None,
@@ -668,7 +689,7 @@ class BaseSearchTree(Tree):
             peak_matcher_score_threshold,
         )
 
-    def get_all_phases_result(
+    def refine_phases(
         self, phases: list[Path], pinned_phases: list[Path] | None = None
     ) -> dict[Path, RefinementResult | None]:
         """
@@ -880,7 +901,7 @@ class SearchTree(BaseSearchTree):
         cif_paths = [
             cif_path for cif_path in self.cif_paths if cif_path not in pinned_phases_set
         ]
-        all_phases_result = self.get_all_phases_result(
+        all_phases_result = self.refine_phases(
             cif_paths, pinned_phases=self.pinned_phases
         )
 
