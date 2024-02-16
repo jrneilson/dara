@@ -93,8 +93,8 @@ class RefinementResult(BaseModel):
         populate_by_name = True
 
     lst_data: LstResult
-    plot_data: DiaResult
-    peak_data: pd.DataFrame
+    plot_data: DiaResult = Field(repr=False)
+    peak_data: pd.DataFrame = Field(repr=False)
 
     @field_validator("peak_data", mode="before")
     @classmethod
