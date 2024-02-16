@@ -246,7 +246,7 @@ class PhaseSearchMaker(Maker):
 
         prediction = self.phase_predictor.predict(precursors, **kwargs)
         dumpfn(prediction, "prediction.json")
-        cost_cutoff = 0.05
+        cost_cutoff = 0.1
 
         if any("CO3" in f for f in precursors):
             logger.info(

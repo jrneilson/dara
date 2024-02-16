@@ -58,8 +58,8 @@ class PhasePredictor(MSONable):
     def write_cifs_from_formulas(
         self,
         prediction: dict,
-        cost_cutoff: float = 0.025,
-        e_hull_filter: float = 0.1,
+        cost_cutoff: float = 0.1,
+        e_hull_filter: float = 0.05,
         dest_dir: str = "cifs",
         exclude_gases: bool = True,
     ):
