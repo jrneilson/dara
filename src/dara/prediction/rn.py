@@ -73,6 +73,7 @@ class ReactionNetworkEngine(PredictionEngine):
                 all entries with an E_hull <= 50 meV/atom.)
         """
         precursors_comp = [Composition(p) for p in precursors]
+        precursors_formulas = [p.reduced_formula for p in precursors_comp]
         temp = round(temp)
         cf = self._get_cost_function(temp)
 
@@ -85,7 +86,7 @@ class ReactionNetworkEngine(PredictionEngine):
         if computed_entries is None:
             logger.info("Downloading entries from Materials Project...")
             computed_entries = get_mp_entries(
-                get_chemsys_from_formulas([p.reduced_formula for p in precursors_comp])
+                get_chemsys_from_formulas(precursors_formulas)
             )
 
         gibbs, precursors_no_open = self._get_entries(
@@ -112,6 +113,12 @@ class ReactionNetworkEngine(PredictionEngine):
             )
             for key in set(ranked_formulas) | set(rereact_ranked_formulas)
         }
+        for formula, cost in merged_dict.items():
+            if formula in precursors_formulas:
+                merged_dict[formula] = min(
+                    cost, 0.0
+                )  # make sure precursor is always there
+
         return collections.OrderedDict(
             sorted(merged_dict.items(), key=lambda item: item[1])
         )
