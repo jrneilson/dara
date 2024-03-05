@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import copy
 from collections import deque
+from traceback import print_exc
 from typing import TYPE_CHECKING
 
 import ray
@@ -31,8 +32,12 @@ def _remote_expand_node(
     search_tree: BaseSearchTree, explored_phases_set: ExploredPhasesSet
 ) -> BaseSearchTree:
     """Expand a node in the search tree."""
-    search_tree.expand_root(explored_phases_set=explored_phases_set)
-    return search_tree
+    try:
+        search_tree.expand_root(explored_phases_set=explored_phases_set)
+        return search_tree
+    except Exception as e:
+        print_exc()
+        raise e
 
 
 def remote_expand_node(

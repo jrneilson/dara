@@ -3,9 +3,9 @@ from typing import Any
 import numpy as np
 from scipy.spatial.distance import cdist
 
-ANGLE_TOLERANCE = 0.3  # maximum difference in angle
-INTENSITY_TOLERANCE = 2  # maximum ratio of the intensities
-MAX_INTENSITY_TOLERANCE = (
+DEFAULT_ANGLE_TOLERANCE = 0.3  # maximum difference in angle
+DEFAULT_INTENSITY_TOLERANCE = 2  # maximum ratio of the intensities
+DEFAULT_MAX_INTENSITY_TOLERANCE = (
     10  # maximum ratio of the intensities to be considered as missing or extra
 )
 
@@ -58,13 +58,22 @@ def distance_matrix(peaks1: np.ndarray, peaks2: np.ndarray) -> np.ndarray:
     return np.max(np.array([position_distance, intensity_distance]), axis=0)
 
 
-def find_best_match(peak_calc: np.ndarray, peak_obs: np.ndarray) -> dict[str, Any]:
+def find_best_match(
+    peak_calc: np.ndarray,
+    peak_obs: np.ndarray,
+    angle_tolerance: float = DEFAULT_ANGLE_TOLERANCE,
+    intensity_tolerance: float = DEFAULT_INTENSITY_TOLERANCE,
+    max_intensity_tolerance: float = DEFAULT_MAX_INTENSITY_TOLERANCE,
+) -> dict[str, Any]:
     """
     Find the best match between two sets of peaks.
 
     Args:
         peak_calc: the calculated peaks, (n, 2) array of peaks with [position, intensity]
         peak_obs: the observed peaks, (m, 2) array of peaks with [position, intensity]
+        angle_tolerance: the maximum difference in angle
+        intensity_tolerance: the maximum ratio of the intensities
+        max_intensity_tolerance: the maximum ratio of the intensities to be considered as
 
     Returns
     -------
@@ -108,9 +117,9 @@ def find_best_match(peak_calc: np.ndarray, peak_obs: np.ndarray) -> dict[str, An
 
         best_match_peak = peak_obs[best_match_idx]
 
-        if np.abs(peak[0] - best_match_peak[0]) > ANGLE_TOLERANCE or absolute_log_error(
+        if np.abs(peak[0] - best_match_peak[0]) > angle_tolerance or absolute_log_error(
             best_match_peak[1], peak[1]
-        ) > np.log(MAX_INTENSITY_TOLERANCE):
+        ) > np.log(max_intensity_tolerance):
             extra.append(peak_idx)
             continue
 
@@ -135,11 +144,11 @@ def find_best_match(peak_calc: np.ndarray, peak_obs: np.ndarray) -> dict[str, An
         peak_intensity_diff = absolute_log_error(
             peak_obs[peak_idx][1], peak_obs_acc[peak_idx]
         )
-        if peak_intensity_diff > np.log(MAX_INTENSITY_TOLERANCE):
+        if peak_intensity_diff > np.log(max_intensity_tolerance):
             missing.append(peak_idx)
             extra.append(matched[i][0])
             to_be_deleted.add(i)
-        if peak_intensity_diff > np.log(INTENSITY_TOLERANCE):
+        if peak_intensity_diff > np.log(intensity_tolerance):
             wrong_intens.append(matched[i])
             to_be_deleted.add(i)
 
@@ -158,7 +167,13 @@ def find_best_match(peak_calc: np.ndarray, peak_obs: np.ndarray) -> dict[str, An
 
 class PeakMatcher:
     def __init__(
-        self, peak_calc: np.ndarray, peak_obs: np.ndarray, noise_level: float = 0.01
+        self,
+        peak_calc: np.ndarray,
+        peak_obs: np.ndarray,
+        noise_level: float = 0.01,
+        angle_tolerance: float = DEFAULT_ANGLE_TOLERANCE,
+        intensity_tolerance: float = DEFAULT_INTENSITY_TOLERANCE,
+        max_intensity_tolerance: float = DEFAULT_MAX_INTENSITY_TOLERANCE,
     ):
         self.noise_level = noise_level
 
@@ -170,7 +185,13 @@ class PeakMatcher:
             (peak_obs[:, 1] > 0)
             & (peak_obs[:, 1] > noise_level * peak_obs[:, 1].max(initial=0))
         ]
-        self._result = find_best_match(self.peak_calc, self.peak_obs)
+        self._result = find_best_match(
+            self.peak_calc,
+            self.peak_obs,
+            angle_tolerance=angle_tolerance,
+            intensity_tolerance=intensity_tolerance,
+            max_intensity_tolerance=max_intensity_tolerance,
+        )
 
     @property
     def missing(self) -> np.ndarray:
@@ -354,5 +375,3 @@ class PeakMatcher:
         ax.set_xlabel("2theta")
         ax.set_ylabel("Intensity")
         ax.legend()
-
-        return fig
