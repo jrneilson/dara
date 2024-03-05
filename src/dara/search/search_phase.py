@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING
 import ray
 
 from dara.search.tree import SearchTree, BaseSearchTree, ExploredPhasesSet
-from dara.utils import DEPRECATED
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -57,7 +56,6 @@ def search_phases(
     phase_params: dict[str, ...] | None = None,
     refinement_params: dict[str, ...] | None = None,
     return_search_tree: bool = False,
-    top_n: int = DEPRECATED,
 ) -> dict[tuple[Path, ...], RefinementResult] | SearchTree:
     """
     Search for the best phases to use for refinement.
@@ -72,8 +70,6 @@ def search_phases(
         phase_params: the parameters for the phase search
         refinement_params: the parameters for the refinement
         return_search_tree: whether to return the search tree. This is mainly used for debugging purposes.
-        top_n: the number of top results to keep. This is deprecated and will be removed in the future.
-            Currently, it has no effect and a warning will be raised if it is not DEPRECATED.
     """
     if phase_params is None:
         phase_params = {}
@@ -84,7 +80,6 @@ def search_phases(
     phase_params = {**DEFAULT_PHASE_PARAMS, **phase_params}
     refinement_params = {**DEFAULT_REFINEMENT_PARAMS, **refinement_params}
 
-    # TODO: remove top_n in the future
     # build the search tree
     search_tree = SearchTree(
         pattern_path=pattern_path,
@@ -94,7 +89,6 @@ def search_phases(
         refine_params=refinement_params,
         phase_params=phase_params,
         max_phases=max_phases,
-        top_n=top_n,
     )
 
     max_worker = ray.cluster_resources()["CPU"]

@@ -22,7 +22,6 @@ from dara.utils import (
     get_optimal_max_two_theta,
     rpb,
     load_symmetrized_structure,
-    DEPRECATED,
     get_logger,
     find_optimal_score_threshold,
     get_composition_distance,
@@ -405,18 +404,10 @@ class BaseSearchTree(Tree):
         instrument_name: str,
         maximum_grouping_distance: float,
         max_phases: float,
-        top_n: int = DEPRECATED,
         *args,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
-
-        # TODO: Remove top_n in the future
-        if top_n != DEPRECATED:
-            warnings.warn(
-                "The top_n parameter is deprecated and will be removed in the future. "
-                "You can set the peak_matcher_score_threshold to control the number of phases searched.",
-            )
 
         self.pattern_path = pattern_path
         self.rpb_threshold = rpb_threshold
