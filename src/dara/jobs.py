@@ -11,6 +11,7 @@ from monty.serialization import dumpfn
 from pymatgen.core import Composition
 
 from dara.cif import Cif
+from dara.icsd import ICSDDatabase
 from dara.prediction.core import PhasePredictor
 from dara.refine import do_refinement, do_refinement_no_saving
 from dara.schema import PhaseSearchDocument, RefinementDocument
@@ -157,7 +158,7 @@ class PhaseSearchMaker(Maker):
                 elems = {
                     str(elem) for p in precursors for elem in Composition(p).elements
                 }
-                _ = self.db.get_cifs_by_chemsys(elems, dest_dir=cifs_path)
+                ICSDDatabase().get_cifs_by_chemsys(elems, dest_dir=cifs_path.as_posix())
             else:
                 logger.info("Predicting phases...")
                 self._predict_folder(
@@ -201,7 +202,7 @@ class PhaseSearchMaker(Maker):
             logger.info("Performing final refinement on best result...")
             best_result = do_refinement(
                 pattern_path=best_dir_path / "xrd_data.xy",
-                phase_paths=best_dir_path.glob("*.cif"),
+                phase_paths=list(best_dir_path.glob("*.cif")),
                 phase_params=final_refinement_params,
                 show_progress=True,
             )
