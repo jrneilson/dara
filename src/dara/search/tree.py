@@ -609,6 +609,20 @@ class BaseSearchTree(Tree):
                 child.data.status not in {"expanded", "max_depth"}
                 for child in self.children(node.identifier)
             ):
+                has_expanded_child = False
+                for child in self.children(node.identifier):
+                    if child.data.status == "duplicate":
+                        other_phases = all_phases[frozenset(child.data.current_phases)]
+                        if any(
+                            self.get_node(nid).data.status in {"expanded", "max_depth"}
+                            for nid in other_phases
+                        ):
+                            has_expanded_child = True
+                            break
+
+                if has_expanded_child:
+                    continue
+
                 other_phases = all_phases[frozenset(node.data.current_phases)]
                 if any(
                     self.get_node(nid).data.status
