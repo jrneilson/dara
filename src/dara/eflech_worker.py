@@ -203,7 +203,7 @@ class EflechWorker:
         return peak_list
 
 
-def merge_peaks(peaks: pd.DataFrame, resolution: float = 0.1) -> pd.DataFrame:
+def merge_peaks(peaks: pd.DataFrame, resolution: float = 0.0) -> pd.DataFrame:
     """
     Merge peaks that are too close to each other (smaller than resolution).
 
@@ -214,7 +214,7 @@ def merge_peaks(peaks: pd.DataFrame, resolution: float = 0.1) -> pd.DataFrame:
     Returns:
         the merged peaks
     """
-    if len(peaks) <= 1:
+    if len(peaks) <= 1 or resolution == 0.0:
         return peaks
 
     merge_to = np.arange(len(peaks))
