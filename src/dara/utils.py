@@ -1,6 +1,8 @@
 """Utility functions for the dara package."""
+
 from __future__ import annotations
 
+import itertools
 import logging
 import os
 import re
@@ -12,6 +14,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Union
 
 import numpy as np
+from monty.json import MontyDecoder
 from pymatgen.core import Composition, Structure
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.symmetry.structure import SymmetrizedStructure
@@ -19,6 +22,7 @@ from scipy import signal
 
 if TYPE_CHECKING:
     import pandas as pd
+    from maggma.stores.mongolike import MongoStore
 
 
 DEPRECATED = "DEPRECATED"
@@ -60,9 +64,7 @@ def load_symmetrized_structure(
     return structure, spg
 
 
-def get_optimal_max_two_theta(
-    peak_data: pd.DataFrame, fraction: float = 0.7, intensity_filter=0.1
-) -> float:
+def get_optimal_max_two_theta(peak_data: pd.DataFrame, fraction: float = 0.7, intensity_filter=0.1) -> float:
     """Get the optimal 2theta max given detected peaks. The range is determined by
     proportion of the detected peaks.
 
@@ -191,9 +193,7 @@ def copy_and_rename_files(src_directory, dest_directory, file_map, verbose=True)
         if os.path.isfile(src_file):
             shutil.copy(src_file, dest_file)
             if verbose:
-                print(
-                    f"Successfully copied {src_filename} to {dest_filename} in {dest_directory}"
-                )
+                print(f"Successfully copied {src_filename} to {dest_filename} in {dest_directory}")
         else:
             if verbose:
                 print(f"ERROR: File {src_filename} not found in {src_directory}")
@@ -208,12 +208,45 @@ def get_chemsys_from_formulas(formulas: list[str]):
     return "-".join(sorted([str(e) for e in elements]))
 
 
-def get_mp_entries(chemsys: str):
+def get_entries_in_chemsys_mp(chemsys: str):
     """Download ComputedStructureEntry objects from Materials Project."""
-    from mp_api.client import MPRester
+    try:
+        from mp_api.client import MPRester
+    except ImportError:
+        raise ImportError("Please install the mp-api package.")
 
     with MPRester() as mpr:
         return mpr.get_entries_in_chemsys(chemsys)
+
+
+def get_entries_db(db: MongoStore, chemsys: str):
+    """Get entries for a specific chemical system from a database."""
+    decoder = MontyDecoder()
+    for doc in db.query(criteria={"chemsys": chemsys}, properties=["entry"]):
+        yield decoder.process_decoded(doc["entry"])
+
+
+def get_entries_in_chemsys_db(db: MongoStore, chemsys: list[str] | str):
+    """Get all computed entries from a database covering all possible sub-chemical systems.
+
+    This is equivalent to MPRester.get_entries_in_chemsys.
+
+    Args:
+        db: the database (must be connected!)
+        chemsys: a chemical system, either as a string (e.g., "Li-Fe-O") or as a list of elements.
+
+    """
+    if isinstance(chemsys, str):
+        elements = chemsys.split("-")
+
+    elements_set = set(elements)  # remove duplicate elements
+
+    entries = []
+    for i in range(len(elements_set)):
+        for els in itertools.combinations(elements_set, i + 1):
+            entries.extend(get_entries_db(db, "-".join(sorted(els))))
+
+    return entries
 
 
 def angular_correction(tt, eps1, eps2):
@@ -322,9 +355,7 @@ def get_composition_from_filename(file_name: str | Path) -> Composition:
     return Composition(file_name.stem.split("_")[0])
 
 
-def get_composition_distance(
-    comp1: Composition | str, comp2: Composition | str, order: int = 2
-) -> float:
+def get_composition_distance(comp1: Composition | str, comp2: Composition | str, order: int = 2) -> float:
     """
     Calculate the distance between two compositions.
 
@@ -334,8 +365,6 @@ def get_composition_distance(
     comp2 = Composition(comp2, allow_negative=True).fractional_composition
 
     delta_composition = comp1 - comp2
-    delta_composition = {
-        k: v / (comp1[k] + comp2[k]) for k, v in delta_composition.items()
-    }
+    delta_composition = {k: v / (comp1[k] + comp2[k]) for k, v in delta_composition.items()}
 
     return np.linalg.norm(np.array(list(delta_composition.values())), ord=order)

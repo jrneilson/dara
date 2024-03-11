@@ -1,4 +1,5 @@
 """Code for predicting products in a chemical reaction."""
+
 from __future__ import annotations
 
 import collections
@@ -16,9 +17,7 @@ logger = get_logger(__name__)
 class PhasePredictor(MSONable):
     """Predict phases during solid-state synthesis."""
 
-    def __init__(
-        self, path_to_icsd: str | None = None, engine_name="reaction_network", **kwargs
-    ):
+    def __init__(self, path_to_icsd: str | None = None, engine_name="reaction_network", **kwargs):
         """Initialize the engine."""
         self.path_to_icsd = path_to_icsd
         self.engine_name = engine_name
@@ -64,12 +63,8 @@ class PhasePredictor(MSONable):
         exclude_gases: bool = True,
     ):
         """Write CIFs of the predicted products."""
-        prediction_sorted = collections.OrderedDict(
-            sorted(prediction.items(), key=lambda item: item[1])
-        )
-        formulas = [
-            formula for formula, cost in prediction_sorted.items() if cost < cost_cutoff
-        ]
+        prediction_sorted = collections.OrderedDict(sorted(prediction.items(), key=lambda item: item[1]))
+        formulas = [formula for formula, cost in prediction_sorted.items() if cost < cost_cutoff]
         if os.path.exists(dest_dir):
             logger.info(f"Removing existing CIFs directory {dest_dir}")
             shutil.rmtree(dest_dir)

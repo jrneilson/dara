@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
 
 class CellularAutomatonEngine(PredictionEngine):
-    """Engine for predicting products in a chemical reaction."""
+    """WIP: Engine for predicting products in a chemical reaction."""
 
     def predict(
         precursors: list[str],
