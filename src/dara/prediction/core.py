@@ -1,4 +1,5 @@
 """Code for predicting products in a chemical reaction."""
+
 from __future__ import annotations
 
 import collections

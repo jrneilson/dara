@@ -1,4 +1,5 @@
 """Utility functions for the dara package."""
+
 from __future__ import annotations
 
 import itertools
@@ -221,12 +222,8 @@ def get_entries_in_chemsys_mp(chemsys: str):
 def get_entries_db(db: MongoStore, chemsys: str):
     """Get entries for a specific chemical system from a database."""
     decoder = MontyDecoder()
-    for doc in db.query(
-        criteria={"chemsys": chemsys, "deprecated": False, "thermo_type": "GGA_GGA+U"}, properties=["entries"]
-    ):
-        for entry_type, entry in doc["entries"].items():
-            if entry_type == "GGA" or entry_type == "GGA+U":
-                yield decoder.process_decoded(entry)
+    for doc in db.query(criteria={"chemsys": chemsys}, properties=["entry"]):
+        yield decoder.process_decoded(doc["entry"])
 
 
 def get_entries_in_chemsys_db(db: MongoStore, chemsys: str):
