@@ -1,4 +1,5 @@
 """An interface for rxn_network for predicting products in a chemical reaction."""
+
 from __future__ import annotations
 
 import collections
@@ -6,6 +7,7 @@ import itertools
 import math
 import typing
 
+from maggma.stores.mongolike import MongoStore
 from pymatgen.core import Composition, Element
 from rxn_network.costs.calculators import (
     PrimaryCompetitionCalculator,
@@ -25,7 +27,6 @@ from dara.prediction.base import PredictionEngine
 from dara.utils import get_chemsys_from_formulas, get_entries_in_chemsys_db, get_entries_in_chemsys_mp, get_logger
 
 if typing.TYPE_CHECKING:
-    from maggma.stores.mongolike import MongoStore
     from pymatgen.entries.computed_entries import ComputedStructureEntry
 
 logger = get_logger(__name__)

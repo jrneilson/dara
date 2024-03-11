@@ -226,8 +226,16 @@ def get_entries_db(db: MongoStore, chemsys: str):
         yield decoder.process_decoded(doc["entry"])
 
 
-def get_entries_in_chemsys_db(db: MongoStore, chemsys: str):
-    """Get computed entries from a database."""
+def get_entries_in_chemsys_db(db: MongoStore, chemsys: list[str] | str):
+    """Get all computed entries from a database covering all possible sub-chemical systems.
+
+    This is equivalent to MPRester.get_entries_in_chemsys.
+
+    Args:
+        db: the database (must be connected!)
+        chemsys: a chemical system, either as a string (e.g., "Li-Fe-O") or as a list of elements.
+
+    """
     if isinstance(chemsys, str):
         elements = chemsys.split("-")
 
