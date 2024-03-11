@@ -100,7 +100,7 @@ def remote_do_refinement_no_saving(
             phase_params=phase_params,
             refinement_params=refinement_params,
         )
-    except (RuntimeError, TimeoutExpired, CIF2StrError) as e:
+    except (RuntimeError, TimeoutExpired, CIF2StrError, AttributeError) as e:
         logger.debug(f"Refinement failed for {cif_paths}, the reason is {e}")
         return None
     if result.lst_data.rpb == 100:
@@ -609,6 +609,20 @@ class BaseSearchTree(Tree):
                 child.data.status not in {"expanded", "max_depth"}
                 for child in self.children(node.identifier)
             ):
+                has_expanded_child = False
+                for child in self.children(node.identifier):
+                    if child.data.status == "duplicate":
+                        other_phases = all_phases[frozenset(child.data.current_phases)]
+                        if any(
+                            self.get_node(nid).data.status in {"expanded", "max_depth"}
+                            for nid in other_phases
+                        ):
+                            has_expanded_child = True
+                            break
+
+                if has_expanded_child:
+                    continue
+
                 other_phases = all_phases[frozenset(node.data.current_phases)]
                 if any(
                     self.get_node(nid).data.status
