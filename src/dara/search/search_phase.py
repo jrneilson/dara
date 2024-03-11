@@ -53,6 +53,7 @@ def search_phases(
     pinned_phases: list[Path] | None = None,
     max_phases: int = 5,
     rpb_threshold: float = 2,
+    instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
     phase_params: dict[str, ...] | None = None,
     refinement_params: dict[str, ...] | None = None,
     return_search_tree: bool = False,
@@ -67,6 +68,7 @@ def search_phases(
         max_phases: the maximum number of phases to refine
         rpb_threshold: the RPB threshold. At each step, we will expect the rpb to be higher than this
             threshold (improvement)
+        instrument_name: the name of the instrument
         phase_params: the parameters for the phase search
         refinement_params: the parameters for the refinement
         return_search_tree: whether to return the search tree. This is mainly used for debugging purposes.
@@ -86,6 +88,7 @@ def search_phases(
         cif_paths=cif_paths,
         pinned_phases=pinned_phases,
         rpb_threshold=rpb_threshold,
+        instrument_name=instrument_name,
         refine_params=refinement_params,
         phase_params=phase_params,
         max_phases=max_phases,
