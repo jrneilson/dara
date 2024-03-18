@@ -29,3 +29,9 @@ class SearchNodeData(BaseModel):
 
     peak_matcher_scores: Optional[dict[Path, float]] = None
     peak_matcher_score_threshold: Optional[float] = None
+
+
+class SearchResult(BaseModel):
+    refinement_result: RefinementResult
+    phases: tuple[tuple[Path, ...], ...]
+    foms: tuple[tuple[float, ...], ...]
