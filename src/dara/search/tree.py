@@ -351,7 +351,7 @@ def get_natural_break_results(
             results = [
                 result
                 for result in results
-                if result.refinement_result.lst_data.rho < rho_cutoff
+                if result.refinement_result.lst_data.rho <= rho_cutoff
             ]
         else:
             break
@@ -774,7 +774,7 @@ class BaseSearchTree(Tree):
         all_phases_result = dict(
             zip_longest(
                 phases,
-                self._batch_refine([[phase] + pinned_phases for phase in phases]),
+                self._batch_refine([pinned_phases + [phase] for phase in phases]),
                 fillvalue=None,
             )
         )
