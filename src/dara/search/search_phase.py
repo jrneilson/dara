@@ -51,7 +51,7 @@ def search_phases(
     cif_paths: list[Path],
     pinned_phases: list[Path] | None = None,
     max_phases: int = 5,
-    rpb_threshold: float = 2,
+    rpb_threshold: float = 4,
     instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
     phase_params: dict[str, ...] | None = None,
     refinement_params: dict[str, ...] | None = None,
