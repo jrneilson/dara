@@ -47,9 +47,9 @@ def remote_expand_node(
 
 
 def search_phases(
-    pattern_path: Path,
-    cif_paths: list[Path],
-    pinned_phases: list[Path] | None = None,
+    pattern_path: Path | str,
+    cif_paths: list[Path | str],
+    pinned_phases: list[Path | str] | None = None,
     max_phases: int = 5,
     rpb_threshold: float = 4,
     instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",

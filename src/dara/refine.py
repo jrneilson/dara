@@ -13,17 +13,22 @@ from dara.xrd import xrdml2xy
 
 
 def do_refinement(
-    pattern_path: Path,
-    phase_paths: list[Path],
+    pattern_path: Path | str,
+    phase_paths: list[Path | str],
     instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
-    working_dir: Path | None = None,
+    working_dir: Path | str | None = None,
     phase_params: dict | None = None,
     refinement_params: dict | None = None,
     show_progress: bool = False,
 ) -> RefinementResult:
     """Refine the structure using BGMN."""
-    if working_dir is None:
-        working_dir = pattern_path.parent / f"refinement_{pattern_path.stem}"
+    pattern_path = Path(pattern_path)
+    phase_paths = [Path(phase_path) for phase_path in phase_paths]
+    working_dir = (
+        Path(working_dir)
+        if working_dir is not None
+        else pattern_path.parent / f"refinement_{pattern_path.stem}"
+    )
 
     if not working_dir.exists():
         working_dir.mkdir(exist_ok=True, parents=True)

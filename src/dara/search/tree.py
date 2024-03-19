@@ -883,9 +883,9 @@ class SearchTree(BaseSearchTree):
 
     def __init__(
         self,
-        pattern_path: Path,
-        cif_paths: list[Path],
-        pinned_phases: list[Path] | None = None,
+        pattern_path: Path | str,
+        cif_paths: list[Path | str],
+        pinned_phases: list[Path | str] | None = None,
         rpb_threshold: float = 2,
         refine_params: dict[str, ...] | None = None,
         phase_params: dict[str, ...] | None = None,
@@ -895,8 +895,13 @@ class SearchTree(BaseSearchTree):
         *args,
         **kwargs,
     ):
-        self.pinned_phases = pinned_phases if pinned_phases is not None else []
-        self.cif_paths = cif_paths
+        pattern_path = Path(pattern_path)
+        self.cif_paths = [Path(cif_path) for cif_path in cif_paths]
+        self.pinned_phases = (
+            [Path(pinned_phase) for pinned_phase in pinned_phases]
+            if pinned_phases is not None
+            else []
+        )
 
         if len(self.pinned_phases) >= max_phases:
             raise ValueError(
