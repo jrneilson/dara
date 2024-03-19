@@ -64,7 +64,9 @@ def load_symmetrized_structure(
     return structure, spg
 
 
-def get_optimal_max_two_theta(peak_data: pd.DataFrame, fraction: float = 0.7, intensity_filter=0.1) -> float:
+def get_optimal_max_two_theta(
+    peak_data: pd.DataFrame, fraction: float = 0.7, intensity_filter=0.1
+) -> float:
     """Get the optimal 2theta max given detected peaks. The range is determined by
     proportion of the detected peaks.
 
@@ -107,7 +109,12 @@ def read_phase_name_from_str(str_path: Path) -> str:
     E=O-2 Wyckoff=d x=0.000000 y=0.000000 z=0.500000 TDS=0.010000
     """
     text = str_path.read_text()
-    return re.search(r"PHASE=(\S*)", text).group(1)
+    try:
+        return re.search(r"PHASE=(\S*)", text).group(1)
+    except AttributeError as e:
+        raise ValueError(
+            f"Could not find phase name in {str_path}. The content is: {text}"
+        ) from e
 
 
 def standardize_coords(x, y, z):
@@ -193,7 +200,9 @@ def copy_and_rename_files(src_directory, dest_directory, file_map, verbose=True)
         if os.path.isfile(src_file):
             shutil.copy(src_file, dest_file)
             if verbose:
-                print(f"Successfully copied {src_filename} to {dest_filename} in {dest_directory}")
+                print(
+                    f"Successfully copied {src_filename} to {dest_filename} in {dest_directory}"
+                )
         else:
             if verbose:
                 print(f"ERROR: File {src_filename} not found in {src_directory}")
@@ -355,7 +364,9 @@ def get_composition_from_filename(file_name: str | Path) -> Composition:
     return Composition(file_name.stem.split("_")[0])
 
 
-def get_composition_distance(comp1: Composition | str, comp2: Composition | str, order: int = 2) -> float:
+def get_composition_distance(
+    comp1: Composition | str, comp2: Composition | str, order: int = 2
+) -> float:
     """
     Calculate the distance between two compositions.
 
@@ -365,6 +376,8 @@ def get_composition_distance(comp1: Composition | str, comp2: Composition | str,
     comp2 = Composition(comp2, allow_negative=True).fractional_composition
 
     delta_composition = comp1 - comp2
-    delta_composition = {k: v / (comp1[k] + comp2[k]) for k, v in delta_composition.items()}
+    delta_composition = {
+        k: v / (comp1[k] + comp2[k]) for k, v in delta_composition.items()
+    }
 
     return np.linalg.norm(np.array(list(delta_composition.values())), ord=order)
