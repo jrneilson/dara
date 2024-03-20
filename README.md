@@ -12,16 +12,9 @@ First, git clone the repository. Then navigate to the directory and pip install:
 
 ```bash
 cd dara
-pip install -e .
+pip install .
 ```
 
-### Install BGMN
-
-From the dara directory:
-
-```bash
-python bgmn/download_bgmn.py
-```
 
 ### Special instructions: installation on Lawrencium (LBNL)
 
