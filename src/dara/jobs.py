@@ -1,4 +1,5 @@
 """Jobflow jobs for DARA."""
+
 from __future__ import annotations
 
 import os
@@ -134,6 +135,7 @@ class PhaseSearchMaker(Maker):
 
         pattern_path = directory / "xrd_data.xy"
         cifs_path = directory / self.cifs_folder_name
+        cifs_path.mkdir(exist_ok=True)
 
         xrd_data.to_xy_file(pattern_path)
 
@@ -143,7 +145,7 @@ class PhaseSearchMaker(Maker):
         if cifs is not None:
             logger.info("CIFs provided, skipping prediction.")
             for cif in cifs:
-                cif_path = cifs_path / f"{next(iter(cif.data.keys()))}.cif"
+                cif_path = cifs_path / f"{cif.name}.cif"
 
                 with open(cif_path, "w") as f:
                     f.write(str(cif))
@@ -152,13 +154,8 @@ class PhaseSearchMaker(Maker):
                 raise ValueError("Must provide either precursors or a set of CIFs!")
 
             if self.phase_predictor is None:
-                logger.info(
-                    "Phase prediction disabled; using all ICSD phases in the chemical "
-                    "system."
-                )
-                elems = {
-                    str(elem) for p in precursors for elem in Composition(p).elements
-                }
+                logger.info("Phase prediction disabled; using all ICSD phases in the chemical system.")
+                elems = {str(elem) for p in precursors for elem in Composition(p).elements}
                 ICSDDatabase().get_cifs_by_chemsys(elems, dest_dir=cifs_path.as_posix())
             else:
                 logger.info("Predicting phases...")
@@ -181,11 +178,7 @@ class PhaseSearchMaker(Maker):
             logger.info("Re-refining best result...")
 
             for item in os.listdir(directory):
-                if (
-                    "1_result_rwp" in item
-                    and "rwp" in item
-                    and os.path.isdir(directory / item)
-                ):
+                if "1_result_rwp" in item and "rwp" in item and os.path.isdir(directory / item):
                     best_dir = item
                     break
             else:
@@ -206,9 +199,7 @@ class PhaseSearchMaker(Maker):
                 phase_params=final_refinement_params,
                 show_progress=True,
             )
-            new_best_dir_path = (
-                str(best_dir_path) + f"_rwp_{round(best_result.lst_data.rwp, 2)}"
-            )
+            new_best_dir_path = str(best_dir_path) + f"_rwp_{round(best_result.lst_data.rwp, 2)}"
 
             if os.path.exists(new_best_dir_path):
                 shutil.rmtree(new_best_dir_path)
@@ -260,9 +251,7 @@ class PhaseSearchMaker(Maker):
             )
             cost_cutoff = 0.5
 
-        self.phase_predictor.write_cifs_from_formulas(
-            prediction, dest_dir=cifs_path, cost_cutoff=cost_cutoff
-        )
+        self.phase_predictor.write_cifs_from_formulas(prediction, dest_dir=cifs_path, cost_cutoff=cost_cutoff)
 
         return prediction
 
