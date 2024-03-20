@@ -63,3 +63,6 @@ class Cif(MSONable, CifFile):
             dct[block.header] = block
 
         return cls(dct, string)
+
+    def __repr__(self):
+        return f"Cif[{self.name}]"
