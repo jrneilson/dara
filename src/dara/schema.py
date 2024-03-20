@@ -1,6 +1,6 @@
 """Pydantic document schemas for jobflow jobs."""
 
-from typing import Optional
+from typing import Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -50,9 +50,10 @@ class PhaseSearchDocument(BaseModel):
         default_factory=datetime_str,
         description="Timestamp of when the document was last updated.",
     )
-    results: Optional[list[tuple[list[list[Cif]], RefinementResult]]] = Field(
-        None, description="The result of the refinement."
-    )
+    results: Optional[
+        list[tuple[Union[list[Cif], list[list[Cif]]], RefinementResult]]
+    ] = Field(None, description="The result of the refinement.")
+
     final_result: Optional[RefinementResult] = Field(
         None, description="The result of the re-refinement of the best result."
     )
