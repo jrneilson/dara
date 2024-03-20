@@ -21,14 +21,7 @@ class Cif(MSONable, CifFile):
     def to_file(self, path: str | Path | None = None):
         """Save to .cif file."""
         if path is None:
-            name = next(iter(self.data.keys()))
-            if not name:
-                try:
-                    name = CifParser.from_str(self.orig_string).parse_structures()[0].composition.reduced_formula
-                except Exception:
-                    raise ValueError("CIF file is missing header and structure not successfully parsed!")
-
-            path = f"{name}.cif"
+            path = f"{self.name}.cif"
 
         with open(path, "w") as f:
             f.write(str(self))
@@ -36,6 +29,18 @@ class Cif(MSONable, CifFile):
     def to_structure(self, **kwargs) -> Structure:
         """Convert to pymatgen Structure."""
         return Structure.from_str(str(self), fmt="cif", **kwargs)
+
+    @property
+    def name(self):
+        """Name of file (acquired either from top of file or from structure's formula)."""
+        name = next(iter(self.data.keys()))
+        if not name:
+            try:
+                name = CifParser.from_str(self.orig_string).parse_structures()[0].composition.reduced_formula
+            except Exception:
+                raise ValueError("CIF file is missing header and structure not successfully parsed!")
+
+        return name
 
     @classmethod
     def from_str(cls, string) -> CifFile:
