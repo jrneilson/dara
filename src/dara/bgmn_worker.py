@@ -3,14 +3,17 @@ import os
 from pathlib import Path
 from subprocess import run
 
+from dara.bgmn.download_bgmn import download_bgmn
+from dara.utils import get_logger
+
+logger = get_logger(__name__)
+
 
 class BGMNWorker:
     """API for BGMN executable."""
 
     def __init__(self):
-        self.bgmn_folder = (
-            Path(__file__).parent.parent.parent / "bgmn" / "BGMNwin"
-        ).absolute()
+        self.bgmn_folder = (Path(__file__).parent / "bgmn" / "BGMNwin").absolute()
 
         self.bgmn_path = self.bgmn_folder / "bgmn"
 
@@ -19,7 +22,8 @@ class BGMNWorker:
             self.bgmn_path = self.bgmn_folder / "bgmn.exe"
 
         if not self.bgmn_path.exists():
-            raise FileNotFoundError("Cannot find BGMN executable.")
+            logger.warning("BGMN executable not found. Downloading BGMN.")
+            download_bgmn()
 
         os.environ["EFLECH"] = self.bgmn_folder.as_posix()
         os.environ["PATH"] += os.pathsep + self.bgmn_folder.as_posix()

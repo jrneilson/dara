@@ -8,23 +8,26 @@ from typing import Literal, Union
 import numpy as np
 import pandas as pd
 
+from dara.bgmn.download_bgmn import download_bgmn
 from dara.generate_control_file import copy_instrument_files, copy_xy_pattern
+from dara.utils import get_logger
 from dara.xrd import xrdml2xy
+
+logger = get_logger(__name__)
 
 
 class EflechWorker:
     """Functionality for running peak detection using BGMN's eflech and teil executables."""
 
     def __init__(self):
-        self.bgmn_folder = (
-            Path(__file__).parent.parent.parent / "bgmn" / "BGMNwin"
-        ).absolute()
+        self.bgmn_folder = (Path(__file__).parent / "bgmn" / "BGMNwin").absolute()
 
         self.eflech_path = self.bgmn_folder / "eflech"
         self.teil_path = self.bgmn_folder / "teil"
 
         if not self.eflech_path.exists():
-            raise FileNotFoundError("Cannot find BGMN executable.")
+            logger.warning("BGMN executable not found. Downloading BGMN.")
+            download_bgmn()
 
         os.environ["EFLECH"] = self.bgmn_folder.as_posix()
         os.environ["PATH"] += os.pathsep + self.bgmn_folder.as_posix()

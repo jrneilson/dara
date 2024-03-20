@@ -22,7 +22,9 @@ def download_bgmn():
     # download
     r = requests.get(URL, stream=True)
     if r.status_code != 200:
-        raise Exception(f"Cannot download from {URL}.")
+        raise Exception(
+            f"Cannot download from {URL}. Please check your internet connection or contact the developer."
+        )
 
     bgmn_folder = Path(__file__).parent
 
