@@ -1,4 +1,5 @@
 """Functions related to opening/reading CIF files."""
+
 from __future__ import annotations
 
 import re
@@ -7,7 +8,7 @@ from pathlib import Path
 from monty.json import MSONable
 from pymatgen.core import Structure
 from pymatgen.io.cif import CifBlock as CifBlockPymatgen
-from pymatgen.io.cif import CifFile
+from pymatgen.io.cif import CifFile, CifParser
 
 
 class CifBlock(MSONable, CifBlockPymatgen):
@@ -20,7 +21,14 @@ class Cif(MSONable, CifFile):
     def to_file(self, path: str | Path | None = None):
         """Save to .cif file."""
         if path is None:
-            path = f"{next(iter(self.data.keys()))}.cif"
+            name = next(iter(self.data.keys()))
+            if not name:
+                try:
+                    name = CifParser.from_str(self.orig_string).parse_structures()[0].composition.reduced_formula
+                except Exception:
+                    raise ValueError("CIF file is missing header and structure not successfully parsed!")
+
+            path = f"{name}.cif"
 
         with open(path, "w") as f:
             f.write(str(self))
@@ -43,9 +51,7 @@ class Cif(MSONable, CifFile):
         """
         dct = {}
 
-        for block_str in re.split(
-            r"^\s*data_", f"x\n{string}", flags=re.MULTILINE | re.DOTALL
-        )[1:]:
+        for block_str in re.split(r"^\s*data_", f"x\n{string}", flags=re.MULTILINE | re.DOTALL)[1:]:
             if "powder_pattern" in re.split(r"\n", block_str, maxsplit=1)[0]:
                 continue
             block = CifBlock.from_str("data_" + block_str)
