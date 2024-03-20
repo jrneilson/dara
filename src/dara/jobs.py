@@ -135,7 +135,10 @@ class PhaseSearchMaker(Maker):
 
         pattern_path = directory / "xrd_data.xy"
         cifs_path = directory / self.cifs_folder_name
-        cifs_path.mkdir(exist_ok=True)
+        if cifs_path.is_dir():
+            logger.info(f"Removing existing CIFs directory, located at: {cifs_path}")
+            shutil.rmtree(cifs_path)
+        cifs_path.mkdir()
 
         xrd_data.to_xy_file(pattern_path)
 
