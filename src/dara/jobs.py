@@ -228,6 +228,9 @@ class PhaseSearchMaker(Maker):
             )
             for result in results
         ]
+        foms = [[list(f) for f in r.foms] for r in results]
+        lattice_strains = [[list(ls) for ls in r.lattice_strains] for r in results]
+
         all_rwp = [i[1].lst_data.rwp for i in parsed_results]
 
         if self.run_final_refinement and best_result is not None:
@@ -238,6 +241,8 @@ class PhaseSearchMaker(Maker):
         return PhaseSearchDocument(
             task_label=self.name,
             results=parsed_results,
+            foms=foms,
+            lattice_strains=lattice_strains,
             final_result=best_result,
             best_rwp=best_rwp,
             xrd_data=xrd_data,

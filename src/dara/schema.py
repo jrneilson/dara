@@ -54,6 +54,13 @@ class PhaseSearchDocument(BaseModel):
         list[tuple[Union[list[Cif], list[list[Cif]]], RefinementResult]]
     ] = Field(None, description="The result of the refinement.")
 
+    foms: Optional[list[list[list[float]]]] = Field(
+        None, description="The FOMs of the results."
+    )
+    lattice_strains: Optional[list[list[list[float]]]] = Field(
+        None, description="The lattice strains of the results."
+    )
+
     final_result: Optional[RefinementResult] = Field(
         None, description="The result of the re-refinement of the best result."
     )

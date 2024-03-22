@@ -15,6 +15,7 @@ class SearchNodeData(BaseModel):
 
     group_id: int = Field(default=-1, ge=-1)
     fom: float = Field(default=0, ge=0)
+    lattice_strain: float = Field(default=0, ge=0)
     status: Literal[
         "pending",
         "max_depth",
@@ -35,3 +36,4 @@ class SearchResult(BaseModel):
     refinement_result: RefinementResult
     phases: tuple[tuple[Path, ...], ...]
     foms: tuple[tuple[float, ...], ...]
+    lattice_strains: tuple[tuple[float, ...], ...]

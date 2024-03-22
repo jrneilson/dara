@@ -174,9 +174,9 @@ def batch_refinement(
     return results
 
 
-def calculate_fom(phase_path: Path, result: RefinementResult) -> float:
+def calculate_fom(phase_path: Path, result: RefinementResult) -> tuple[float, float]:
     """
-    Calculate the figure of merit for a phase.
+    Calculate the figure of merit for a phase and lattice strain.
 
     For more detail, refer to https://journals.iucr.org/j/issues/2019/03/00/nb5231/.
     Args:
@@ -205,7 +205,7 @@ def calculate_fom(phase_path: Path, result: RefinementResult) -> float:
         b1 = 0
 
     if refined_a is None or geweicht is None:
-        return 0
+        return 0, 0
 
     refined_lattice_abc = [
         refined_a,
@@ -230,7 +230,9 @@ def calculate_fom(phase_path: Path, result: RefinementResult) -> float:
     else:
         c /= b1
 
-    return (1 / (result.lst_data.rho + a * delta_u + 1e-4) + b * geweicht) / (1 + c)
+    return (1 / (result.lst_data.rho + a * delta_u + 1e-4) + b * geweicht) / (
+        1 + c
+    ), delta_u / 100
 
 
 def group_phases(
@@ -252,7 +254,7 @@ def group_phases(
     # handle the case where there is no result for a phase
     for phase, result in all_phases_result.items():
         if result is None:
-            grouped_result[phase] = {"group_id": -1, "fom": 0}
+            grouped_result[phase] = {"group_id": -1, "fom": 0, "lattice_strain": 0}
 
     all_phases_result = {
         phase: result
@@ -261,10 +263,15 @@ def group_phases(
     }
 
     if len(all_phases_result) <= 1:
-        return {
-            phase: {"group_id": 0, "fom": calculate_fom(phase, result)}
-            for phase, result in all_phases_result.items()
-        }
+        results = {}
+        for phase, result in all_phases_result.items():
+            fom, lattice_strain = calculate_fom(phase, result)
+            results[phase] = {
+                "group_id": 0,
+                "fom": fom,
+                "lattice_strain": lattice_strain,
+            }
+        return results
 
     peaks = []
 
@@ -296,9 +303,11 @@ def group_phases(
     for i, cluster in enumerate(clusterer.labels_):
         phase = list(all_phases_result.keys())[i]
         result = list(all_phases_result.values())[i]
+        fom, lattice_strain = calculate_fom(phase, result)
         grouped_result[phase] = {
             "group_id": cluster,
-            "fom": calculate_fom(phase, result),
+            "fom": fom,
+            "lattice_strain": lattice_strain,
         }
 
     return grouped_result
@@ -531,6 +540,7 @@ class BaseSearchTree(Tree):
                         status=status,
                         group_id=group_id,
                         fom=fom,
+                        lattice_strain=grouped_results[phase]["lattice_strain"],
                     ),
                     parent=nid,
                 )
@@ -577,7 +587,7 @@ class BaseSearchTree(Tree):
 
     def get_all_possible_phases_at_same_level(
         self, node: Node
-    ) -> tuple[tuple[Path, float], ...]:
+    ) -> tuple[tuple[Path, float, float], ...]:
         """
         Get all possible phases that can be added to the current phase combination at this level.
 
@@ -599,7 +609,11 @@ class BaseSearchTree(Tree):
         nodes_at_same_level = self.children(self.ancestor(node.identifier))
 
         phases_at_same_level = [
-            (node_at_same_level.data.current_phases[-1], node_at_same_level.data.fom)
+            (
+                node_at_same_level.data.current_phases[-1],
+                node_at_same_level.data.fom,
+                node_at_same_level.data.lattice_strain,
+            )
             for node_at_same_level in nodes_at_same_level
             if node_at_same_level.data.group_id == node.data.group_id
             and node_at_same_level.data.status
@@ -614,7 +628,11 @@ class BaseSearchTree(Tree):
 
     def get_phase_combinations(
         self, node: Node
-    ) -> tuple[tuple[tuple[Path, ...], ...], tuple[tuple[float, ...], ...]]:
+    ) -> tuple[
+        tuple[tuple[Path, ...], ...],
+        tuple[tuple[float, ...], ...],
+        tuple[tuple[float, ...], ...],
+    ]:
         """
         Get all the phase combinations at this node.
 
@@ -638,12 +656,20 @@ class BaseSearchTree(Tree):
             current_phases[i] = self.get_all_possible_phases_at_same_level(parent_node)
             parent_node = self.get_node(self.ancestor(parent_node.identifier))
 
-        foms = tuple(tuple([fom for phase, fom in phases]) for phases in current_phases)
+        foms = tuple(
+            tuple([fom for phase, fom, lattice_strain in phases])
+            for phases in current_phases
+        )
         phases = tuple(
-            tuple([phase for phase, fom in phases]) for phases in current_phases
+            tuple([phase for phase, fom, lattice_strain in phases])
+            for phases in current_phases
+        )
+        lattice_strains = tuple(
+            tuple([lattice_strain for phase, fom, lattice_strain in phases])
+            for phases in current_phases
         )
 
-        return phases, foms
+        return phases, foms, lattice_strains
 
     def get_search_results(self) -> list[SearchResult]:
         """
@@ -688,12 +714,13 @@ class BaseSearchTree(Tree):
                 ):
                     continue
 
-                phases, foms = self.get_phase_combinations(node)
+                phases, foms, lattice_strains = self.get_phase_combinations(node)
                 results.append(
                     SearchResult(
                         refinement_result=node.data.current_result,
                         phases=phases,
                         foms=foms,
+                        lattice_strains=lattice_strains,
                     )
                 )
         return get_natural_break_results(results)
