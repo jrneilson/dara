@@ -1,6 +1,7 @@
 """Load and process XRD data files (.xrdml, .xy)."""
 from __future__ import annotations
 
+import struct
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -74,6 +75,35 @@ class XRDData(MSONable):
             np.column_stack((self.angles, self.intensities)),
             fmt="%f",
         )
+
+
+class RawFile(XRDData):
+    """Load Rigaku raw file data format"""
+
+    def __init__(self, angles, intensities, binary_data: bytes | None = None):
+        super().__init__(angles, intensities)
+        self._binary_data = binary_data
+
+    @classmethod
+    def from_file(cls, path: str | Path) -> RawFile:
+        """Load data from a raw file."""
+        path = Path(path)
+        (angles, intensities), binary_data = load_raw(path)
+        return cls(angles, intensities, binary_data)
+
+    @property
+    def binary_data(self) -> bytes | None:
+        """Binary data."""
+        return self._binary_data
+
+    def to_raw_file(self, fn: str | Path = "xrd_data.raw") -> None:
+        """Save as a raw file.
+
+        Args:
+            fn: filename to save to. Defaults to "xrd_data.raw".
+        """
+        with open(Path(fn), "wb") as f:
+            f.write(self.binary_data)
 
 
 class XRDMLFile(XRDData):
@@ -159,4 +189,50 @@ def xrdml2xy(fn: str | Path, target_folder: Path = None) -> Path:
     target_path = target_folder / fn.with_suffix(".xy").name
 
     XRDMLFile.from_file(fn).to_xy_file(target_path)
+    return target_path
+
+
+def hex2float(hex_string: bytes) -> float:
+    # Assuming hex_string is a bytes object representing a float in hex
+    return struct.unpack("f", hex_string)[0]
+
+
+def hex2int(hex_string: bytes) -> int:
+    # Assuming hex_string is a bytes object representing an int in hex
+    return struct.unpack("i", hex_string)[0]
+
+
+def load_raw(file: Path | str) -> tuple[tuple[np.ndarray, np.ndarray], bytes]:
+    """Convert raw file to xy data."""
+    content = open(file, "rb").read()
+    size_float = 4  # Assuming 4 bytes for a float
+    size_int = 4  # Assuming 4 bytes for an int
+
+    # Extracting start angle, end angle, and step size from binary content
+    start_ang = hex2float(content[2962 : 2962 + size_float])
+    end_ang = hex2float(content[2966 : 2966 + size_float])
+    count = hex2int(content[3154 : 3154 + size_int])
+    start_idx = 3158
+    angles = np.zeros(count)
+    intensities = np.zeros(count)
+
+    for j in range(count):
+        ang = start_ang + (j / (count - 1)) * (end_ang - start_ang)
+        its = hex2float(
+            content[start_idx + j * size_float : start_idx + (j + 1) * size_float]
+        )
+        angles[j] = ang
+        intensities[j] = its
+
+    return (angles, intensities), content
+
+
+def raw2xy(fn: str | Path, target_folder: Path = None) -> Path:
+    """Convert .raw file to .xy file (and save)."""
+    fn = Path(fn)
+    if target_folder is None:
+        target_folder = fn.parent
+    target_path = target_folder / fn.with_suffix(".xy").name
+
+    RawFile.from_file(fn).to_xy_file(target_path)
     return target_path

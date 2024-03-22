@@ -17,12 +17,12 @@ def copy_instrument_files(instrument_name: str, working_dir: Path) -> None:
         shutil.copy(file, working_dir)
 
 
-def copy_xy_pattern(pattern_path: Path, working_dir: Path) -> None:
+def copy_xy_pattern(pattern_path: Path, working_dir: Path) -> Path:
     """Copy the xy pattern to the working directory."""
     # if same directory, do nothing
-    if pattern_path.parent == working_dir:
-        return
-    shutil.copy(pattern_path, working_dir)
+    if pattern_path.parent != working_dir:
+        shutil.copy(pattern_path, working_dir)
+    return working_dir / pattern_path.name
 
 
 def generate_control_file(

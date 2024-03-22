@@ -11,7 +11,7 @@ import pandas as pd
 from dara.bgmn.download_bgmn import download_bgmn
 from dara.generate_control_file import copy_instrument_files, copy_xy_pattern
 from dara.utils import get_logger
-from dara.xrd import xrdml2xy
+from dara.xrd import xrdml2xy, raw2xy
 
 logger = get_logger(__name__)
 
@@ -50,12 +50,12 @@ class EflechWorker:
                 np.savetxt(pattern_path_temp.as_posix(), pattern, fmt="%.6f")
                 print(pattern_path_temp.read_text())
             else:
-                if pattern.suffix == ".xy":
-                    copy_xy_pattern(pattern, temp_dir)
-                    pattern_path_temp = temp_dir / pattern.name
+                if pattern.suffix == ".xy" or pattern.suffix == ".txt":
+                    pattern_path_temp = copy_xy_pattern(pattern, temp_dir)
                 elif pattern.suffix == ".xrdml":
-                    pattern_path_temp = temp_dir / pattern.with_suffix(".xy").name
-                    xrdml2xy(pattern, temp_dir)
+                    pattern_path_temp = xrdml2xy(pattern, temp_dir)
+                elif pattern.suffix == ".raw":
+                    pattern_path_temp = raw2xy(pattern, temp_dir)
                 else:
                     raise ValueError(f"Unknown pattern file type: {pattern.suffix}")
 

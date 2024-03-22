@@ -9,7 +9,7 @@ from dara.bgmn_worker import BGMNWorker
 from dara.cif2str import cif2str
 from dara.generate_control_file import generate_control_file
 from dara.result import RefinementResult, get_result
-from dara.xrd import xrdml2xy
+from dara.xrd import xrdml2xy, raw2xy
 
 
 def do_refinement(
@@ -41,6 +41,8 @@ def do_refinement(
 
     if pattern_path.suffix == ".xrdml":
         pattern_path = xrdml2xy(pattern_path, working_dir)
+    elif pattern_path.suffix == ".raw":
+        pattern_path = raw2xy(pattern_path, working_dir)
 
     str_paths = []
     for i, phase_path in enumerate(phase_paths):
