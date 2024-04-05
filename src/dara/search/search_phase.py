@@ -9,7 +9,8 @@ from typing import TYPE_CHECKING
 import ray
 
 from dara.search.data_model import SearchResult
-from dara.search.tree import BaseSearchTree, ExploredPhasesSet, SearchTree
+from dara.search.tree import BaseSearchTree, SearchTree
+from dara.utils import DEPRECATED
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -26,24 +27,20 @@ DEFAULT_REFINEMENT_PARAMS = {"n_threads": 8}
 
 
 @ray.remote
-def _remote_expand_node(
-    search_tree: BaseSearchTree, explored_phases_set: ExploredPhasesSet
-) -> BaseSearchTree:
+def _remote_expand_node(search_tree: BaseSearchTree) -> BaseSearchTree:
     """Expand a node in the search tree."""
     try:
-        search_tree.expand_root(explored_phases_set=explored_phases_set)
+        search_tree.expand_root()
         return search_tree
     except Exception as e:
         print_exc()
         raise e
 
 
-def remote_expand_node(
-    search_tree: SearchTree, nid: str, explored_phases_set: ExploredPhasesSet
-) -> ray.ObjectRef:
+def remote_expand_node(search_tree: SearchTree, nid: str) -> ray.ObjectRef:
     """Expand a node in the search tree."""
     subtree = BaseSearchTree.from_search_tree(root_nid=nid, search_tree=search_tree)
-    return _remote_expand_node.remote(subtree, explored_phases_set)
+    return _remote_expand_node.remote(subtree)
 
 
 def search_phases(
@@ -51,11 +48,11 @@ def search_phases(
     cif_paths: list[Path | str],
     pinned_phases: list[Path | str] | None = None,
     max_phases: int = 5,
-    rpb_threshold: float = 4,
     instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
     phase_params: dict[str, ...] | None = None,
     refinement_params: dict[str, ...] | None = None,
     return_search_tree: bool = False,
+    rpb_threshold: float = DEPRECATED,
 ) -> list[SearchResult] | SearchTree:
     """
     Search for the best phases to use for refinement.
@@ -65,12 +62,11 @@ def search_phases(
         cif_paths: the paths to the CIF files
         pinned_phases: the paths to the pinned phases, which will be included in all the results
         max_phases: the maximum number of phases to refine
-        rpb_threshold: the RPB threshold. At each step, we will expect the rpb to be higher than this
-            threshold (improvement)
         instrument_name: the name of the instrument
         phase_params: the parameters for the phase search
         refinement_params: the parameters for the refinement
         return_search_tree: whether to return the search tree. This is mainly used for debugging purposes.
+        rpb_threshold: the RPB threshold, which is deprecated, and will be removed in the future
     """
     if phase_params is None:
         phase_params = {}
@@ -94,8 +90,7 @@ def search_phases(
     )
 
     max_worker = ray.cluster_resources()["CPU"]
-    explored_phases_set = ExploredPhasesSet.remote()
-    pending = [remote_expand_node(search_tree, search_tree.root, explored_phases_set)]
+    pending = [remote_expand_node(search_tree, search_tree.root)]
     to_be_submitted = deque()
 
     while pending:
@@ -112,7 +107,7 @@ def search_phases(
 
         while len(pending) < max_worker and to_be_submitted:
             nid = to_be_submitted.popleft()
-            pending.append(remote_expand_node(search_tree, nid, explored_phases_set))
+            pending.append(remote_expand_node(search_tree, nid))
 
     if not return_search_tree:
         return search_tree.get_search_results()

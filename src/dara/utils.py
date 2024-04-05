@@ -249,6 +249,8 @@ def get_entries_in_chemsys_db(db: MongoStore, chemsys: list[str] | str):
     """
     if isinstance(chemsys, str):
         elements = chemsys.split("-")
+    else:
+        elements = chemsys
 
     elements_set = set(elements)  # remove duplicate elements
 
@@ -266,6 +268,34 @@ def angular_correction(tt, eps1, eps2):
     # deps3 = -eps3 * np.sin(np.deg2rad(tt)) * 180.0 / np.pi
 
     return deps1 + deps2  # + deps3
+
+
+def intensity_correction(
+    intensity: float, d_inv: float, gsum: float, wavelength: float, pol: float = 1
+):
+    """
+    Translated from Profex source (bgmnparparser.cpp:L112)
+    Args:
+        intensity: the intensity of the peak
+        gsum: the gsum of the peak
+        d_inv: the inverse of the d-spacing
+        wavelength: the wavelength of the X-ray
+        pol: the polarization factor, defaults to 1
+
+    Returns:
+        the corrected intensity
+    """
+    # double sinx2 = std::pow(0.5 * dinv * pl.waveLength, 2.0);
+    sinx2 = (0.5 * d_inv * wavelength) ** 2
+    # double intens = gsum * 360.0 * intens * 0.5 / (M_PI * std::sqrt(1.0 - sinx2) / pl.waveLength);
+    # if (pl.polarization > 0.0) intens *= (0.5 * (1.0 + pl.polarization * std::pow(1.0 - 2.0 * sinx2, 2.0)));
+    intensity = (
+        gsum * 360.0 * intensity * 0.5 / (np.pi * np.sqrt(1.0 - sinx2) / wavelength)
+    )
+    if pol > 0.0:
+        intensity *= 0.5 * (1.0 + pol * (1.0 - 2.0 * sinx2) ** 2.0)
+
+    return intensity
 
 
 def rwp(y_calc: np.ndarray, y_obs: np.ndarray) -> float:
@@ -353,6 +383,28 @@ def find_optimal_score_threshold(
 
     second_derivative = np.diff(score_percentile, n=2)
     return score_percentile[np.argmax(second_derivative)].item(), score_percentile
+
+
+def find_optimal_intensity_threshold(
+    intensities: list[float] | np.ndarray, percentile: float = 90
+) -> float:
+    """
+    Find the intensity threshold that captures percentile% of the intensities.
+
+    Args:
+        intensities: the list of intensities
+        percentile: the percentile to capture, defaults to 90
+
+    Returns:
+        the intensity threshold
+    """
+    if len(intensities) == 0:
+        return 0.0
+    intensities_ = np.sort(intensities)[::-1]
+    intensities_cum = np.cumsum(intensities_)
+    intensities_cum /= intensities_cum[-1]
+    idx = np.argmax(intensities_cum >= percentile / 100)
+    return intensities_[idx]
 
 
 def get_composition_from_filename(file_name: str | Path) -> Composition:

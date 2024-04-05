@@ -10,7 +10,7 @@ import pandas as pd
 
 from dara.bgmn.download_bgmn import download_bgmn
 from dara.generate_control_file import copy_instrument_files, copy_xy_pattern
-from dara.utils import get_logger
+from dara.utils import get_logger, intensity_correction
 from dara.xrd import xrdml2xy, raw2xy
 
 logger = get_logger(__name__)
@@ -34,7 +34,7 @@ class EflechWorker:
 
     def run_peak_detection(
         self,
-        pattern: Union[Path, np.ndarray],
+        pattern: Union[Path, np.ndarray, str],
         instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
         show_progress: bool = False,
         *,
@@ -48,8 +48,9 @@ class EflechWorker:
             if isinstance(pattern, np.ndarray):
                 pattern_path_temp = temp_dir / "temp.xy"
                 np.savetxt(pattern_path_temp.as_posix(), pattern, fmt="%.6f")
-                print(pattern_path_temp.read_text())
             else:
+                if isinstance(pattern, str):
+                    pattern = Path(pattern)
                 if pattern.suffix == ".xy" or pattern.suffix == ".txt":
                     pattern_path_temp = copy_xy_pattern(pattern, temp_dir)
                 elif pattern.suffix == ".xrdml":
@@ -87,6 +88,7 @@ class EflechWorker:
         *,
         wmin: float = None,
         wmax: float = None,
+        nthreads: int = None,
     ) -> Path:
         control_file_str = f"""
             VERZERR={instrument_name}.geq
@@ -95,7 +97,7 @@ class EflechWorker:
             VAL[1]={pattern_path.name}
             {f"WMIN={wmin}" if wmin is not None else ""}
             {f"WMAX={wmax}" if wmax is not None else ""}
-            NTHREADS=8
+            NTHREADS={nthreads if nthreads is not None else os.cpu_count()}
             TEST=ND234U
             OUTPUTMASK=output-$
             TITELMASK=output-$"""
@@ -167,6 +169,11 @@ class EflechWorker:
             return peak_list
 
         peak_num = re.search(r"PEAKZAHL=(\d+)", content[0])
+        pol = re.search(r"POL=(\d+(\.\d+)?)", content[0])
+        if pol:
+            pol = float(pol.group(1))
+        else:
+            pol = 1.0
 
         if not peak_num:
             return peak_list
@@ -186,6 +193,16 @@ class EflechWorker:
                 rp = int(numbers[0])
                 intensity = float(numbers[1])
                 d_inv = float(numbers[2])
+                gsum = float(re.search(r"GSUM=(\d+(\.\d+)?)", content[i]).group(1))
+                # TODO: change the wavelength to the user-specified value
+                intensity = intensity_correction(
+                    intensity=intensity,
+                    d_inv=d_inv,
+                    gsum=gsum,
+                    wavelength=0.15406,
+                    pol=pol,
+                )
+
                 if rp == 2:
                     b1 = 0
                     b2 = 0
@@ -204,56 +221,3 @@ class EflechWorker:
                     peak_list.append([d_inv, intensity, b1, b2])
 
         return peak_list
-
-
-def merge_peaks(peaks: pd.DataFrame, resolution: float = 0.0) -> pd.DataFrame:
-    """
-    Merge peaks that are too close to each other (smaller than resolution).
-
-    Args:
-        peaks: the peaks to merge, must be sorted by 2theta
-        resolution: the resolution to use for merging
-
-    Returns:
-        the merged peaks
-    """
-    if len(peaks) <= 1 or resolution == 0.0:
-        return peaks
-
-    merge_to = np.arange(len(peaks))
-    two_thetas = peaks["2theta"].values
-
-    for i in range(1, len(peaks)):
-        two_theta_i = two_thetas[i]
-        two_theta_im1 = two_thetas[i - 1]
-        if np.abs(two_theta_im1 - two_theta_i) <= resolution:
-            merge_to[i] = merge_to[i - 1]
-
-    ptr_1 = ptr_2 = merge_to[0]
-    new_peaks_list = []
-    while ptr_1 < len(peaks):
-        while ptr_2 < len(peaks) and merge_to[ptr_2] == ptr_1:
-            ptr_2 += 1
-        peaks2merge = peaks.iloc[ptr_1:ptr_2]
-        angles = peaks2merge["2theta"].values
-        intensities = peaks2merge["intensity"].values
-        b1 = peaks2merge["b1"].values
-        b2 = peaks2merge["b2"].values
-
-        updated_angle = angles @ intensities / np.sum(intensities)
-        updated_intensity = np.sum(intensities)
-        updated_b1 = b1[np.argmax(intensities)]
-        updated_b2 = b2[np.argmax(intensities)]
-
-        new_peaks_list.append(
-            [updated_angle, updated_intensity, updated_b1, updated_b2]
-        )
-
-        ptr_1 = ptr_2
-
-    new_peaks_list = np.array(new_peaks_list)
-    new_peaks = pd.DataFrame(
-        new_peaks_list, columns=["2theta", "intensity", "b1", "b2"]
-    ).astype(float)
-
-    return new_peaks

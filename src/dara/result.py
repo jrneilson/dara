@@ -10,7 +10,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from dara.utils import angular_correction, get_number
+from dara.utils import angular_correction, get_number, intensity_correction
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -124,11 +124,6 @@ class RefinementResult(BaseModel):
         # Create a Plotly figure with size 800x600
         fig = go.Figure()
 
-        # fix the size of the box
-        fig.update_layout(
-            autosize=True, xaxis=dict(range=[min(plot_data.x), max(plot_data.x)])
-        )
-
         # Adding scatter plot for observed data
         fig.add_trace(
             go.Scatter(
@@ -160,6 +155,7 @@ class RefinementResult(BaseModel):
                 line=dict(color="#FF7F7F", width=2),
                 name="Background",
                 opacity=0.5,
+                hoverinfo="skip",
             )
         )
 
@@ -175,15 +171,28 @@ class RefinementResult(BaseModel):
                 line=dict(color="#808080", width=1),
                 name="Difference",
                 opacity=0.7,
+                hoverinfo="skip",
             )
         )
 
         weight_fractions = self.get_phase_weights()
+        peak_data = self.peak_data
+        max_y = max(np.array(self.plot_data.y_obs) + np.array(self.plot_data.y_bkg))
+        min_y_diff = min(
+            np.array(self.plot_data.y_obs) - np.array(self.plot_data.y_calc)
+        )
         # Adding dashed lines for phases
         for i, (phase_name, phase) in enumerate(plot_data.structs.items()):
             # add area under the curve between the curve and the plot_data["y_bkg"]
             if i >= len(colormap) - 1:
                 i = i % (len(colormap) - 1)
+
+            name = (
+                f"{phase_name} ({weight_fractions[phase_name] * 100:.2f} %)"
+                if len(weight_fractions) > 1
+                else phase_name
+            )
+
             fig.add_trace(
                 go.Scatter(
                     x=plot_data.x,
@@ -193,6 +202,7 @@ class RefinementResult(BaseModel):
                     fill=None,
                     showlegend=False,
                     hoverinfo="none",
+                    legendgroup=phase_name,
                 )
             )
             fig.add_trace(
@@ -202,13 +212,29 @@ class RefinementResult(BaseModel):
                     mode="lines",
                     line=dict(color=colormap[i], width=1.5),
                     fill="tonexty",
-                    name=f"{phase_name}"
-                    + (
-                        f" ({weight_fractions[phase_name] * 100:.2f} %)"
-                        if len(weight_fractions) > 1
-                        else ""
-                    ),
+                    name=name,
                     visible="legendonly",
+                    legendgroup=phase_name,
+                )
+            )
+            refl = peak_data[peak_data["phase"] == phase_name]["2theta"]
+            intensity = peak_data[peak_data["phase"] == phase_name]["intensity"]
+            fig.add_trace(
+                go.Scatter(
+                    x=refl,
+                    y=np.ones(len(refl)) * (i + 1) * -max_y * 0.1 + min_y_diff,
+                    mode="markers",
+                    marker={
+                        "symbol": 142,
+                        "size": 5,
+                        "color": colormap[i],
+                    },
+                    name=name,
+                    legendgroup=phase_name,
+                    showlegend=False,
+                    visible="legendonly",
+                    text=[f"{x:.2f}, {y:.2f}" for x, y in zip(refl, intensity)],
+                    hovertemplate="%{text}",
                 )
             )
 
@@ -216,26 +242,29 @@ class RefinementResult(BaseModel):
 
         # Updating layout with titles and labels
         fig.update_layout(
+            autosize=True,
+            xaxis=dict(
+                range=[min(plot_data.x), max(plot_data.x)],
+                showline=True,
+                linewidth=1,
+                linecolor="black",
+                mirror=True,
+            ),
             title=title,
             xaxis_title="2θ [°]",
             yaxis_title="Intensity",
             legend_title="",
             font=dict(family="Arial, sans-serif", color="RebeccaPurple"),
+            plot_bgcolor="white",
+            yaxis=dict(showline=True, linewidth=1, linecolor="black", mirror=True),
+            legend_tracegroupgap=1,
         )
 
-        # white background
-        fig.update_layout(plot_bgcolor="white")
         fig.add_hline(y=0, line_width=1)
 
         # add tick
         fig.update_xaxes(ticks="outside", tickwidth=1, tickcolor="black", ticklen=10)
         fig.update_yaxes(ticks="outside", tickwidth=1, tickcolor="black", ticklen=10)
-
-        # add border to the plot
-        fig.update_layout(
-            xaxis=dict(showline=True, linewidth=1, linecolor="black", mirror=True),
-            yaxis=dict(showline=True, linewidth=1, linecolor="black", mirror=True),
-        )
 
         return fig
 
@@ -437,7 +466,6 @@ def parse_dia(dia_path: Path, phase_names: list[str]) -> DiaResult:
 
     # read first line to get the keys
     dia_text = dia_path.read_text().split("\n")
-    metadata = dia_text[0]
 
     raw_data = np.loadtxt(dia_text[1:])
     data = {
@@ -494,23 +522,22 @@ def parse_par(par_file: Path, phase_names: list[str]) -> pd.DataFrame:
     if not peak_num:
         return _make_dataframe(peak_list)
 
+    # parse some global parameters
     eps1 = re.search(r"EPS1=(\d+(\.\d+)?)", content[0])
     eps2 = re.search(r"EPS2=([+-]?\d+(\.\d+)?)", content[0])
-    # pol = re.search(r"POL=(\d+(\.\d+)?)", content[0])
-
+    pol = re.search(r"POL=(\d+(\.\d+)?)", content[0])
     if eps1:
         eps1 = float(eps1.group(1))
     else:
         eps1 = 0.0
-
     if eps2:
         eps2 = float(eps2.group(1))
     else:
         eps2 = 0.0
-    # if pol:
-    #     pol = float(pol.group(1))
-    # else:
-    #     pol = 1.
+    if pol:
+        pol = float(pol.group(1))
+    else:
+        pol = 1.0
 
     peak_num = int(peak_num.group(1))
 
@@ -530,23 +557,15 @@ def parse_par(par_file: Path, phase_names: list[str]) -> pd.DataFrame:
 
         numbers = re.split(r"\s+", content[i])
 
-        # TODO: do the intensity correction
         if numbers:
             rp = int(numbers[0])
             intensity = float(numbers[1])
             d_inv = float(numbers[2])
-            # gsum = float(re.search(r"GSUM=(\d+(\.\d+)?)", content[i]).group(1))
-            # # double sinx2 = std::pow(0.5 * dinv * pl.waveLength, 2.0);
-            # sinx2 = (0.5 * d_inv * 0.15406) ** 2
-            # # double intens = gsum * 360.0 * intens * 0.5 / (M_PI * std::sqrt(1.0 - sinx2) / pl.waveLength);
-            # # if (pl.polarization > 0.0) intens *= (0.5 * (1.0 + pl.polarization * std::pow(1.0 - 2.0 * sinx2, 2.0)));
-
-            # intensity = gsum * 360.0 * intensity * 0.5 / (
-            #     np.pi * np.sqrt(1.0 - sinx2) / 0.15406
-            # )
-            # if pol > 0.0:
-            #     intensity *= (0.5 * (1.0 + pol * (1.0 - 2.0 * sinx2) ** 2.0))
-
+            gsum = float(re.search(r"GSUM=(\d+(\.\d+)?)", content[i]).group(1))
+            # TODO: change the wavelength to the user-specified wavelength
+            intensity = intensity_correction(
+                intensity=intensity, d_inv=d_inv, gsum=gsum, wavelength=0.15406, pol=pol
+            )
             if rp == 2:
                 b1 = 0
                 b2 = 0
@@ -571,6 +590,7 @@ def parse_par(par_file: Path, phase_names: list[str]) -> pd.DataFrame:
                 peak_list.append([d_inv, intensity, b1, b2, h, k, l, phase, idx])
 
     # from d_inv to two theta
+    # TODO: change the wavelength to the user-specified wavelength
     two_theta = (
         np.arcsin(0.15406 * np.array([p[0] for p in peak_list]) / 2) * 180 / np.pi * 2
     )
