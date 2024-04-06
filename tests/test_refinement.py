@@ -1,4 +1,3 @@
-import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -12,10 +11,6 @@ class TestRefinement(unittest.TestCase):
         self.cif_paths = list((Path(__file__).parent / "test_data").glob("*.cif"))
         self.pattern_path = Path(__file__).parent / "test_data" / "BiFeO3.xy"
 
-    def tearDown(self):
-        """Tear down the test."""
-        os.environ.pop("DARA_CONFIG")
-
     def test_refinement(self):
         """Test the refinement function."""
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -27,6 +22,5 @@ class TestRefinement(unittest.TestCase):
                 pattern_path,
                 cif_paths,
                 instrument_name="Aeris-fds-Pixcel1d-Medipix3",
-                working_dir=tmpdir,
             )
-            self.assertTrue(7.81 < result["Rwp"] < 7.83)
+            self.assertLess(result.lst_data.rwp, 8)

@@ -398,7 +398,8 @@ def parse_par(par_file: Path, phase_names: list[str]) -> pd.DataFrame:
             rp = int(numbers[0])
             intensity = float(numbers[1])
             d_inv = float(numbers[2])
-            gsum = float(re.search(r"GSUM=(\d+(\.\d+)?)", content[i]).group(1))
+            gsum = re.search(r"GSUM=(\d+(\.\d+)?)", content[i])
+            gsum = float(gsum.group(1)) if gsum is not None else 0
             # TODO: change the wavelength to the user-specified wavelength
             intensity = intensity_correction(
                 intensity=intensity, d_inv=d_inv, gsum=gsum, wavelength=0.15406, pol=pol

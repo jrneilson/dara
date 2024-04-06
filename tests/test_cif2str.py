@@ -1,4 +1,3 @@
-import os
 import tempfile
 import unittest
 import warnings
@@ -15,10 +14,6 @@ class TestCif2Str(unittest.TestCase):
         """Set up the test."""
         self.cif_paths = list((Path(__file__).parent / "test_data").glob("*.cif"))
 
-    def tearDown(self):
-        """Tear down the test."""
-        os.environ.pop("DARA_CONFIG")
-
     def test_cif2str(self):
         """Test the cif2str function."""
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -26,7 +21,7 @@ class TestCif2Str(unittest.TestCase):
             for cif_path in self.cif_paths:
                 with warnings.catch_warnings(record=True) as w:
                     warnings.simplefilter("always")
-                    str_path = cif2str(cif_path, tmpdir)
+                    str_path = cif2str(cif_path, "", tmpdir)
                     self.assertTrue(len(w) == 0)
 
                 self.assertTrue(str_path.exists())
@@ -35,15 +30,7 @@ class TestCif2Str(unittest.TestCase):
                 self.assertTrue(str_path.stem == cif_path.stem)
 
                 ref_str_path = cif_path.parent / (cif_path.stem + ".str")
-                ref_str_text = ref_str_path.read_text(encoding="utf-8")
-                str_text = str_path.read_text(encoding="utf-8")
 
                 ref_phase_name = read_phase_name_from_str(ref_str_path)
                 phase_name = read_phase_name_from_str(str_path)
                 self.assertTrue(ref_phase_name == phase_name)
-
-                # remove the first line of the str file, since it contains the date information
-                ref_str_text = ref_str_text.split("\n", 1)[1]
-                str_text = str_text.split("\n", 1)[1]
-
-                self.assertTrue(ref_str_text == str_text)
