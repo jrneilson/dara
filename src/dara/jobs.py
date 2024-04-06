@@ -230,6 +230,8 @@ class PhaseSearchMaker(Maker):
         ]
         foms = [[list(f) for f in r.foms] for r in results]
         lattice_strains = [[list(ls) for ls in r.lattice_strains] for r in results]
+        missing_peaks = [r.missing_peaks for r in results]
+        extra_peaks = [r.extra_peaks for r in results]
 
         all_rwp = [i[1].lst_data.rwp for i in parsed_results]
 
@@ -243,6 +245,8 @@ class PhaseSearchMaker(Maker):
             results=parsed_results,
             foms=foms,
             lattice_strains=lattice_strains,
+            missing_peaks=missing_peaks,
+            extra_peaks=extra_peaks,
             final_result=best_result,
             best_rwp=best_rwp,
             xrd_data=xrd_data,

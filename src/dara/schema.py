@@ -60,6 +60,12 @@ class PhaseSearchDocument(BaseModel):
     lattice_strains: Optional[list[list[list[float]]]] = Field(
         None, description="The lattice strains of the results."
     )
+    missing_peaks: Optional[list[list[list[float]]]] = Field(
+        None, description="The missing peaks of the results."
+    )
+    extra_peaks: Optional[list[list[list[float]]]] = Field(
+        None, description="The extra peaks of the results."
+    )
 
     final_result: Optional[RefinementResult] = Field(
         None, description="The result of the re-refinement of the best result."
