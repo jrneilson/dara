@@ -123,7 +123,7 @@ def visualize(
         )
 
     if missing_peaks is not None:
-        missing_peaks = np.array(result.missing_peaks).reshape(-1, 2)
+        missing_peaks = np.array(missing_peaks).reshape(-1, 2)
         fig.add_trace(
             go.Scatter(
                 x=missing_peaks[:, 0],
@@ -137,7 +137,7 @@ def visualize(
         )
 
     if extra_peaks is not None:
-        extra_peaks = np.array(result.extra_peaks).reshape(-1, 2)
+        extra_peaks = np.array(extra_peaks).reshape(-1, 2)
         fig.add_trace(
             go.Scatter(
                 x=extra_peaks[:, 0],
