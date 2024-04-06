@@ -127,6 +127,7 @@ def visualize(
             )
         )
         refl = peak_data[peak_data["phase"] == phase_name]["2theta"]
+        intensity = peak_data[peak_data["phase"] == phase_name]["intensity"]
         fig.add_trace(
             go.Scatter(
                 x=refl,
@@ -138,11 +139,11 @@ def visualize(
                     "color": colormap[i],
                 },
                 name=name,
-                hovertext=phase_name,
-                hovertemplate="",
                 legendgroup=phase_name,
                 showlegend=False,
                 visible="legendonly",
+                text=[f"{x:.2f}, {y:.2f}" for x, y in zip(refl, intensity)],
+                hovertemplate="%{text}",
             )
         )
 
