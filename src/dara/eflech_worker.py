@@ -193,7 +193,10 @@ class EflechWorker:
                 rp = int(numbers[0])
                 intensity = float(numbers[1])
                 d_inv = float(numbers[2])
-                gsum = float(re.search(r"GSUM=(\d+(\.\d+)?)", content[i]).group(1))
+                if (gsum := re.search(r"GSUM=(\d+(\.\d+)?)", content[i])) is None:
+                    gsum = 1.0
+                else:
+                    gsum = float(gsum.group(1))
                 # TODO: change the wavelength to the user-specified value
                 intensity = intensity_correction(
                     intensity=intensity,
