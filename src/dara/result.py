@@ -7,7 +7,7 @@ from typing import Any, Optional, TYPE_CHECKING, Union
 
 import numpy as np
 import pandas as pd
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from dara.plot import visualize
 from dara.utils import angular_correction, get_number, intensity_correction
@@ -19,9 +19,7 @@ if TYPE_CHECKING:
 class PhaseResult(BaseModel):
     """The result for each phase."""
 
-    class Config:  # noqa: D106
-        extra = "allow"
-        populate_by_name = True
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     spacegroup_no: Optional[int] = Field(alias="SpacegroupNo")
     hermann_mauguin: Optional[str] = Field(alias="HermannMauguin")
@@ -55,8 +53,7 @@ class PhaseResult(BaseModel):
 class LstResult(BaseModel):
     """Refinement result parsed from the .lst file."""
 
-    class Config:  # noqa: D106
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
     raw_lst: str
     pattern_name: str
@@ -75,8 +72,7 @@ class LstResult(BaseModel):
 class DiaResult(BaseModel):
     """Refinement result parsed from the .dia file. Mainly some x-y data for plotting."""
 
-    class Config:  # noqa: D106
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
     x: list[float]
     y_obs: list[float]
@@ -88,9 +84,7 @@ class DiaResult(BaseModel):
 class RefinementResult(BaseModel):
     """The result from the refinement, which is parsed from the .lst and .dia files."""
 
-    class Config:  # noqa: D106
-        arbitrary_types_allowed = True
-        populate_by_name = True
+    model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True)
 
     lst_data: LstResult
     plot_data: DiaResult = Field(repr=False)

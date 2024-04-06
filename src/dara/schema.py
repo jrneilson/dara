@@ -2,7 +2,7 @@
 
 from typing import Optional, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from dara.cif import Cif
 from dara.prediction.core import PhasePredictor
@@ -16,8 +16,7 @@ class RefinementDocument(BaseModel):
     job.
     """
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     task_label: Optional[str] = Field("refine", description="The name of the task.")
     last_updated: str = Field(
@@ -40,8 +39,7 @@ class PhaseSearchDocument(BaseModel):
     job.
     """
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     task_label: Optional[str] = Field(
         "phase_search", description="The name of the task."
