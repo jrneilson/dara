@@ -64,7 +64,6 @@ def visualize(
             mode="lines",
             line=dict(color="#FF7F7F", width=2),
             name="Background",
-            hoverinfo="skip",  # "skip" to not show hover info for this trace
             opacity=0.5,
         )
     )
