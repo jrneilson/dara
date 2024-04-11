@@ -312,6 +312,7 @@ def rwp(y_calc: np.ndarray, y_obs: np.ndarray) -> float:
     """
     y_calc = np.array(y_calc)
     y_obs = np.array(y_obs)
+    y_obs = np.clip(y_obs, 1e-6, None)
     return np.sqrt(np.sum((y_calc - y_obs) ** 2 / y_obs) / np.sum(y_obs)) * 100
 
 

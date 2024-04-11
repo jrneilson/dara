@@ -6,6 +6,7 @@ import re
 import shutil
 from pathlib import Path
 
+import numpy as np
 from dara.utils import read_phase_name_from_str
 
 
@@ -44,6 +45,20 @@ def generate_control_file(
 
     copy_xy_pattern(pattern_path, control_file_path.parent)
     copy_instrument_files(instrument_name, control_file_path.parent)
+
+    xy_pattern_path = control_file_path.parent / pattern_path.name
+
+    try:
+        xy_content = np.loadtxt(pattern_path)
+    except ValueError as e:
+        raise ValueError(f"Could not load pattern file {pattern_path}")
+
+    if xy_content[:, 1].min() <= 0:
+        warnings.warn(
+            "Pattern contains negative or zero intensities. Setting them to 1e-6."
+        )
+        xy_content[:, 1] = np.clip(xy_content[:, 1], 1e-6, None)
+        np.savetxt(xy_pattern_path, xy_content, fmt="%.6f")
 
     phases_str = "\n".join(
         [f"STRUC[{i}]={str_path.name}" for i, str_path in enumerate(str_paths, start=1)]
