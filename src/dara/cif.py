@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import re
+from functools import cached_property
 from pathlib import Path
 
 from monty.json import MSONable
 from pymatgen.core import Structure
 from pymatgen.io.cif import CifBlock as CifBlockPymatgen
 from pymatgen.io.cif import CifFile, CifParser
+from pymatgen.transformations.advanced_transformations import DisorderOrderedTransformation
 
 
 class CifBlock(MSONable, CifBlockPymatgen):
@@ -16,7 +18,7 @@ class CifBlock(MSONable, CifBlockPymatgen):
 
 
 class Cif(MSONable, CifFile):
-    """Thin wrapper around CifFile from pymatgen to enable serialization."""
+    """Thin wrapper around pymatgen's CifFile to enable serialization."""
 
     def __init__(
         self, data: dict, orig_string: str | None = None, comment: str | None = None, filename: str | None = None
@@ -31,16 +33,8 @@ class Cif(MSONable, CifFile):
         super().__init__(data, orig_string, comment)
         self.filename = filename or ""
 
-        try:
-            struct = CifParser.from_str(self.orig_string).parse_structures()[0]
-            formula = struct.composition.reduced_formula
-            sg = struct.get_space_group_info()[1]
-            self._name = f"{formula}_{sg}"
-        except Exception:
-            raise ValueError("CIF file structure can not be successfully parsed!")
-
     @classmethod
-    def from_file(cls, path: str | Path) -> CifFile:
+    def from_file(cls, path: str | Path) -> Cif:  #  pylint: disable=arguments-renamed
         """
         Read Cif from a path.
 
@@ -72,10 +66,26 @@ class Cif(MSONable, CifFile):
         """Convert to pymatgen Structure."""
         return Structure.from_str(str(self), fmt="cif", **kwargs)
 
-    @property
+    @cached_property
     def name(self) -> str:
-        """Name of file (acquired either from top of file or from structure's formula)."""
-        return self._name
+        """Name of CIF (acquired either from top of file or from structure's
+        formula).
+        """
+        try:
+            struct = CifParser.from_str(self.orig_string).parse_structures()[0]
+        except Exception:
+            return self.filename or "unknown"
+
+        formula = struct.composition.reduced_formula
+        try:
+            sg = struct.get_space_group_info()[1]
+        except Exception:
+            pass
+
+        if sg is None:
+            sg = "unknown"
+
+        return f"{formula}_{sg}"
 
     @classmethod
     def from_str(cls, string) -> CifFile:
@@ -101,3 +111,37 @@ class Cif(MSONable, CifFile):
 
     def __repr__(self) -> str:
         return f"Cif[{self.name}]"
+
+
+class ComputedCif(Cif):
+    """Extends the Cif class to include additional features for modifying computd
+    structures.
+    """
+
+    def to_disordered_structures(self, max_num_structs: int = 10, vol_scale=1.03, **kwargs) -> list[Structure]:
+        """Convert to disordered structures, ranked from predicted lowest to highest
+        energy.
+
+        Args:
+            max_num_structs: Maximum number of structures to return.
+            vol_scale: Isotropic volume scaling factor.
+            **kwargs: Additional kwargs to pass to to_structure.
+        """
+        struct = self.to_structure(**kwargs)
+        structs = [
+            s["structure"]
+            for s in DisorderOrderedTransformation().apply_transformation(struct, return_ranked_list=max_num_structs)
+        ]
+
+        return [s.scale_lattice(s.volume * vol_scale) for s in structs]
+
+    def to_scaled_structure(self, vol_scale=1.03, **kwargs) -> Structure:
+        """Scales the structure isotropically by volume.
+
+        Args:
+            vol_scale: Volume scaling factor.
+            **kwargs: Additional kwargs to pass to to_structure.
+
+        """
+        struct = self.to_structure(**kwargs)
+        return struct.scale_lattice(struct.volume * vol_scale)
