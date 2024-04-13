@@ -1,4 +1,5 @@
 """Interact with the (local) ICSD database."""
+
 from __future__ import annotations
 
 import itertools
@@ -28,9 +29,7 @@ class ICSDDatabase:
         :param path_to_icsd: Path to the ICSD database
         """
         self.path_to_icsd = path_to_icsd
-        self.icsd_dict = loadfn(
-            Path(__file__).parent / "data/icsd_filtered_info_2024.json.gz"
-        )
+        self.icsd_dict = loadfn(Path(__file__).parent / "data/icsd_filtered_info_2024_v2.json.gz")
 
     def get_cifs_by_formulas(
         self,
@@ -126,14 +125,10 @@ class ICSDDatabase:
                 continue
 
             if e_hull is not None and e_hull > e_hull_filter:
-                print(
-                    f"Skipping high-energy phase: {code} ({formula}, {sg}): e_hull = {e_hull}"
-                )
+                print(f"Skipping high-energy phase: {code} ({formula}, {sg}): e_hull = {e_hull}")
                 continue
 
             e_hull_value = round(1000 * e_hull) if e_hull is not None else None
-            file_map[
-                f"icsd_{clean_icsd_code(code)}.cif"
-            ] = f"{formula}_{sg}_({code})-{e_hull_value}.cif"
+            file_map[f"icsd_{clean_icsd_code(code)}.cif"] = f"{formula}_{sg}_({code})-{e_hull_value}.cif"
 
         return file_map
