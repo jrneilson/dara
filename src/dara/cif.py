@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from collections import Counter
 from functools import cached_property
 from pathlib import Path
 
@@ -66,17 +67,65 @@ class Cif(MSONable, CifFile):
         """Convert to pymatgen Structure."""
         return Structure.from_str(str(self), fmt="cif", **kwargs)
 
+    def get_disordered_structures(self, max_num_structs: int = 10, vol_scale=1.03, **kwargs) -> list[Structure]:
+        """Convert to disordered structures, ranked from predicted lowest to highest
+        energy. This method is useful when starting from ordered computed structures.
+
+        Args:
+            max_num_structs: Maximum number of structures to return.
+            vol_scale: Isotropic volume scaling factor.
+            **kwargs: Additional kwargs to pass to to_structure.
+        """
+        struct = self.to_structure(**kwargs)
+        if not struct.is_ordered:
+            raise ValueError("Structure is already disordered!")
+
+        structs = [
+            s["structure"]
+            for s in DisorderOrderedTransformation().apply_transformation(struct, return_ranked_list=max_num_structs)
+        ]
+
+        return [s.scale_lattice(s.volume * vol_scale) for s in structs]
+
+    def get_disordered_cifs(self, max_num_structs: int = 10, vol_scale=1.03, **kwargs) -> list[Structure]:
+        """Call get_disordered_structures, but return Cif objects instead.
+
+        Args:
+            max_num_structs: Maximum number of structures to return.
+            vol_scale: Isotropic volume scaling factor.
+            **kwargs: Additional kwargs to pass to to_structure.
+        """
+        return [Cif.from_structure(s) for s in self.get_disordered_structures(max_num_structs, vol_scale, **kwargs)]
+
+    def to_scaled_structure(self, vol_scale=1.03, **kwargs) -> Structure:
+        """Scales the structure isotropically by volume. Useful for expanding DFT-computed structures.
+
+        Args:
+            vol_scale: Volume scaling factor.
+            **kwargs: Additional kwargs to pass to to_structure.
+
+        """
+        struct = self.to_structure(**kwargs)
+        return struct.scale_lattice(struct.volume * vol_scale)
+
+    @classmethod
+    def from_structure(cls, structure, filename=None) -> Cif:
+        """Convert to Cif from pymatgen Structure."""
+        obj = cls.from_str(structure.to(fmt="cif"))
+        obj.filename = filename or ""
+        return obj
+
     @cached_property
     def name(self) -> str:
-        """Name of CIF (acquired either from top of file or from structure's
-        formula).
+        """Name of CIF, acquired from analyzing the structure. IF the CIF structure can
+        not be read by pymatgen, the filename will be returned.
         """
         try:
             struct = CifParser.from_str(self.orig_string).parse_structures()[0]
         except Exception:
             return self.filename or "unknown"
 
-        formula = struct.composition.reduced_formula
+        formula = get_formula_with_disorder(struct)
         try:
             sg = struct.get_space_group_info()[1]
         except Exception:
@@ -113,35 +162,29 @@ class Cif(MSONable, CifFile):
         return f"Cif[{self.name}]"
 
 
-class ComputedCif(Cif):
-    """Extends the Cif class to include additional features for modifying computd
-    structures.
-    """
+def get_formula_with_disorder(structure: Structure):
+    """Get the formula of a structure with disorder included."""
+    if structure.is_ordered:
+        return structure.composition.reduced_formula
 
-    def to_disordered_structures(self, max_num_structs: int = 10, vol_scale=1.03, **kwargs) -> list[Structure]:
-        """Convert to disordered structures, ranked from predicted lowest to highest
-        energy.
+    struct = structure.copy()  # avoid modifying the original structure
+    struct.remove_oxidation_states()
 
-        Args:
-            max_num_structs: Maximum number of structures to return.
-            vol_scale: Isotropic volume scaling factor.
-            **kwargs: Additional kwargs to pass to to_structure.
-        """
-        struct = self.to_structure(**kwargs)
-        structs = [
-            s["structure"]
-            for s in DisorderOrderedTransformation().apply_transformation(struct, return_ranked_list=max_num_structs)
-        ]
+    count = Counter(struct.species_and_occu)
 
-        return [s.scale_lattice(s.volume * vol_scale) for s in structs]
+    formula = ""
+    for comp, amt in count.items():
+        if comp.is_element:
+            if next(iter(comp.get_el_amt_dict().values())) == 1:
+                formula += f"{comp.elements[0]}"  # ensure 1 is not shown
+            else:
+                formula += f"({comp.reduced_formula})"
+        else:
+            if amt == 1:
+                formula += f"{comp.reduced_formula}"
+            else:
+                formula += f"({comp.reduced_formula})"
+        if amt != 1:
+            formula += f"{amt}"
 
-    def to_scaled_structure(self, vol_scale=1.03, **kwargs) -> Structure:
-        """Scales the structure isotropically by volume.
-
-        Args:
-            vol_scale: Volume scaling factor.
-            **kwargs: Additional kwargs to pass to to_structure.
-
-        """
-        struct = self.to_structure(**kwargs)
-        return struct.scale_lattice(struct.volume * vol_scale)
+    return formula
