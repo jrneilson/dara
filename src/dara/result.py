@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import warnings
 from typing import Any, Optional, TYPE_CHECKING, Union
 
 import numpy as np
@@ -336,6 +337,10 @@ def parse_par(control_file: Path, phase_mapping: dict[str, str]) -> pd.DataFrame
     par_df["phase"] = par_df["phase"].map(phase_mapping)
 
     if par_df["phase"].isnull().any():
+        warnings.warn(
+            "Some phases in the .par file do not match the phase names in the .sav file. "
+            "Falling back to the old parser. Only Cu K alpha is supported!"
+        )
         # fail back to the old parser
         par_df = _parse_par_legacy(
             control_file.with_suffix(".par"), list(phase_mapping.values())
