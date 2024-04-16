@@ -49,6 +49,7 @@ def download_bgmn():
         os.system(f"chmod +x {bgmn_folder}/BGMNwin/bgmn")
         os.system(f"chmod +x {bgmn_folder}/BGMNwin/teil")
         os.system(f"chmod +x {bgmn_folder}/BGMNwin/eflech")
+        os.system(f"chmod +x {bgmn_folder}/BGMNwin/output")
 
 
 if __name__ == "__main__":

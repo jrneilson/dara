@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import re
+import warnings
 from typing import Any, Optional, TYPE_CHECKING, Union
 
 import numpy as np
 import pandas as pd
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from dara.par_parser import ParParser
 from dara.plot import visualize
 from dara.utils import angular_correction, get_number, intensity_correction
 
@@ -119,6 +121,10 @@ class RefinementResult(BaseModel):
         return dict(sorted(weights.items(), key=lambda item: item[1], reverse=True))
 
 
+class ParseError(Exception):
+    """Error when parsing the result."""
+
+
 def get_result(control_file: Path) -> RefinementResult:
     """
     Get the result from the refinement.
@@ -130,20 +136,34 @@ def get_result(control_file: Path) -> RefinementResult:
     # STRUC[1]=Bi2Fe4O9.str
     # STRUC[2]=Bi25FeO39.str
     # STRUC[3]=BiFeO3.str
-    sav_text = control_file.read_text()
-    phase_names = re.findall(r"STRUC\[\d+]=(.+?)\.str", sav_text)
+    try:
+        sav_text = control_file.read_text()
+        phase_names = re.findall(r"STRUC\[\d+]=(.+?)\.str", sav_text)
 
-    lst_path = control_file.parent / f"{control_file.stem}.lst"
-    dia_path = control_file.parent / f"{control_file.stem}.dia"
-    par_path = control_file.parent / f"{control_file.stem}.par"
+        lst_path = control_file.parent / f"{control_file.stem}.lst"
+        lst_data = parse_lst(lst_path, phase_names=phase_names)
 
-    result = {
-        "lst_data": parse_lst(lst_path, phase_names=phase_names),
-        "plot_data": parse_dia(dia_path, phase_names=phase_names),
-        "peak_data": parse_par(par_path, phase_names=phase_names),
-    }
+        dia_path = control_file.parent / f"{control_file.stem}.dia"
+        plot_data = parse_dia(dia_path, phase_names=phase_names)
 
-    return RefinementResult(**result)
+        # try to get the phase mapping from the .lst file
+        str_phase_names = re.findall(
+            r"Local parameters and GOALs for phase (.+?)\n", lst_data.raw_lst
+        )
+        phase_mapping = {
+            p_name: f_name for p_name, f_name in zip(str_phase_names, phase_names)
+        }
+        peak_data = parse_par(control_file, phase_mapping=phase_mapping)
+
+        result = {
+            "lst_data": lst_data,
+            "plot_data": plot_data,
+            "peak_data": peak_data,
+        }
+
+        return RefinementResult(**result)
+    except Exception as e:
+        raise ParseError(f"Error in parsing the result from {control_file}") from e
 
 
 def parse_lst(lst_path: Path, phase_names: list[str]) -> LstResult:
@@ -311,8 +331,29 @@ def parse_dia(dia_path: Path, phase_names: list[str]) -> DiaResult:
     return DiaResult(**data)
 
 
-def parse_par(par_file: Path, phase_names: list[str]) -> pd.DataFrame:
+def parse_par(control_file: Path, phase_mapping: dict[str, str]) -> pd.DataFrame:
     """Get the parameters from the .par file (hkl)."""
+    par_df = ParParser(control_file).to_df()
+    par_df["phase"] = par_df["phase"].map(phase_mapping)
+
+    if par_df["phase"].isnull().any():
+        warnings.warn(
+            "Some phases in the .par file do not match the phase names in the .sav file. "
+            "Falling back to the old parser. Only Cu K alpha is supported!"
+        )
+        # fail back to the old parser
+        par_df = _parse_par_legacy(
+            control_file.with_suffix(".par"), list(phase_mapping.values())
+        )
+    return par_df
+
+
+def _parse_par_legacy(par_file: Path, phase_names: list[str]) -> pd.DataFrame:
+    """
+    Get the parameters from the .par file (hkl). Old method used.
+
+    Only work for Cu K alpha!!!
+    """
 
     def _make_dataframe(peak_list) -> pd.DataFrame:
         return pd.DataFrame(
@@ -432,15 +473,3 @@ def parse_par(par_file: Path, phase_names: list[str]) -> pd.DataFrame:
     peak_list = [[two_theta[i]] + peak_list[i][1:] for i in range(len(peak_list))]
 
     return _make_dataframe(peak_list)
-
-
-if __name__ == "__main__":
-    from pathlib import Path
-
-    print(
-        parse_par(
-            Path(
-                "/Users/yuxing/projects/ar3l-search/example/Mn7(P2O7)4/Mn7(P2O7)4_recipe19_Pellet.par"
-            )
-        )
-    )
