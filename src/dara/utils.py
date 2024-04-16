@@ -52,23 +52,34 @@ def get_number(s: Union[float, None, tuple[float, float]]) -> Union[float, None]
 def load_symmetrized_structure(
     cif_path: Path,
 ) -> tuple[SymmetrizedStructure, SpacegroupAnalyzer]:
-    # suppress the warnings from pymatgen
-    with warnings.catch_warnings():
+    """Load the symmetrized structure from a CIF file. This function will symmetrize the
+    structure and provide a spacegroup analyzer object as well.
+    """
+    with warnings.catch_warnings():  # suppress the warnings from pymatgen
         warnings.filterwarnings("ignore")
         structure = SpacegroupAnalyzer(
-            Structure.from_file(
-                cif_path.as_posix(), site_tolerance=1e-3, occupancy_tolerance=100
-            )
+            Structure.from_file(cif_path.as_posix(), site_tolerance=1e-3, occupancy_tolerance=100)
         ).get_refined_structure()
+        spg = SpacegroupAnalyzer(structure)
 
-    spg = SpacegroupAnalyzer(structure)
-    structure: SymmetrizedStructure = spg.get_symmetrized_structure()
-    return structure, spg
+    try:
+        symmetrized_structure: SymmetrizedStructure = spg.get_symmetrized_structure()
+    except Exception as e:
+        warnings.warn(
+            f"Could not get the symmetrized structure for {cif_path}. Error: {e}. Trying looser site tolerance."
+        )
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+            structure = SpacegroupAnalyzer(
+                Structure.from_file(cif_path.as_posix(), site_tolerance=1e-2, occupancy_tolerance=100)
+            ).get_refined_structure()
+            spg = SpacegroupAnalyzer(structure)
+            symmetrized_structure = spg.get_symmetrized_structure()
+
+    return symmetrized_structure, spg
 
 
-def get_optimal_max_two_theta(
-    peak_data: pd.DataFrame, fraction: float = 0.7, intensity_filter=0.1
-) -> float:
+def get_optimal_max_two_theta(peak_data: pd.DataFrame, fraction: float = 0.7, intensity_filter=0.1) -> float:
     """Get the optimal 2theta max given detected peaks. The range is determined by
     proportion of the detected peaks.
 
@@ -114,9 +125,7 @@ def read_phase_name_from_str(str_path: Path) -> str:
     try:
         return re.search(r"PHASE=(\S*)", text).group(1)
     except AttributeError as e:
-        raise ValueError(
-            f"Could not find phase name in {str_path}. The content is: {text}"
-        ) from e
+        raise ValueError(f"Could not find phase name in {str_path}. The content is: {text}") from e
 
 
 def standardize_coords(x, y, z):
@@ -202,9 +211,7 @@ def copy_and_rename_files(src_directory, dest_directory, file_map, verbose=True)
         if os.path.isfile(src_file):
             shutil.copy(src_file, dest_file)
             if verbose:
-                print(
-                    f"Successfully copied {src_filename} to {dest_filename} in {dest_directory}"
-                )
+                print(f"Successfully copied {src_filename} to {dest_filename} in {dest_directory}")
         else:
             if verbose:
                 print(f"ERROR: File {src_filename} not found in {src_directory}")
@@ -270,9 +277,7 @@ def angular_correction(tt, eps1, eps2):
     return deps1 + deps2  # + deps3
 
 
-def intensity_correction(
-    intensity: float, d_inv: float, gsum: float, wavelength: float, pol: float = 1
-):
+def intensity_correction(intensity: float, d_inv: float, gsum: float, wavelength: float, pol: float = 1):
     """
     Translated from Profex source (bgmnparparser.cpp:L112)
     Args:
@@ -282,16 +287,15 @@ def intensity_correction(
         wavelength: the wavelength of the X-ray
         pol: the polarization factor, defaults to 1
 
-    Returns:
+    Returns
+    -------
         the corrected intensity
     """
     # double sinx2 = std::pow(0.5 * dinv * pl.waveLength, 2.0);
     sinx2 = (0.5 * d_inv * wavelength) ** 2
     # double intens = gsum * 360.0 * intens * 0.5 / (M_PI * std::sqrt(1.0 - sinx2) / pl.waveLength);
     # if (pl.polarization > 0.0) intens *= (0.5 * (1.0 + pl.polarization * std::pow(1.0 - 2.0 * sinx2, 2.0)));
-    intensity = (
-        gsum * 360.0 * intensity * 0.5 / (np.pi * np.sqrt(1.0 - sinx2) / wavelength)
-    )
+    intensity = gsum * 360.0 * intensity * 0.5 / (np.pi * np.sqrt(1.0 - sinx2) / wavelength)
     if pol > 0.0:
         intensity *= 0.5 * (1.0 + pol * (1.0 - 2.0 * sinx2) ** 2.0)
 
@@ -386,9 +390,7 @@ def find_optimal_score_threshold(
     return score_percentile[np.argmax(second_derivative)].item(), score_percentile
 
 
-def find_optimal_intensity_threshold(
-    intensities: list[float] | np.ndarray, percentile: float = 90
-) -> float:
+def find_optimal_intensity_threshold(intensities: list[float] | np.ndarray, percentile: float = 90) -> float:
     """
     Find the intensity threshold that captures percentile% of the intensities.
 
@@ -396,7 +398,8 @@ def find_optimal_intensity_threshold(
         intensities: the list of intensities
         percentile: the percentile to capture, defaults to 90
 
-    Returns:
+    Returns
+    -------
         the intensity threshold
     """
     if len(intensities) == 0:
@@ -419,9 +422,7 @@ def get_composition_from_filename(file_name: str | Path) -> Composition:
     return Composition(file_name.stem.split("_")[0])
 
 
-def get_composition_distance(
-    comp1: Composition | str, comp2: Composition | str, order: int = 2
-) -> float:
+def get_composition_distance(comp1: Composition | str, comp2: Composition | str, order: int = 2) -> float:
     """
     Calculate the distance between two compositions.
 
@@ -431,8 +432,6 @@ def get_composition_distance(
     comp2 = Composition(comp2, allow_negative=True).fractional_composition
 
     delta_composition = comp1 - comp2
-    delta_composition = {
-        k: v / (comp1[k] + comp2[k]) for k, v in delta_composition.items()
-    }
+    delta_composition = {k: v / (comp1[k] + comp2[k]) for k, v in delta_composition.items()}
 
     return np.linalg.norm(np.array(list(delta_composition.values())), ord=order)
