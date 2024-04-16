@@ -3,14 +3,12 @@
 from __future__ import annotations
 
 import re
-import warnings
 from typing import Any, Optional, TYPE_CHECKING, Union
 
 import numpy as np
 import pandas as pd
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from dara.par_parser import ParParser
 from dara.plot import visualize
 from dara.utils import angular_correction, get_number, intensity_correction
 
@@ -141,24 +139,13 @@ def get_result(control_file: Path) -> RefinementResult:
         phase_names = re.findall(r"STRUC\[\d+]=(.+?)\.str", sav_text)
 
         lst_path = control_file.parent / f"{control_file.stem}.lst"
-        lst_data = parse_lst(lst_path, phase_names=phase_names)
-
         dia_path = control_file.parent / f"{control_file.stem}.dia"
-        plot_data = parse_dia(dia_path, phase_names=phase_names)
-
-        # try to get the phase mapping from the .lst file
-        str_phase_names = re.findall(
-            r"Local parameters and GOALs for phase (.+?)\n", lst_data.raw_lst
-        )
-        phase_mapping = {
-            p_name: f_name for p_name, f_name in zip(str_phase_names, phase_names)
-        }
-        peak_data = parse_par(control_file, phase_mapping=phase_mapping)
+        par_path = control_file.parent / f"{control_file.stem}.par"
 
         result = {
-            "lst_data": lst_data,
-            "plot_data": plot_data,
-            "peak_data": peak_data,
+            "lst_data": parse_lst(lst_path, phase_names=phase_names),
+            "plot_data": parse_dia(dia_path, phase_names=phase_names),
+            "peak_data": parse_par(par_path, phase_names=phase_names),
         }
 
         return RefinementResult(**result)
@@ -331,26 +318,9 @@ def parse_dia(dia_path: Path, phase_names: list[str]) -> DiaResult:
     return DiaResult(**data)
 
 
-def parse_par(control_file: Path, phase_mapping: dict[str, str]) -> pd.DataFrame:
-    """Get the parameters from the .par file (hkl)."""
-    par_df = ParParser(control_file).to_df()
-    par_df["phase"] = par_df["phase"].map(phase_mapping)
-
-    if par_df["phase"].isnull().any():
-        warnings.warn(
-            "Some phases in the .par file do not match the phase names in the .sav file. "
-            "Falling back to the old parser. Only Cu K alpha is supported!"
-        )
-        # fail back to the old parser
-        par_df = _parse_par_legacy(
-            control_file.with_suffix(".par"), list(phase_mapping.values())
-        )
-    return par_df
-
-
-def _parse_par_legacy(par_file: Path, phase_names: list[str]) -> pd.DataFrame:
+def parse_par(par_file: Path, phase_names: list[str]) -> pd.DataFrame:
     """
-    Get the parameters from the .par file (hkl). Old method used.
+    Get the parameters from the .par file (hkl).
 
     Only work for Cu K alpha!!!
     """

@@ -11,7 +11,6 @@ import ray
 
 from dara.search.data_model import SearchResult
 from dara.search.tree import BaseSearchTree, SearchTree
-from dara.utils import DEPRECATED
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -100,7 +99,9 @@ def search_phases(
         for task in done:
             remote_search_tree = ray.get(task)
             remote_search_tree = copy.deepcopy(remote_search_tree)
-            search_tree.add_subtree(anchor_nid=remote_search_tree.root, search_tree=remote_search_tree)
+            search_tree.add_subtree(
+                anchor_nid=remote_search_tree.root, search_tree=remote_search_tree
+            )
             for nid in search_tree.get_expandable_children(remote_search_tree.root):
                 to_be_submitted.append(nid)
 
