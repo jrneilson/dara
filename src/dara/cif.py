@@ -67,7 +67,9 @@ class Cif(MSONable, CifFile):
         """Convert to pymatgen Structure."""
         return Structure.from_str(str(self), fmt="cif", **kwargs)
 
-    def get_disordered_structures(self, max_num_structs: int = 10, vol_scale=1.03, **kwargs) -> list[Structure]:
+    def get_disordered_structures(
+        self, max_num_structs: int = 10, vol_scale: float = 1.00, **kwargs
+    ) -> list[Structure]:
         """Convert to disordered structures, ranked from predicted lowest to highest
         energy. This method is useful when starting from ordered computed structures.
 
@@ -87,7 +89,7 @@ class Cif(MSONable, CifFile):
 
         return [s.scale_lattice(s.volume * vol_scale) for s in structs]
 
-    def get_disordered_cifs(self, max_num_structs: int = 10, vol_scale=1.03, **kwargs) -> list[Structure]:
+    def get_disordered_cifs(self, max_num_structs: int = 10, vol_scale: float = 1.00, **kwargs) -> list[Structure]:
         """Call get_disordered_structures, but return Cif objects instead.
 
         Args:
