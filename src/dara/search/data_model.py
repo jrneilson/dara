@@ -1,11 +1,10 @@
 """Search node data model."""
+
 from __future__ import annotations
 
 from pathlib import Path
 from typing import Literal, Optional
 
-import numpy as np
-from plotly import graph_objects as go
 from pydantic import BaseModel, Field
 
 from dara.plot import visualize

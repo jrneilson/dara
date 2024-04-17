@@ -1,4 +1,5 @@
 """APIs for running BGMN executable from Python."""
+
 import os
 from pathlib import Path
 from subprocess import run
@@ -17,10 +18,7 @@ class BGMNWorker:
 
         self.bgmn_path = self.bgmn_folder / "bgmn"
 
-        if (
-            not self.bgmn_path.exists()
-            and not self.bgmn_path.with_suffix(".exe").exists()
-        ):
+        if not self.bgmn_path.exists() and not self.bgmn_path.with_suffix(".exe").exists():
             logger.warning("BGMN executable not found. Downloading BGMN.")
             download_bgmn()
 

@@ -284,9 +284,7 @@ def angular_correction(tt, eps1, eps2):
     return deps1 + deps2  # + deps3
 
 
-def intensity_correction(
-    intensity: float, d_inv: float, gsum: float, wavelength: float, pol: float = 1
-):
+def intensity_correction(intensity: float, d_inv: float, gsum: float, wavelength: float, pol: float = 1):
     """
     Translated from Profex source (bgmnparparser.cpp:L112)
     Args:

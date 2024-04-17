@@ -1,4 +1,7 @@
-"""An interface for rxn_network and other engines for predicting products in a chemical reaction."""
+"""An interface for predicting products in a chemical reaction using a cellular
+automaton model.
+"""
+
 from __future__ import annotations
 
 import logging
@@ -15,7 +18,7 @@ logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
 
 class CellularAutomatonEngine(PredictionEngine):
-    """WIP: Engine for predicting products in a chemical reaction."""
+    """TODO: Engine for predicting products in a chemical reaction."""
 
     def predict(
         precursors: list[str],

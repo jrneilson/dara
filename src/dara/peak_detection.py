@@ -14,8 +14,6 @@ def detect_peaks(
     wmax: float = None,
 ) -> pd.DataFrame:
     eflech_worker = EflechWorker()
-    peaks = eflech_worker.run_peak_detection(
-        pattern=pattern, instrument_name=instrument_name, wmin=wmin, wmax=wmax
-    )
+    peaks = eflech_worker.run_peak_detection(pattern=pattern, instrument_name=instrument_name, wmin=wmin, wmax=wmax)
 
     return peaks

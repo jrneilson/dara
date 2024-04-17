@@ -75,7 +75,7 @@ class Cif(MSONable, CifFile):
 
         Args:
             max_num_structs: Maximum number of structures to return.
-            vol_scale: Isotropic volume scaling factor.
+            vol_scale: Isotropic volume scaling factor. Defaults to 1 (no effect).
             **kwargs: Additional kwargs to pass to to_structure.
         """
         struct = self.to_structure(**kwargs)
@@ -94,7 +94,7 @@ class Cif(MSONable, CifFile):
 
         Args:
             max_num_structs: Maximum number of structures to return.
-            vol_scale: Isotropic volume scaling factor.
+            vol_scale: Isotropic volume scaling factor. Defaults to 1 (no effect).
             **kwargs: Additional kwargs to pass to to_structure.
         """
         return [Cif.from_structure(s) for s in self.get_disordered_structures(max_num_structs, vol_scale, **kwargs)]
@@ -103,7 +103,7 @@ class Cif(MSONable, CifFile):
         """Scales the structure isotropically by volume. Useful for expanding DFT-computed structures.
 
         Args:
-            vol_scale: Volume scaling factor.
+            vol_scale: Isotropic volume scaling factor for lattice. Defaults to 1.03 (3% volume scaling).
             **kwargs: Additional kwargs to pass to to_structure.
 
         """
@@ -165,7 +165,14 @@ class Cif(MSONable, CifFile):
 
 
 def get_formula_with_disorder(structure: Structure):
-    """Get the formula of a structure with disorder included."""
+    """Get the formula of a structure with disorder included.
+
+    Args:
+        structure: pymatgen Structure object. If this is an ordered structure, the
+            formula will be returned as is. Otherwise, the formula will attempt to
+            include the disordered sites and occupancies.
+
+    """
     if structure.is_ordered:
         return structure.composition.reduced_formula
 

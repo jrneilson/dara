@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Optional, TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -245,9 +245,7 @@ def parse_lst(lst_path: Path, phase_names: list[str]) -> LstResult:
     with lst_path.open() as f:
         texts = f.read()
 
-    pattern_name = re.search(r"Rietveld refinement to file\(s\) (.+?)\n", texts).group(
-        1
-    )
+    pattern_name = re.search(r"Rietveld refinement to file\(s\) (.+?)\n", texts).group(1)
     result = {"raw_lst": texts, "pattern_name": pattern_name}
 
     num_steps = int(re.search(r"(\d+) iteration steps", texts).group(1))
@@ -255,21 +253,11 @@ def parse_lst(lst_path: Path, phase_names: list[str]) -> LstResult:
 
     for var in ["Rp", "Rpb", "R", "Rwp", "Rexp"]:
         result[var] = float(re.search(rf"{var}=(\d+(\.\d+)?)%", texts).group(1))
-    result["d"] = (
-        float(d.group(1))
-        if (d := re.search(r"Durbin-Watson d=(\d+(\.\d+)?)", texts))
-        else None
-    )
-    result["1-rho"] = (
-        float(rho.group(1))
-        if (rho := re.search(r"1-rho=(\d+(\.\d+)?)%", texts))
-        else None
-    )
+    result["d"] = float(d.group(1)) if (d := re.search(r"Durbin-Watson d=(\d+(\.\d+)?)", texts)) else None
+    result["1-rho"] = float(rho.group(1)) if (rho := re.search(r"1-rho=(\d+(\.\d+)?)%", texts)) else None
 
     # global goals
-    global_parameters_text = re.search(
-        r"Global parameters and GOALs\n(.*?)\n(?:\n|\Z)", texts, re.DOTALL
-    )
+    global_parameters_text = re.search(r"Global parameters and GOALs\n(.*?)\n(?:\n|\Z)", texts, re.DOTALL)
     if global_parameters_text:
         global_parameters_text = global_parameters_text.group(1)
         global_parameters = parse_section(global_parameters_text)
@@ -282,8 +270,7 @@ def parse_lst(lst_path: Path, phase_names: list[str]) -> LstResult:
     )
 
     result["phases_results"] = {
-        phase_name: parse_section(phase_result)
-        for phase_name, phase_result in zip(phase_names, phases_results)
+        phase_name: parse_section(phase_result) for phase_name, phase_result in zip(phase_names, phases_results)
     }
     return LstResult(**result)
 
@@ -311,9 +298,7 @@ def parse_dia(dia_path: Path, phase_names: list[str]) -> DiaResult:
         "y_obs": raw_data[:, 1].tolist(),
         "y_calc": raw_data[:, 2].tolist(),
         "y_bkg": raw_data[:, 3].tolist(),
-        "structs": {
-            name: raw_data[:, i + 4].tolist() for i, name in enumerate(phase_names)
-        },
+        "structs": {name: raw_data[:, i + 4].tolist() for i, name in enumerate(phase_names)},
     }
     return DiaResult(**data)
 
@@ -388,9 +373,7 @@ def parse_par(par_file: Path, phase_names: list[str]) -> pd.DataFrame:
     peak_phase_names = list(dict.fromkeys(all_peak_phase_names))
     phase_names_mapping = {
         peak_phase_name: (phase_name, i)
-        for i, (peak_phase_name, phase_name) in enumerate(
-            zip(peak_phase_names, phase_names)
-        )
+        for i, (peak_phase_name, phase_name) in enumerate(zip(peak_phase_names, phase_names))
     }
 
     for i in range(1, peak_num + 1):
@@ -406,9 +389,7 @@ def parse_par(par_file: Path, phase_names: list[str]) -> pd.DataFrame:
             gsum = re.search(r"GSUM=(\d+(\.\d+)?)", content[i])
             gsum = float(gsum.group(1)) if gsum is not None else 1.0
             # TODO: change the wavelength to the user-specified wavelength
-            intensity = intensity_correction(
-                intensity=intensity, d_inv=d_inv, gsum=gsum, wavelength=0.15406, pol=pol
-            )
+            intensity = intensity_correction(intensity=intensity, d_inv=d_inv, gsum=gsum, wavelength=0.15406, pol=pol)
             if rp == 2:
                 b1 = 0
                 b2 = 0
@@ -434,9 +415,7 @@ def parse_par(par_file: Path, phase_names: list[str]) -> pd.DataFrame:
 
     # from d_inv to two theta
     # TODO: change the wavelength to the user-specified wavelength
-    two_theta = (
-        np.arcsin(0.15406 * np.array([p[0] for p in peak_list]) / 2) * 180 / np.pi * 2
-    )
+    two_theta = np.arcsin(0.15406 * np.array([p[0] for p in peak_list]) / 2) * 180 / np.pi * 2
 
     # apply eps1 and eps2
     two_theta += angular_correction(two_theta, eps1, eps2)

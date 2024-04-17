@@ -9,17 +9,11 @@ import typing
 
 from maggma.stores.mongolike import MongoStore
 from pymatgen.core import Composition, Element
-from rxn_network.costs.calculators import (
-    PrimaryCompetitionCalculator,
-    SecondaryCompetitionCalculator,
-)
+from rxn_network.costs.calculators import PrimaryCompetitionCalculator, SecondaryCompetitionCalculator
 from rxn_network.costs.functions import Softplus, WeightedSum
 from rxn_network.entries.entry_set import GibbsEntrySet
 from rxn_network.enumerators.basic import BasicEnumerator, BasicOpenEnumerator
-from rxn_network.enumerators.minimize import (
-    MinimizeGibbsEnumerator,
-    MinimizeGrandPotentialEnumerator,
-)
+from rxn_network.enumerators.minimize import MinimizeGibbsEnumerator, MinimizeGrandPotentialEnumerator
 from rxn_network.reactions.hull import InterfaceReactionHull
 from rxn_network.reactions.reaction_set import ReactionSet
 

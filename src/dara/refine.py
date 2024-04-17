@@ -1,4 +1,5 @@
 """Perform refinements with BGMN."""
+
 from __future__ import annotations
 
 import shutil
@@ -9,7 +10,7 @@ from dara.bgmn_worker import BGMNWorker
 from dara.cif2str import cif2str
 from dara.generate_control_file import generate_control_file
 from dara.result import RefinementResult, get_result
-from dara.xrd import xrdml2xy, raw2xy
+from dara.xrd import raw2xy, xrdml2xy
 
 
 def do_refinement(
@@ -25,9 +26,7 @@ def do_refinement(
     pattern_path = Path(pattern_path)
     phase_paths = [Path(phase_path) for phase_path in phase_paths]
     working_dir = (
-        Path(working_dir)
-        if working_dir is not None
-        else pattern_path.parent / f"refinement_{pattern_path.stem}"
+        Path(working_dir) if working_dir is not None else pattern_path.parent / f"refinement_{pattern_path.stem}"
     )
 
     if not working_dir.exists():

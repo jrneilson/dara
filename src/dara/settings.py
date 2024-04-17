@@ -18,15 +18,9 @@ class DaraSettings(BaseSettings):
     "DARA_CONFIG_FILE".
     """
 
-    CONFIG_FILE: str = Field(
-        _DEFAULT_CONFIG_FILE_PATH, description="File to load alternative defaults from."
-    )
+    CONFIG_FILE: str = Field(_DEFAULT_CONFIG_FILE_PATH, description="File to load alternative defaults from.")
 
-    PATH_TO_ICSD: Path = Field(
-        Path(
-            "~/ICSD_2024/ICSD_2024_experimental_inorganic/experimental_inorganic"
-        ).expanduser()
-    )
+    PATH_TO_ICSD: Path = Field(Path("~/ICSD_2024/ICSD_2024_experimental_inorganic/experimental_inorganic").expanduser())
 
     model_config = SettingsConfigDict(env_prefix="dara_")  # prepend dara_ to env vars
 
@@ -57,8 +51,6 @@ class DaraSettings(BaseSettings):
                 try:
                     new_values.update(loadfn(config_file_path))
                 except ValueError:
-                    raise SyntaxError(
-                        f"DARA config file is unparsable:{config_file_path} "
-                    ) from None
+                    raise SyntaxError(f"DARA config file is unparsable:{config_file_path} ") from None
 
         return {**new_values, **values}
