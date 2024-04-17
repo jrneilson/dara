@@ -16,10 +16,21 @@ logger = get_logger(__name__)
 
 
 class ICSDDatabase:
-    """Class that represents the ICSD database.
+    """Class to interact with CIF files acquired from the ICSD database.
 
-    WARNING: the ICSD database is not publicly available, and you must have a local copy
-    stored at the specified path. The default path is set in SETTINGS.PATH_TO_ICSD.
+    **Legal notice**: to use the ICSD database, you must purchase a paid license that allows
+    you to download and keep CIFs as a local copy. We do not provide any CIFs from the ICSD
+    Database and discourage any unpermitted use of the database that is inconsistent
+    with your license. Please visit https://icsd.products.fiz-karlsruhe.de/ for more
+    information.
+
+    By using this package, you agree to the terms and conditions of the ICSD database
+    and must not hold use liable for any misuse of the database.
+
+    Here we assume you have a folder containing relevant downloaded ICSD CIFS located at the
+    default path in DaraSettings. You can also configure the path in dara.yaml.
+
+    Each CIF file should be named "icsd_<id>.cif" where <id> is the ICSD code.
     """
 
     def __init__(self, path_to_icsd: str | None = None):

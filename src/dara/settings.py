@@ -21,6 +21,7 @@ class DaraSettings(BaseSettings):
     CONFIG_FILE: str = Field(_DEFAULT_CONFIG_FILE_PATH, description="File to load alternative defaults from.")
 
     PATH_TO_ICSD: Path = Field(Path("~/ICSD_2024/ICSD_2024_experimental_inorganic/experimental_inorganic").expanduser())
+    PATH_TO_COD: Path = Field(Path("~/COD_2024").expanduser())
 
     model_config = SettingsConfigDict(env_prefix="dara_")  # prepend dara_ to env vars
 

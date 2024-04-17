@@ -1,4 +1,4 @@
-"""A script to filter and group the ICSD, removing duplicate structures and classifying
+"""A script to filter and group the cod, removing duplicate structures and classifying
 symmetry.
 """
 
@@ -13,19 +13,23 @@ from tqdm import tqdm
 from dara import SETTINGS
 from dara.cif import Cif
 
-path_to_icsd = Path(SETTINGS.PATH_TO_ICSD)
+path_to_cod = Path(SETTINGS.PATH_TO_COD)
 MAX_NUM_ATOMS = 128
 
 
-def load_icsd_structures():
-    """Load ICSD structures and metadata. Groups by chemical system. Assumes you have a folder containing labeled
-    CIFs from the ICSD with the name format "icsd_<id>.cif.
+def load_cod_structures():
+    """Load COD structures and metadata. Groups by chemical system.
+
+    This assumes you have a COD_2024 folder acquired through the standard rsync approach:
+        rsync -av --delete rsync://www.crystallography.net/cif/ COD_2024/
+
+    Note that this folder will probably include two levels of sub folders (e.g. COD_2024/7/03/03/...)
 
     See DaraSettings for the default path or to configure with a dara.yaml file.
     """
-    icsd_data = {}
+    cod_data = {}
 
-    for filename in tqdm(sorted(path_to_icsd.glob("*.cif")), desc="Loading ICSD structures..."):
+    for filename in tqdm(sorted(path_to_cod.rglob("*.cif")), desc="Loading COD structures..."):
         try:
             cif = Cif.from_file(filename)
         except Exception as err:
@@ -40,43 +44,43 @@ def load_icsd_structures():
 
         metadata = cif.data[next(iter(cif.data.keys()))].data
 
-        date = metadata.get("_audit_creation_date", None)
-        temp = float(metadata.get("_diffrn_ambient_temperature", 0))
+        date = metadata.get("_journal_year", None)
+        temp = float(str(metadata.get("_diffrn_ambient_temperature", 0)).split("(", maxsplit=1)[0])
         if temp == 0:
-            temp = metadata.get("_cell_measurement_temperature", 0)
-        icsd_id = metadata.get("_database_code_ICSD", filename.stem)  # prefer whats in CIF
-        data = {"structure": structure, "temp": temp, "date": date, "icsd_id": icsd_id}
+            temp = float(str(metadata.get("_cell_measurement_temperature", 0)).split("(", maxsplit=1)[0])
+        cod_id = str(metadata.get("_cod_database_code", filename.stem))  # prefer whats in CIF
+        data = {"structure": structure, "temp": temp, "date": date, "cod_id": cod_id}
 
         chemsys = structure.composition.chemical_system
 
-        if chemsys in icsd_data:
-            icsd_data[chemsys].append(data)
+        if chemsys in cod_data:
+            cod_data[chemsys].append(data)
         else:
-            icsd_data[chemsys] = [data]
+            cod_data[chemsys] = [data]
 
-    return icsd_data
+    return cod_data
 
 
-def filter_icsd_structures(icsd_data, mp_struct_info):
-    """Filter and prioritize ICSD structures based on space group and MP data.
+def filter_cod_structures(cod_data, mp_struct_info):
+    """Filter and prioritize COD structures based on space group and MP data.
 
     Specifically:
 
     1) Remove duplicate structures using StructureMatcher
     2) Remove structures that are too big (>128 atoms)
     3) Prioritize structures based on proximity to room temperature
-    4) Associate MP data (formation energy, space group) with ICSD data
+    4) Associate MP data (formation energy, space group) with COD data
     """
     filtered_data = {}
 
-    for chemsys, data in tqdm(list(icsd_data.items()), desc="Filtering structures..."):
+    for chemsys, data in tqdm(list(cod_data.items()), desc="Filtering structures..."):
         matcher = StructureMatcher(allow_subset=True)
 
         # pre-sort by spacegroup to speed up matching
         grouped_structures = {}
         for item in data:
             if len(item["structure"]) > MAX_NUM_ATOMS:
-                print("skipping (too big):", item["icsd_id"])
+                print("skipping (too big):", item["cod_id"])
                 continue
             try:
                 sg_data = SpacegroupAnalyzer(structure=item["structure"], symprec=0.1)._space_group_data
@@ -92,11 +96,11 @@ def filter_icsd_structures(icsd_data, mp_struct_info):
                             structure=item["structure"], symprec=0.01, angle_tolerance=10
                         )._space_group_data
                     except Exception:
-                        print("No symmetry data for ICSD ID", item["icsd_id"])
+                        print("No symmetry data for cod ID", item["cod_id"])
                         continue
 
             if sg_data is None:
-                print("No data: Excluding ICSD ID", item["icsd_id"])
+                print("No data: Excluding cod ID", item["cod_id"])
                 continue
 
             sg = sg_data["number"]
@@ -130,7 +134,7 @@ def filter_icsd_structures(icsd_data, mp_struct_info):
                 group_sorted = sorted(group, key=lambda x: (abs(x["temp"] - 293.0), x["date"]))
                 selected = group_sorted[0]
                 formula = selected["structure"].composition.reduced_formula
-                data = [formula, selected["icsd_id"], sg, None]
+                data = [formula, selected["cod_id"], sg, None]
 
                 if formula in mp_struct_info:
                     for e_hull, mp_sg in mp_struct_info[formula]:
@@ -153,11 +157,11 @@ if __name__ == "__main__":
     logging.info("Loading information on MP structures (formulas, space groups, e_hulls)...")
     mp_struct_info = loadfn(Path(__file__).resolve().parent.parent / "src/dara/data/mp_struct_info.json.gz")
 
-    logging.info("Loading ICSD structures...")
-    icsd_data = load_icsd_structures()
+    logging.info("Loading COD structures...")
+    cod_data = load_cod_structures()
 
-    filtered_data = filter_icsd_structures(icsd_data, mp_struct_info)
+    filtered_data = filter_cod_structures(cod_data, mp_struct_info)
 
-    logging.info("Saving filtered ICSD data...")
+    logging.info("Saving filtered COD data...")
 
-    dumpfn(filtered_data, "icsd_filtered_info_2024_v2.json.gz")
+    dumpfn(filtered_data, "cod_filtered_info_2024.json.gz")
