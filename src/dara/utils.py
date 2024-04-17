@@ -70,19 +70,13 @@ def load_symmetrized_structure(
     """
     with warnings.catch_warnings():  # suppress the warnings from pymatgen
         warnings.filterwarnings("ignore")
-        structure = SpacegroupAnalyzer(
-            Structure.from_file(cif_path.as_posix(), site_tolerance=1e-3, occupancy_tolerance=100)
-        ).get_refined_structure()
-        spg = SpacegroupAnalyzer(structure)
-
-    try:
-        symmetrized_structure: SymmetrizedStructure = spg.get_symmetrized_structure()
-    except Exception as e:
-        warnings.warn(
-            f"Could not get the symmetrized structure for {cif_path}. Error: {e}. Trying looser site tolerance."
-        )
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore")
+        try:
+            structure = SpacegroupAnalyzer(
+                Structure.from_file(cif_path.as_posix(), site_tolerance=1e-3, occupancy_tolerance=100)
+            ).get_refined_structure()
+            spg = SpacegroupAnalyzer(structure)
+            symmetrized_structure: SymmetrizedStructure = spg.get_symmetrized_structure()
+        except Exception:  # try with a higher site tolerance
             structure = SpacegroupAnalyzer(
                 Structure.from_file(cif_path.as_posix(), site_tolerance=1e-2, occupancy_tolerance=100)
             ).get_refined_structure()
