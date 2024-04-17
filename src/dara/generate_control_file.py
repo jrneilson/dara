@@ -15,7 +15,7 @@ def copy_instrument_files(instrument_name: str, working_dir: Path) -> None:
     """Copy the instrument files to the working directory."""
     instrument_path = Path(__file__).parent / "data" / "BGMN-Templates" / "Devices"
 
-    for file in instrument_path.glob(f"{instrument_name}*"):
+    for file in instrument_path.glob(f"{instrument_name}.*"):
         shutil.copy(file, working_dir)
 
 
