@@ -24,9 +24,7 @@ class ICSDDatabase:
     you to download and keep CIFs as a local copy. We do not provide any CIFs from the
     ICSD and discourage any unpermitted use of the database that is inconsistent
     with your license. Please visit https://icsd.products.fiz-karlsruhe.de/ for more
-    information.
-
-    By using this package, you agree to the terms and conditions of the ICSD database
+    information. By using this package, you agree to the terms and conditions of the ICSD database
     and must not hold use liable for any misuse.
 
     Here we assume you have a folder containing relevant downloaded ICSD CIFs located at the

@@ -18,8 +18,16 @@ MAX_NUM_ATOMS = 128
 
 
 def load_icsd_structures():
-    """Load ICSD structures and metadata. Groups by chemical system. Assumes you have a folder containing labeled
-    CIFs from the ICSD with the name format "icsd_<id>.cif.
+    """Load ICSD structures and metadata. Groups by chemical system.
+
+    **Legal notice**: to use the ICSD database, you must purchase a paid license that allows
+    you to download and keep CIFs as a local copy. We do not provide any CIFs from the
+    ICSD and discourage any unpermitted use of the database that is inconsistent
+    with your license. Please visit https://icsd.products.fiz-karlsruhe.de/ for more
+    information. By using this package, you agree to the terms and conditions of the ICSD database
+    and must not hold use liable for any misuse.
+
+    This function ssumes you have a folder containing labeled CIFs from the ICSD with the name format "icsd_<id>.cif.
 
     See DaraSettings for the default path or to configure with a dara.yaml file.
     """
@@ -33,7 +41,7 @@ def load_icsd_structures():
             continue
 
         try:
-            structure = cif.to_structure(merge_tol=0.01, occupancy_tolerance=1.01)
+            structure = cif.to_structure(merge_tol=0.01, occupancy_tolerance=100)
         except Exception:
             logging.error(f"Error parsing CIF from file: {filename}. Skipping...")
             continue
@@ -160,4 +168,4 @@ if __name__ == "__main__":
 
     logging.info("Saving filtered ICSD data...")
 
-    dumpfn(filtered_data, "icsd_filtered_info_2024_v2.json.gz")
+    dumpfn(filtered_data, "icsd_filtered_info_2024_v3.json.gz")

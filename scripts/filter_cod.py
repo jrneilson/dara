@@ -10,10 +10,10 @@ from pymatgen.analysis.structure_analyzer import SpacegroupAnalyzer
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from tqdm import tqdm
 
-from dara import SETTINGS
 from dara.cif import Cif
 
-path_to_cod = Path(SETTINGS.PATH_TO_COD)
+# path_to_cod = Path(SETTINGS.PATH_TO_COD)
+path_to_cod = Path("/Users/mcdermott/COD_test")
 MAX_NUM_ATOMS = 128
 
 
@@ -23,7 +23,8 @@ def load_cod_structures():
     This assumes you have a COD_2024 folder acquired through the standard rsync approach:
         rsync -av --delete rsync://www.crystallography.net/cif/ COD_2024/
 
-    Note that this folder will probably include two levels of sub folders (e.g. COD_2024/7/03/03/...)
+    Note that this folder will probably include two levels of sub folders (e.g.
+    COD_2024/7/03/03/...). This will not affect parsing.
 
     See DaraSettings for the default path or to configure with a dara.yaml file.
     """
@@ -37,7 +38,7 @@ def load_cod_structures():
             continue
 
         try:
-            structure = cif.to_structure(merge_tol=0.01, occupancy_tolerance=1.01)
+            structure = cif.to_structure(merge_tol=0.01, occupancy_tolerance=100)
         except Exception:
             logging.error(f"Error parsing CIF from file: {filename}. Skipping...")
             continue
