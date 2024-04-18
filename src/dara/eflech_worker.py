@@ -90,7 +90,6 @@ class EflechWorker:
         *,
         wmin: float = None,
         wmax: float = None,
-        nthreads: int = None,
     ) -> Path:
         control_file_str = f"""
             VERZERR={instrument_name}.geq
@@ -99,7 +98,7 @@ class EflechWorker:
             VAL[1]={pattern_path.name}
             {f"WMIN={wmin}" if wmin is not None else ""}
             {f"WMAX={wmax}" if wmax is not None else ""}
-            NTHREADS={nthreads if nthreads is not None else os.cpu_count()}
+            NTHREADS=8
             TEST=ND234U
             OUTPUTMASK=output-$
             TITELMASK=output-$"""
@@ -126,7 +125,7 @@ class EflechWorker:
                 [self.eflech_path.as_posix(), control_file_path.as_posix()],
                 cwd=working_dir.as_posix(),
                 capture_output=not show_progress,
-                timeout=1200,
+                timeout=1800,
                 check=False,
             )
         elif mode == "teil":
@@ -134,7 +133,7 @@ class EflechWorker:
                 [self.teil_path.as_posix(), control_file_path.as_posix()],
                 cwd=working_dir.as_posix(),
                 capture_output=not show_progress,
-                timeout=1200,
+                timeout=1800,
                 check=False,
             )
 
