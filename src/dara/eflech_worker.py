@@ -90,6 +90,7 @@ class EflechWorker:
         *,
         wmin: float = None,
         wmax: float = None,
+        nthreads: int = None,
     ) -> Path:
         control_file_str = f"""
             VERZERR={instrument_name}.geq
@@ -98,7 +99,7 @@ class EflechWorker:
             VAL[1]={pattern_path.name}
             {f"WMIN={wmin}" if wmin is not None else ""}
             {f"WMAX={wmax}" if wmax is not None else ""}
-            NTHREADS=8
+            NTHREADS={nthreads if nthreads is not None else os.cpu_count()}
             TEST=ND234U
             OUTPUTMASK=output-$
             TITELMASK=output-$"""
