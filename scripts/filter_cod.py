@@ -10,10 +10,11 @@ from pymatgen.analysis.structure_analyzer import SpacegroupAnalyzer
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from tqdm import tqdm
 
+from dara import SETTINGS
 from dara.cif import Cif
 
-# path_to_cod = Path(SETTINGS.PATH_TO_COD)
-path_to_cod = Path("/Users/mcdermott/COD_test")
+path_to_cod = Path(SETTINGS.PATH_TO_COD)
+
 MAX_NUM_ATOMS = 128
 
 
@@ -45,10 +46,19 @@ def load_cod_structures():
 
         metadata = cif.data[next(iter(cif.data.keys()))].data
 
+        if len(structure) > MAX_NUM_ATOMS:
+            print("Skipping (too big):", filename)
+            continue
+
         date = metadata.get("_journal_year", None)
-        temp = float(str(metadata.get("_diffrn_ambient_temperature", 0)).split("(", maxsplit=1)[0])
-        if temp == 0:
-            temp = float(str(metadata.get("_cell_measurement_temperature", 0)).split("(", maxsplit=1)[0])
+        temp = str(metadata.get("_diffrn_ambient_temperature", 0)).split("(", maxsplit=1)[0]  # remove uncertainty
+        if temp == "?":
+            temp = "0"
+
+        if temp == "0":
+            temp = str(metadata.get("_cell_measurement_temperature", 0)).split("(", maxsplit=1)[0]  # remove uncertainty
+
+        temp = float(temp)
         cod_id = str(metadata.get("_cod_database_code", filename.stem))  # prefer whats in CIF
         data = {"structure": structure, "temp": temp, "date": date, "cod_id": cod_id}
 
