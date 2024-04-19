@@ -126,7 +126,7 @@ class EflechWorker:
                 [self.eflech_path.as_posix(), control_file_path.as_posix()],
                 cwd=working_dir.as_posix(),
                 capture_output=not show_progress,
-                timeout=1200,
+                timeout=1800,
                 check=False,
             )
         elif mode == "teil":
@@ -134,7 +134,7 @@ class EflechWorker:
                 [self.teil_path.as_posix(), control_file_path.as_posix()],
                 cwd=working_dir.as_posix(),
                 capture_output=not show_progress,
-                timeout=1200,
+                timeout=1800,
                 check=False,
             )
 
