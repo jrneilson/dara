@@ -24,7 +24,13 @@ For example, installing BGMN on Lawrencium (or perhaps another older Linux clust
 
     version `GLIBC_2.29 not found (required by …)
 
-To fix, we need to install GLIBC 2.29. Based on:
+To fix, we need to install GLIBC 2.29. First, make sure to run:
+
+```bash
+module load gcc
+```
+
+Now follow the directions below. These are based on this post:
 <https://stackoverflow.com/questions/50564999/lib64-libc-so-6-version-glibc-2-14-not-found-why-am-i-getting-this-error>
 
 ```bash
@@ -49,7 +55,7 @@ Git clone and follow setup instructions here: <https://github.com/NixOS/patchelf
 This command will fix every binary. Make sure DARA is installed in a folder called $HOME/dara/
 
 ```bash
-patchelf --set-interpreter $HOME/.local/lib/ld-linux-x86-64.so.2 --set-rpath $HOME/.local/lib/ $HOME/dara/dara/bgmn/BGMNwin/bgmn && patchelf --set-interpreter $HOME/.local/lib/ld-linux-x86-64.so.2 --set-rpath $HOME/.local/lib/ $HOME/dara/dara/bgmn/BGMNwin/eflech && patchelf --set-interpreter $HOME/.local/lib/ld-linux-x86-64.so.2 --set-rpath $HOME/.local/lib/ $HOME/dara/dara/bgmn/BGMNwin/geomet && patchelf --set-interpreter $HOME/.local/lib/ld-linux-x86-64.so.2 --set-rpath $HOME/.local/lib/ $HOME/dara/dara/bgmn/BGMNwin/gertest && patchelf --set-interpreter $HOME/.local/lib/ld-linux-x86-64.so.2 --set-rpath $HOME/.local/lib/ $HOME/dara/dara/bgmn/BGMNwin/index && patchelf --set-interpreter $HOME/.local/lib/ld-linux-x86-64.so.2 --set-rpath $HOME/.local/lib/ $HOME/dara/dara/bgmn/BGMNwin/lamtest && patchelf --set-interpreter $HOME/.local/lib/ld-linux-x86-64.so.2 --set-rpath $HOME/.local/lib/ $HOME/dara/dara/bgmn/BGMNwin/makegeq && patchelf --set-interpreter $HOME/.local/lib/ld-linux-x86-64.so.2 --set-rpath $HOME/.local/lib/ $HOME/dara/dara/bgmn/BGMNwin/output && patchelf --set-interpreter $HOME/.local/lib/ld-linux-x86-64.so.2 --set-rpath $HOME/.local/lib/ $HOME/dara/dara/bgmn/BGMNwin/plot1 && patchelf --set-interpreter $HOME/.local/lib/ld-linux-x86-64.so.2 --set-rpath $HOME/.local/lib/ $HOME/dara/dara/bgmn/BGMNwin/spacegrp && patchelf --set-interpreter $HOME/.local/lib/ld-linux-x86-64.so.2 --set-rpath $HOME/.local/lib/ $HOME/dara/dara/bgmn/BGMNwin/teil && patchelf --set-interpreter $HOME/.local/lib/ld-linux-x86-64.so.2 --set-rpath $HOME/.local/lib/ $HOME/dara/dara/bgmn/BGMNwin/verzerr
+patchelf --set-interpreter $HOME/.local/lib/ld-linux-x86-64.so.2 --set-rpath $HOME/.local/lib/ $HOME/dara/dara/src/dara/bgmn/BGMNwin/bgmn && patchelf --set-interpreter $HOME/.local/lib/ld-linux-x86-64.so.2 --set-rpath $HOME/.local/lib/ $HOME/dara/dara/src/dara/bgmn/BGMNwin/eflech && patchelf --set-interpreter $HOME/.local/lib/ld-linux-x86-64.so.2 --set-rpath $HOME/.local/lib/ $HOME/dara/dara/src/dara/bgmn/BGMNwin/geomet && patchelf --set-interpreter $HOME/.local/lib/ld-linux-x86-64.so.2 --set-rpath $HOME/.local/lib/ $HOME/dara/dara/src/dara/bgmn/BGMNwin/gertest && patchelf --set-interpreter $HOME/.local/lib/ld-linux-x86-64.so.2 --set-rpath $HOME/.local/lib/ $HOME/dara/dara/src/dara/bgmn/BGMNwin/index && patchelf --set-interpreter $HOME/.local/lib/ld-linux-x86-64.so.2 --set-rpath $HOME/.local/lib/ $HOME/dara/dara/src/dara/bgmn/BGMNwin/lamtest && patchelf --set-interpreter $HOME/.local/lib/ld-linux-x86-64.so.2 --set-rpath $HOME/.local/lib/ $HOME/dara/dara/src/dara/bgmn/BGMNwin/makegeq && patchelf --set-interpreter $HOME/.local/lib/ld-linux-x86-64.so.2 --set-rpath $HOME/.local/lib/ $HOME/dara/dara/src/dara/bgmn/BGMNwin/output && patchelf --set-interpreter $HOME/.local/lib/ld-linux-x86-64.so.2 --set-rpath $HOME/.local/lib/ $HOME/dara/dara/src/dara/bgmn/BGMNwin/plot1 && patchelf --set-interpreter $HOME/.local/lib/ld-linux-x86-64.so.2 --set-rpath $HOME/.local/lib/ $HOME/dara/dara/src/dara/bgmn/BGMNwin/spacegrp && patchelf --set-interpreter $HOME/.local/lib/ld-linux-x86-64.so.2 --set-rpath $HOME/.local/lib/ $HOME/dara/dara/src/dara/bgmn/BGMNwin/teil && patchelf --set-interpreter $HOME/.local/lib/ld-linux-x86-64.so.2 --set-rpath $HOME/.local/lib/ $HOME/dara/dara/src/dara/bgmn/BGMNwin/verzerr
 ```
 
 ---
