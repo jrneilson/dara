@@ -487,7 +487,7 @@ class BaseSearchTree(Tree):
                         searched_phases,
                         key=lambda x: new_result.peak_data[
                             new_result.peak_data["phase"] == x.stem
-                        ]["intensity"].max(),
+                        ]["intensity"].sum(),
                         reverse=True,
                     )
                     is_low_weight_fraction = sorted_searched_phases != searched_phases
