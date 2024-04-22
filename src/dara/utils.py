@@ -311,6 +311,7 @@ def intensity_correction(
 ):
     """
     Translated from Profex source (bgmnparparser.cpp:L112)
+
     Args:
         intensity: the intensity of the peak
         gsum: the gsum of the peak
