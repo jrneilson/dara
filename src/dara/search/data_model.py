@@ -33,6 +33,9 @@ class SearchNodeData(BaseModel):
     isolated_missing_peaks: Optional[list[list[float]]] = None
     isolated_extra_peaks: Optional[list[list[float]]] = None
 
+    peak_matcher_scores: Optional[dict[Path, float]] = None
+    peak_matcher_threshold: Optional[float] = None
+
     @property
     def pretty_output(self):
         is_root_node = self.current_result is None and self.status == "expanded"

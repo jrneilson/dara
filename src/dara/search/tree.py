@@ -372,6 +372,7 @@ class BaseSearchTree(Tree):
         max_phases: float,
         rpb_threshold: float,
         pinned_phases: list[Path] | None = None,
+        record_peak_matcher_scores: bool = False,
         *args,
         **kwargs,
     ):
@@ -386,6 +387,7 @@ class BaseSearchTree(Tree):
         self.maximum_grouping_distance = maximum_grouping_distance
         self.max_phases = max_phases
         self.pinned_phases = pinned_phases
+        self.record_peak_matcher_scores = record_peak_matcher_scores
 
         self.all_phases_result = all_phases_result
         self.peak_obs = peak_obs
@@ -422,6 +424,10 @@ class BaseSearchTree(Tree):
             best_phases, scores, threshold = self.score_phases(
                 all_phases_result, node.data.current_result
             )
+
+            if self.record_peak_matcher_scores:
+                node.data.peak_matcher_scores = scores
+                node.data.peak_matcher_threshold = threshold
 
             new_results = self.refine_phases(
                 best_phases, pinned_phases=node.data.current_phases
@@ -495,16 +501,6 @@ class BaseSearchTree(Tree):
                     != len(new_phases)
                 ):
                     status = "no_improvement"
-                # elif (
-                #     node.data.isolated_missing_peaks is not None
-                #     and isolated_missing_peaks is not None
-                #     and not has_improvement(
-                #         isolated_missing_peak_old=node.data.isolated_missing_peaks,
-                #         isolated_missing_peak_new=isolated_missing_peaks,
-                #         intensity_threshold=self.intensity_threshold,
-                #     )
-                # ):
-                #     status = "no_improvement"
                 elif is_low_weight_fraction:
                     status = "low_weight_fraction"
                 elif not is_best_result_in_group:
@@ -838,6 +834,7 @@ class BaseSearchTree(Tree):
             instrument_name=search_tree.instrument_name,
             maximum_grouping_distance=search_tree.maximum_grouping_distance,
             pinned_phases=search_tree.pinned_phases,
+            record_peak_matcher_scores=search_tree.record_peak_matcher_scores,
         )
         new_search_tree.add_node(root_node)
 
@@ -895,6 +892,7 @@ class SearchTree(BaseSearchTree):
         maximum_grouping_distance: float = 0.1,
         max_phases: float = 5,
         rpb_threshold: float = 4,
+        record_peak_matcher_scores: bool = False,
         *args,
         **kwargs,
     ):
@@ -924,6 +922,7 @@ class SearchTree(BaseSearchTree):
             maximum_grouping_distance=maximum_grouping_distance,
             max_phases=max_phases,
             pinned_phases=self.pinned_phases,
+            record_peak_matcher_scores=record_peak_matcher_scores,
             *args,
             **kwargs,
         )

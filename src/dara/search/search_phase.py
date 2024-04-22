@@ -52,6 +52,7 @@ def search_phases(
     phase_params: dict[str, ...] | None = None,
     refinement_params: dict[str, ...] | None = None,
     return_search_tree: bool = False,
+    record_peak_matcher_scores: bool = False,
     rpb_threshold: float = 2,
 ) -> list[SearchResult] | SearchTree:
     """
@@ -66,6 +67,8 @@ def search_phases(
         phase_params: the parameters for the phase search
         refinement_params: the parameters for the refinement
         return_search_tree: whether to return the search tree. This is mainly used for debugging purposes.
+        record_peak_matcher_scores: whether to record the peak matcher scores. This is mainly used for
+            debugging purposes.
         rpb_threshold: the RPB threshold, which is deprecated, and will be removed in the future
     """
     if phase_params is None:
@@ -87,6 +90,7 @@ def search_phases(
         refine_params=refinement_params,
         phase_params=phase_params,
         max_phases=max_phases,
+        record_peak_matcher_scores=record_peak_matcher_scores,
     )
 
     max_worker = ray.cluster_resources()["CPU"]
@@ -99,7 +103,9 @@ def search_phases(
         for task in done:
             remote_search_tree = ray.get(task)
             remote_search_tree = copy.deepcopy(remote_search_tree)
-            search_tree.add_subtree(anchor_nid=remote_search_tree.root, search_tree=remote_search_tree)
+            search_tree.add_subtree(
+                anchor_nid=remote_search_tree.root, search_tree=remote_search_tree
+            )
             for nid in search_tree.get_expandable_children(remote_search_tree.root):
                 to_be_submitted.append(nid)
 
