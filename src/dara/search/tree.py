@@ -313,39 +313,6 @@ def remove_unnecessary_phases(
     return new_phases
 
 
-def has_improvement(
-    isolated_missing_peak_old: list[list[float]],
-    isolated_missing_peak_new: list[list[float]],
-    intensity_threshold: float = 0.0,
-    maximum_angle: float = 40.0,
-) -> bool:
-    isolated_missing_peak_new = np.array(isolated_missing_peak_new)
-
-    isolated_missing_peak_old = np.array(isolated_missing_peak_old)
-    peak_matcher_missing = PeakMatcher(
-        isolated_missing_peak_new, isolated_missing_peak_old
-    )
-
-    not_missing_peaks = peak_matcher_missing.missing
-    # TODO: this is a temporary fix, we should consider all peaks
-    not_missing_peaks = not_missing_peaks[
-        not_missing_peaks[:, 0] < maximum_angle
-    ]  # only consider peaks below maximum_angle degrees
-
-    new_missing_peaks = peak_matcher_missing.extra
-    new_missing_peaks = new_missing_peaks[
-        new_missing_peaks[:, 0] < maximum_angle
-    ]  # only consider peaks below maximum_angle degrees
-
-    if (
-        np.max(not_missing_peaks[:, 1], initial=0) < intensity_threshold
-        or np.max(new_missing_peaks[:, 1], initial=0) > intensity_threshold
-    ):
-        return False
-
-    return True
-
-
 def get_natural_break_results(
     results: list[SearchResult], sorting: bool = True
 ) -> list[SearchResult]:
@@ -471,12 +438,14 @@ class BaseSearchTree(Tree):
 
                 group_id = grouped_results[phase]["group_id"]
                 fom = grouped_results[phase]["fom"]
-                is_best_result_in_group = fom == max(
+
+                is_best_result_in_group = phase == max(
                     [
-                        grouped_results[phase_]["fom"]
+                        phase_
                         for phase_ in grouped_results
                         if grouped_results[phase_]["group_id"] == group_id
-                    ]
+                    ],
+                    key=lambda x: grouped_results[x]["fom"],
                 )
 
                 if new_result is not None:
