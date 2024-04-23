@@ -17,10 +17,10 @@ def cod_db():
 
 def test_icsd_database(icsd_db):
     """Test the ICSDDatabase class."""
-    cif_paths = icsd_db.get_cifs_by_chemsys("Fe-O")
+    cif_paths = icsd_db.get_cifs_by_chemsys("Fe-O", copy_files=False)
     assert len(cif_paths) > 0
 
 
 def test_cod_database(cod_db):
-    cif_paths = cod_db.get_cifs_by_chemsys("Fe-O")
+    cif_paths = cod_db.get_cifs_by_chemsys("Fe-O", copy_files=False)
     assert len(cif_paths) > 0
