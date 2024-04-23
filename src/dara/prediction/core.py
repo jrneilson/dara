@@ -9,7 +9,7 @@ import shutil
 from monty.json import MSONable
 from rxn_network.utils.funcs import get_logger
 
-from dara.icsd import ICSDDatabase
+from dara.structure_db import ICSDDatabase
 
 logger = get_logger(__name__)
 

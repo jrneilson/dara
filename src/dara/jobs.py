@@ -12,12 +12,12 @@ from monty.serialization import dumpfn
 from pymatgen.core import Composition
 
 from dara.cif import Cif
-from dara.icsd import ICSDDatabase
 from dara.prediction.core import PhasePredictor
 from dara.refine import do_refinement, do_refinement_no_saving
 from dara.schema import PhaseSearchDocument, RefinementDocument
 from dara.search import search_phases
 from dara.search.data_model import SearchResult
+from dara.structure_db import ICSDDatabase
 from dara.utils import get_logger
 
 if TYPE_CHECKING:
@@ -105,7 +105,7 @@ class PhaseSearchMaker(Maker):
     phase_predictor: PhasePredictor | None = field(default_factory=PhasePredictor)
     verbose: bool = True
     run_final_refinement: bool = True
-    cifs_folder_name: str = "cifs"
+    cifs_folder_name: str = "dara_cifs"
 
     @job(output_schema=PhaseSearchDocument)
     def make(
@@ -159,7 +159,7 @@ class PhaseSearchMaker(Maker):
             if self.phase_predictor is None:
                 logger.info("Phase prediction disabled; using all ICSD phases in the chemical system.")
                 elems = {str(elem) for p in precursors for elem in Composition(p).elements}
-                ICSDDatabase().get_cifs_by_chemsys(elems, dest_dir=cifs_path.as_posix())
+                ICSDDatabase().get_cifs_by_chemsys(elems, copy_files=True, dest_dir=cifs_path.as_posix())
             else:
                 logger.info("Predicting phases...")
                 self._predict_folder(

@@ -3,7 +3,7 @@ from pathlib import Path
 
 from pymatgen.core import Composition
 
-from dara.icsd import ICSDDatabase
+from dara.structure_db import ICSDDatabase
 from dara.search.search_phase import search_phases
 
 dataset_path = Path(__file__).parent.parent / "dataset" / "precursor_mixture"
