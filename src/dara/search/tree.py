@@ -190,9 +190,6 @@ def calculate_fom_and_strain(
         (refined_lattice_abc - initial_lattice_abc) / initial_lattice_abc
     )
 
-    if delta_u <= 1:
-        a = 0
-
     if b1 is None or b1 < b1_threshold:
         c = 0
     else:

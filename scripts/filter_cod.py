@@ -234,4 +234,4 @@ if __name__ == "__main__":
 
     logging.info("Saving filtered COD data...")
 
-    dumpfn(filtered_data, "cod_filtered_info_2024.2.json.gz")
+    dumpfn(filtered_data, "cod_filtered_info_2024.json.gz")
