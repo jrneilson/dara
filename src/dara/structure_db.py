@@ -133,8 +133,12 @@ class StructureDatabase(MSONable, metaclass=ABCMeta):
 
         return formula_data
 
-    def _generate_file_map(self, all_data, e_hull_filter, exclude_gases):
+    def _generate_file_map(self, all_data, e_hull_filter, exclude_gases, download_folder="dara_downloaded_cifs"):
         """A mapping of database file paths to new file names with structure metadata included."""
+        if not self.local_copy_found:
+            logger.warning("Local copy of database not found. Attempting to download structures...")
+            _ = self.download_structures([data[1] for data in all_data], save=True, default_folder=download_folder)
+
         file_map = {}
         for formula, code, sg, e_hull in all_data:
             if exclude_gases and formula in COMMON_GASES:
@@ -146,7 +150,9 @@ class StructureDatabase(MSONable, metaclass=ABCMeta):
                 continue
 
             e_hull_value = round(1000 * e_hull) if e_hull is not None else None
-            file_map[f"{self.get_file_path(code)}"] = f"{formula}_{sg}_({self.name}_{code})-{e_hull_value}.cif"
+
+            fp = f"{self.get_file_path(code)}" if self.local_copy_found else f"{download_folder}/{code}.cif"
+            file_map[fp] = f"{formula}_{sg}_({self.name}_{code})-{e_hull_value}.cif"
 
         return file_map
 
@@ -162,8 +168,13 @@ class StructureDatabase(MSONable, metaclass=ABCMeta):
 
         return Path(p)
 
+    @property
+    def local_copy_found(self) -> bool:
+        """Check if a local copy of the database is found."""
+        return self.path.exists()
+
     @abstractmethod
-    def download_structures(self, ids: list[str] | None = None):
+    def download_structures(self, ids: list[str] | None = None, save=False, default_folder=None) -> list[Cif]:
         """Download structures from the database."""
 
     @abstractmethod
@@ -211,10 +222,15 @@ class CODDatabase(StructureDatabase):
         super().__init__(path_to_cifs)
         self._preparsed_info = loadfn(Path(__file__).parent / "data/cod_filtered_info_2024.json.gz")
 
-    def download_structures(self, ids: list[str] | None = None):
-        """Download structures from the COD database."""
-        COD_URL = "https://www.crystallography.net/cod/{cod_id}.cif"
+    def download_structures(
+        self, ids: list[str] | None = None, save=False, default_folder="downloaded_cod_cifs"
+    ) -> list[Cif]:
+        """Download structures from the COD database. Note that this downloads directly
+        from the COD website, so it may be slow. Please do not abuse this feature.
 
+        Args:
+            ids: List of COD IDs to download.
+        """
         cifs = thread_map(
             self._download_cod,
             ids,
@@ -222,6 +238,15 @@ class CODDatabase(StructureDatabase):
             max_workers=128,
             desc="Downloading CIFs from COD...",
         )
+        if save:
+            logger.info(f"Saving downloaded CIFs to {default_folder}")
+            default_folder = Path(default_folder)
+            if not default_folder.exists():
+                default_folder.mkdir()
+
+            for cif in cifs:
+                cif.to_file(default_folder / cif.filename)
+
         return cifs
 
     def get_file_path(self, cif_id: str | int):
@@ -243,19 +268,18 @@ class CODDatabase(StructureDatabase):
         return "cod"
 
     @staticmethod
-    def _download_cod(cod_id: str):
-        """
-        Download a file from a URL and save it to the current directory.
-        """
+    def _download_cod(cod_id: str) -> Cif:
+        """Download a COD file from its ID."""
         COD_URL = "https://www.crystallography.net/cod/{cod_id}.cif"
         # Get the content of the URL
         try:
             url = COD_URL.format(cod_id=cod_id)
-            response = requests.get(url)
+            response = requests.get(url, timeout=30)
             response.raise_for_status()  # Raise an error for bad status codes
-            temp_file = NamedTemporaryFile(mode="w+b")
+            temp_file = NamedTemporaryFile(mode="w+b")  # the with protocol does not work here
             temp_file.write(response.content)
             cif = Cif.from_file(temp_file.name)
+            cif.filename = f"{cod_id}.cif"
             temp_file.close()
 
         except Exception as e:
@@ -294,7 +318,7 @@ class ICSDDatabase(StructureDatabase):
         """Get the path to a CIF file in the ICSD database."""
         return self.path / f"icsd_{self._clean_icsd_code(cif_id)}.cif"
 
-    def download_structures(self, ids: list[str] | None = None):
+    def download_structures(self, ids: list[str] | None = None, save=False, default_folder=None) -> list[Cif]:
         """Download structures from the ICSD database."""
         raise NotImplementedError(
             "Downloading from the online ICSD database will not be implemented. Please use a local copy of CIFs"
