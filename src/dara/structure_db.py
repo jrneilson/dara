@@ -5,11 +5,15 @@ from __future__ import annotations
 import itertools
 from abc import ABCMeta, abstractmethod
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 
+import requests
 from monty.json import MSONable
 from monty.serialization import loadfn
 from pymatgen.core import Composition
+from tqdm.contrib.concurrent import thread_map
 
+from dara.cif import Cif
 from dara.data import COMMON_GASES
 from dara.settings import DaraSettings
 from dara.utils import copy_and_rename_files, get_logger
@@ -31,7 +35,9 @@ class StructureDatabase(MSONable, metaclass=ABCMeta):
         """
         Initialize an object for interacting with CIFs from a structure database.
 
-        path_to_cifs: Path to a folder containing the CIFs for the database.
+        Args:
+            path_to_cifs: Path to a folder containing the CIFs for the database. If this
+                is not provided, the default path from DaraSettings will be used.
         """
         self._path_to_cifs = path_to_cifs
         self._preparsed_info: dict = {}
@@ -46,6 +52,14 @@ class StructureDatabase(MSONable, metaclass=ABCMeta):
     ):
         """Get a list of database CIF codes corresponding to formulas, and optionally copy CIF
         files into a destination folder.
+
+        Args:
+            formulas: List of formulas to search for.
+            e_hull_filter: Filter out structures with e_hull above this value (compared
+                via spacegroup).
+            copy_files: Whether to copy CIF files to a destination folder.
+            dest_dir: Destination folder for copied CIF files.
+            exclude_gases: Whether to exclude common gases (e.g., O2) from the results.
         """
         file_map = {}
         all_data = []
@@ -69,6 +83,14 @@ class StructureDatabase(MSONable, metaclass=ABCMeta):
     ):
         """Get a list of database CIF codes corresponding to structures in a chemical system.
         Option to copy CIF files into a destination folder.
+
+        Args:
+            chemsys: Chemical system to search for (e.g., "Fe-O").
+            e_hull_filter: Filter out structures with e_hull above this value (compared
+                via spacegroup).
+            copy_files: Whether to copy CIF files to a destination folder.
+            dest_dir: Destination folder for copied CIF files.
+            exclude_gases: Whether to exclude common gases (e.g., O2) from the results.
         """
         if isinstance(chemsys, str):
             chemsys = chemsys.split("-")
@@ -90,7 +112,11 @@ class StructureDatabase(MSONable, metaclass=ABCMeta):
         return [data[1] for data in all_data]
 
     def get_formula_data(self, formula: str):
-        """Get a list of database codes and info corresponding to a formula."""
+        """Get a list of database codes + info corresponding to a formula.
+
+        Args:
+            formula: Chemical formula to search for.
+        """
         formula_reduced = Composition(formula).reduced_formula
         chemsys = Composition(formula).chemical_system
         db_chemsys = self.preparsed_info.get(chemsys)
@@ -108,6 +134,7 @@ class StructureDatabase(MSONable, metaclass=ABCMeta):
         return formula_data
 
     def _generate_file_map(self, all_data, e_hull_filter, exclude_gases):
+        """A mapping of database file paths to new file names with structure metadata included."""
         file_map = {}
         for formula, code, sg, e_hull in all_data:
             if exclude_gases and formula in COMMON_GASES:
@@ -186,7 +213,16 @@ class CODDatabase(StructureDatabase):
 
     def download_structures(self, ids: list[str] | None = None):
         """Download structures from the COD database."""
-        raise NotImplementedError("Downloading from the online COD database is not yet implemented.")
+        COD_URL = "https://www.crystallography.net/cod/{cod_id}.cif"
+
+        cifs = thread_map(
+            self._download_cod,
+            ids,
+            chunksize=1,
+            max_workers=128,
+            desc="Downloading CIFs from COD...",
+        )
+        return cifs
 
     def get_file_path(self, cif_id: str | int):
         """Get the path to a CIF file in the COD database."""
@@ -206,23 +242,43 @@ class CODDatabase(StructureDatabase):
         """Name of the database."""
         return "cod"
 
+    @staticmethod
+    def _download_cod(cod_id: str):
+        """
+        Download a file from a URL and save it to the current directory.
+        """
+        COD_URL = "https://www.crystallography.net/cod/{cod_id}.cif"
+        # Get the content of the URL
+        try:
+            url = COD_URL.format(cod_id=cod_id)
+            response = requests.get(url)
+            response.raise_for_status()  # Raise an error for bad status codes
+            temp_file = NamedTemporaryFile(mode="w+b")
+            temp_file.write(response.content)
+            cif = Cif.from_file(temp_file.name)
+            temp_file.close()
+
+        except Exception as e:
+            print(f"Failed to download {cod_id}: {e}")
+            raise
+
+        return cif
+
 
 class ICSDDatabase(StructureDatabase):
     """Class to interact with CIF files acquired from the ICSD database. This class uses
     a parsed/filtered list of ICSD_IDs that are automatically selected from when doing
-    phase searches (see data/icsd_filtered_info_2024_v2.json.gz).
+    phase searches (see data/icsd_filtered_info_2024_v2.json.gz). Here we assume you
+    have a folder containing relevant downloaded ICSD CIFs located at the
+    default path in DaraSettings. You can also configure the path in dara.yaml.
+
+    Each CIF file should be named "icsd_<id>.cif" where <id> is the ICSD code.
 
     **Legal notice**: to use the ICSD database, you must purchase a paid license that allows
     you to download and keep CIFs as a local copy. We do not provide any CIFs from the
     ICSD and discourage any unpermitted use of the database that is inconsistent
     with your license. Please visit https://icsd.products.fiz-karlsruhe.de/ for more
-    information. By using this package, you agree to the terms and conditions of the ICSD database
-    and must not hold use liable for any misuse.
-
-    Here we assume you have a folder containing relevant downloaded ICSD CIFs located at the
-    default path in DaraSettings. You can also configure the path in dara.yaml.
-
-    Each CIF file should be named "icsd_<id>.cif" where <id> is the ICSD code.
+    information. We are not liable for any misuse of the ICSD database.
     """
 
     def __init__(self, path_to_cifs: Path | str | None = None):
