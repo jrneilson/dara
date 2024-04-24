@@ -17,7 +17,7 @@ from dara.refine import do_refinement, do_refinement_no_saving
 from dara.schema import PhaseSearchDocument, RefinementDocument
 from dara.search import search_phases
 from dara.search.data_model import SearchResult
-from dara.structure_db import ICSDDatabase
+from dara.structure_db import CODDatabase, StructureDatabase
 from dara.utils import get_logger
 
 if TYPE_CHECKING:
@@ -112,6 +112,7 @@ class PhaseSearchMaker(Maker):
         self,
         xrd_data: XRDData,
         cifs: list[Cif] | None = None,
+        cif_dbs: list[StructureDatabase] | None = None,
         precursors: list[str] | None = None,
         predict_kwargs: dict | None = None,
         search_kwargs: dict | None = None,
@@ -138,6 +139,7 @@ class PhaseSearchMaker(Maker):
         if cifs_path.is_dir():
             logger.info(f"Removing existing CIFs directory, located at: {cifs_path}")
             shutil.rmtree(cifs_path)
+
         cifs_path.mkdir()
 
         xrd_data.to_xy_file(pattern_path)
@@ -146,20 +148,24 @@ class PhaseSearchMaker(Maker):
             precursors = []
 
         if cifs is not None:
-            logger.info("CIFs provided, skipping prediction.")
+            logger.info("CIFs provided. Skipping CIF download and phase prediction.")
             for cif in cifs:
-                cif_path = cifs_path / f"{cif.name}.cif"
+                cp = cifs_path / f"{cif.name}.cif"
 
-                with open(cif_path, "w") as f:
+                with open(cp, "w") as f:
                     f.write(str(cif))
         else:
             if precursors is None:
                 raise ValueError("Must provide either precursors or a set of CIFs!")
 
+            if cif_dbs is None:
+                cif_dbs = [CODDatabase()]
+
             if self.phase_predictor is None:
                 logger.info("Phase prediction disabled; using all ICSD phases in the chemical system.")
                 elems = {str(elem) for p in precursors for elem in Composition(p).elements}
-                ICSDDatabase().get_cifs_by_chemsys(elems, copy_files=True, dest_dir=cifs_path.as_posix())
+                for db in cif_dbs:
+                    db.get_cifs_by_chemsys(elems, copy_files=True, dest_dir=cifs_path.as_posix())
             else:
                 logger.info("Predicting phases...")
                 self._predict_folder(

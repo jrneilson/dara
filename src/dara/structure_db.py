@@ -26,13 +26,13 @@ class StructureDatabase(metaclass=ABCMeta):
     structures. This class is subclassed by ICSDDatabase, CODDatabase, etc.
     """
 
-    def __init__(self, path_to_cifs: Path | str):
+    def __init__(self, path_to_cifs: Path | str | None = None):
         """
         Initialize an object for interacting with CIFs from the ICSD.
 
         path_to_cifs: Path to a folder containing the CIFs for the database.
         """
-        self._path_to_cifs = Path(path_to_cifs)
+        self._path_to_cifs = path_to_cifs
         self._preparsed_info: dict = {}
 
     def get_cifs_by_formulas(
@@ -118,9 +118,21 @@ class StructureDatabase(metaclass=ABCMeta):
                 continue
 
             e_hull_value = round(1000 * e_hull) if e_hull is not None else None
-            file_map[f"{self.get_file_path(code)}"] = f"{formula}_{sg}_({code})-{e_hull_value}.cif"
+            file_map[f"{self.get_file_path(code)}"] = f"{formula}_{sg}_({self.name}_{code})-{e_hull_value}.cif"
 
         return file_map
+
+    @property
+    def path_to_cifs(self) -> Path:
+        """Path to local copy of the structure database (i.e., the folder containing all
+        the relevant CIFs). Automatically uses the default path if not
+        provided.
+        """
+        path = self._path_to_cifs
+        if path is None:
+            path = self.default_folder_path
+
+        return Path(path)
 
     @abstractmethod
     def download_structures(self, ids: list[str] | None = None):
@@ -131,12 +143,14 @@ class StructureDatabase(metaclass=ABCMeta):
         """Get the path to a CIF file in the database from its database ID."""
 
     @property
-    def path_to_cifs(self) -> Path:
-        """Path to local copy of the structure database (i.e., the folder containing all
-        the relevant CIFs). Automatically uses the default path if not
-        provided.
-        """
-        return self._path_to_cifs
+    @abstractmethod
+    def name(self) -> str:
+        """Name of the database."""
+
+    @property
+    @abstractmethod
+    def default_folder_path(self) -> Path:
+        """Default path to the folder containing the CIFs for the database."""
 
     @property
     def preparsed_info(self) -> dict:
@@ -160,7 +174,7 @@ class CODDatabase(StructureDatabase):
         rsync -av --delete rsync://www.crystallography.net/cif/ COD_2024/
     """
 
-    def __init__(self, path_to_cifs: str = PATH_TO_COD):
+    def __init__(self, path_to_cifs: Path | str | None = None):
         """
         Initialize an object for interacting with CIFs from the ICSD.
 
@@ -181,6 +195,16 @@ class CODDatabase(StructureDatabase):
 
         return self.path_to_cifs / cod_id[0] / cod_id[1:3] / cod_id[3:5] / f"{cod_id}.cif"
 
+    @property
+    def default_folder_path(self) -> Path:
+        """Default path to the folder containing the CIFs for the COD database."""
+        return PATH_TO_COD
+
+    @property
+    def name(self) -> str:
+        """Name of the database."""
+        return "cod"
+
 
 class ICSDDatabase(StructureDatabase):
     """Class to interact with CIF files acquired from the ICSD database. This class uses
@@ -200,7 +224,7 @@ class ICSDDatabase(StructureDatabase):
     Each CIF file should be named "icsd_<id>.cif" where <id> is the ICSD code.
     """
 
-    def __init__(self, path_to_cifs: Path | str = PATH_TO_ICSD):
+    def __init__(self, path_to_cifs: Path | str | None = None):
         """
         Initialize an object for interacting with CIFs from the ICSD.
 
@@ -219,6 +243,16 @@ class ICSDDatabase(StructureDatabase):
             "Downloading from the online ICSD database will not be implemented. Please use a local copy of CIFs"
             " acquired legally through your agreement."
         )
+
+    @property
+    def name(self) -> str:
+        """Name of the database."""
+        return "icsd"
+
+    @property
+    def default_folder_path(self) -> Path:
+        """Default path to the folder containing the CIFs for the ICSD database."""
+        return PATH_TO_ICSD
 
     @staticmethod
     def _clean_icsd_code(icsd_code):

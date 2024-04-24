@@ -9,7 +9,7 @@ import shutil
 from monty.json import MSONable
 from rxn_network.utils.funcs import get_logger
 
-from dara.structure_db import ICSDDatabase
+from dara.structure_db import CODDatabase, StructureDatabase
 
 logger = get_logger(__name__)
 
@@ -17,9 +17,12 @@ logger = get_logger(__name__)
 class PhasePredictor(MSONable):
     """Predict phases during solid-state synthesis."""
 
-    def __init__(self, path_to_icsd: str | None = None, engine_name="reaction_network", **kwargs):
+    def __init__(self, cif_dbs: list[StructureDatabase] | None = None, engine_name="reaction_network", **kwargs):
         """Initialize the engine."""
-        self.path_to_icsd = path_to_icsd
+        if cif_dbs is None:
+            cif_dbs = [CODDatabase()]
+
+        self.cif_dbs = cif_dbs
         self.engine_name = engine_name
         self.engine = None
 
@@ -27,8 +30,6 @@ class PhasePredictor(MSONable):
             from dara.prediction.rn import ReactionNetworkEngine
 
             self.engine = ReactionNetworkEngine(**kwargs)
-
-        self.db = ICSDDatabase(path_to_icsd=path_to_icsd)
 
         if self.engine is None:
             raise ValueError(f"Unknown engine provided: {engine_name}")
@@ -45,6 +46,9 @@ class PhasePredictor(MSONable):
         """Predict and rank the probability of appearance of products of a chemical
         reaction.
         """
+        if self.engine is None:
+            raise ValueError("Engine not initialized!")
+
         return self.engine.predict(
             precursors=precursors,
             temp=temp,
@@ -69,10 +73,11 @@ class PhasePredictor(MSONable):
             logger.info(f"Removing existing CIFs directory {dest_dir}")
             shutil.rmtree(dest_dir)
 
-        return self.db.get_cifs_by_formulas(
-            formulas=formulas,
-            e_hull_filter=e_hull_filter,
-            copy_files=True,
-            dest_dir=dest_dir,
-            exclude_gases=exclude_gases,
-        )
+        for db in self.cif_dbs:
+            db.get_cifs_by_formulas(
+                formulas=formulas,
+                e_hull_filter=e_hull_filter,
+                copy_files=True,
+                dest_dir=dest_dir,
+                exclude_gases=exclude_gases,
+            )
