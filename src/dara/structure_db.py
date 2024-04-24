@@ -6,6 +6,7 @@ import itertools
 from abc import ABCMeta, abstractmethod
 from pathlib import Path
 
+from monty.json import MSONable
 from monty.serialization import loadfn
 from pymatgen.core import Composition
 
@@ -21,7 +22,7 @@ PATH_TO_COD = DARA_SETTINGS.PATH_TO_COD
 PATH_TO_ICSD = DARA_SETTINGS.PATH_TO_ICSD
 
 
-class StructureDatabase(metaclass=ABCMeta):
+class StructureDatabase(MSONable, metaclass=ABCMeta):
     """Base class to interact with CIF files from an experimental database of
     structures. This class is subclassed by ICSDDatabase, CODDatabase, etc.
     """
@@ -123,16 +124,16 @@ class StructureDatabase(metaclass=ABCMeta):
         return file_map
 
     @property
-    def path_to_cifs(self) -> Path:
+    def path(self) -> Path:
         """Path to local copy of the structure database (i.e., the folder containing all
         the relevant CIFs). Automatically uses the default path if not
         provided.
         """
-        path = self._path_to_cifs
-        if path is None:
-            path = self.default_folder_path
+        p = self._path_to_cifs
+        if p is None:
+            p = self.default_folder_path
 
-        return Path(path)
+        return Path(p)
 
     @abstractmethod
     def download_structures(self, ids: list[str] | None = None):
@@ -193,7 +194,7 @@ class CODDatabase(StructureDatabase):
         if len(cod_id) > 7:
             raise ValueError(f"Invalid COD ID provided (too long): {cod_id}")
 
-        return self.path_to_cifs / cod_id[0] / cod_id[1:3] / cod_id[3:5] / f"{cod_id}.cif"
+        return self.path / cod_id[0] / cod_id[1:3] / cod_id[3:5] / f"{cod_id}.cif"
 
     @property
     def default_folder_path(self) -> Path:
@@ -235,7 +236,7 @@ class ICSDDatabase(StructureDatabase):
 
     def get_file_path(self, cif_id: str | int):
         """Get the path to a CIF file in the ICSD database."""
-        return self.path_to_cifs / f"icsd_{self._clean_icsd_code(cif_id)}.cif"
+        return self.path / f"icsd_{self._clean_icsd_code(cif_id)}.cif"
 
     def download_structures(self, ids: list[str] | None = None):
         """Download structures from the ICSD database."""
