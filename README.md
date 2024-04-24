@@ -5,9 +5,6 @@
 Automated phase search with BGMN.
 
 ## Installation
-
-## Install DARA
-
 First, git clone the repository. Then navigate to the directory and pip install:
 
 ```bash

@@ -264,9 +264,7 @@ class PeakMatcher:
 
     @property
     def missing(self) -> np.ndarray:
-        """
-        Get the missing peaks in the `observed peaks`. The shape should be (N, 2) with [position, intensity].
-        """
+        """Get the missing peaks in the `observed peaks`. The shape should be (N, 2) with [position, intensity]."""
         missing = self._result["missing"]
         missing = np.array(missing).reshape(-1)
         return (
@@ -275,9 +273,7 @@ class PeakMatcher:
 
     @property
     def matched(self) -> tuple[np.ndarray, np.ndarray]:
-        """
-        Get the matched peaks in both the `calculated peaks` and the `observed peaks`.
-        """
+        """Get the matched peaks in both the `calculated peaks` and the `observed peaks`."""
         matched = self._result["matched"]
         matched = np.array(matched).reshape(-1, 2)
         return (
@@ -291,9 +287,7 @@ class PeakMatcher:
 
     @property
     def extra(self) -> np.ndarray:
-        """
-        Get the extra peaks in the `calculated peaks`.
-        """
+        """Get the extra peaks in the `calculated peaks`."""
         extra = self._result["extra"]
         extra = np.array(extra).reshape(-1)
         return self.peak_calc[extra] if len(extra) > 0 else np.array([]).reshape(-1, 2)

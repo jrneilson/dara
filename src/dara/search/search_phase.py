@@ -9,11 +9,12 @@ from typing import TYPE_CHECKING
 
 import ray
 
-from dara.search.data_model import SearchResult
 from dara.search.tree import BaseSearchTree, SearchTree
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+    from dara.search.data_model import SearchResult
 
 DEFAULT_PHASE_PARAMS = {
     "gewicht": "0_0",
@@ -115,5 +116,4 @@ def search_phases(
 
     if not return_search_tree:
         return search_tree.get_search_results()
-    else:
-        return search_tree
+    return search_tree

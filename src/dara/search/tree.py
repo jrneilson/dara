@@ -107,9 +107,7 @@ def batch_peak_matching(
     handles = [
         remote_peak_matching.remote(batch, return_type=return_type) for batch in batches
     ]
-    results = sum(ray.get(handles), [])
-
-    return results
+    return sum(ray.get(handles), [])
 
 
 def batch_refinement(
@@ -129,8 +127,7 @@ def batch_refinement(
         )
         for cif_paths in cif_paths
     ]
-    results = ray.get(handles)
-    return results
+    return ray.get(handles)
 
 
 def calculate_fom_and_strain(
@@ -315,6 +312,7 @@ def remove_unnecessary_phases(
 def get_natural_break_results(
     results: list[SearchResult], sorting: bool = True
 ) -> list[SearchResult]:
+    """Get the natural break results based on (1-rho) value."""
     all_rhos = None
 
     # remove results that are too bad (dead end in the tree search)
@@ -439,7 +437,7 @@ class BaseSearchTree(Tree):
             )
 
             for phase, new_result in new_results.items():
-                new_phases = node.data.current_phases + [phase]
+                new_phases = [*node.data.current_phases, phase]
 
                 group_id = grouped_results[phase]["group_id"]
                 fom = grouped_results[phase]["fom"]
@@ -576,7 +574,7 @@ class BaseSearchTree(Tree):
             "similar_structure",
         }:
             raise ValueError(f"Node with id {node.identifier} is not expanded.")
-        elif node.data.group_id == -1:
+        if node.data.group_id == -1:
             raise ValueError("The group id is not available at this node.")
 
         nodes_at_same_level = self.children(self.ancestor(node.identifier))
@@ -636,7 +634,7 @@ class BaseSearchTree(Tree):
         )
         phases = tuple(
             [
-                tuple([pinned_phase])
+                (pinned_phase,)
                 for pinned_phase in all_possible_nodes[0][
                     0
                 ].data.current_phases  # root node
@@ -764,16 +762,15 @@ class BaseSearchTree(Tree):
         if pinned_phases is None:
             pinned_phases = []
 
-        all_phases_result = dict(
+        return dict(
             zip_longest(
                 phases,
                 self._batch_refine(
-                    all_references=[pinned_phases + [phase] for phase in phases],
+                    all_references=[[*pinned_phases, phase] for phase in phases],
                 ),
                 fillvalue=None,
             )
         )
-        return all_phases_result
 
     def _batch_refine(
         self,
@@ -913,6 +910,7 @@ class SearchTree(BaseSearchTree):
             )
 
         super().__init__(
+            *args,
             pattern_path=pattern_path,
             all_phases_result=None,  # placeholder, will be updated later
             peak_obs=None,  # placeholder, will be updated later
@@ -925,7 +923,6 @@ class SearchTree(BaseSearchTree):
             max_phases=max_phases,
             pinned_phases=self.pinned_phases,
             record_peak_matcher_scores=record_peak_matcher_scores,
-            *args,
             **kwargs,
         )
 
@@ -968,7 +965,7 @@ class SearchTree(BaseSearchTree):
 
     def _create_root_node(self) -> Node:
         logger.info("Creating the root node.")
-        root_node = Node(
+        return Node(
             data=SearchNodeData(
                 current_result=(
                     self._batch_refine([self.pinned_phases])[0]
@@ -978,7 +975,6 @@ class SearchTree(BaseSearchTree):
                 current_phases=self.pinned_phases,
             ),
         )
-        return root_node
 
     def _get_all_cleaned_phases_result(self) -> dict[Path, RefinementResult]:
         logger.info("Refining all the phases in the dataset.")
