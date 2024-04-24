@@ -29,7 +29,7 @@ class StructureDatabase(MSONable, metaclass=ABCMeta):
 
     def __init__(self, path_to_cifs: Path | str | None = None):
         """
-        Initialize an object for interacting with CIFs from the ICSD.
+        Initialize an object for interacting with CIFs from a structure database.
 
         path_to_cifs: Path to a folder containing the CIFs for the database.
         """
@@ -90,7 +90,7 @@ class StructureDatabase(MSONable, metaclass=ABCMeta):
         return [data[1] for data in all_data]
 
     def get_formula_data(self, formula: str):
-        """Get a list of ICSD codes corresponding to a formula."""
+        """Get a list of database codes and info corresponding to a formula."""
         formula_reduced = Composition(formula).reduced_formula
         chemsys = Composition(formula).chemical_system
         db_chemsys = self.preparsed_info.get(chemsys)
@@ -157,7 +157,7 @@ class StructureDatabase(MSONable, metaclass=ABCMeta):
     def preparsed_info(self) -> dict:
         """Preparsed information about the database. This is used to quickly filter and
         find structures based on chemical system, formula, etc. This has already been
-        generated via the scripts in the scripts/ folder.
+        generated via the code in the scripts folder.
         """
         return self._preparsed_info
 
