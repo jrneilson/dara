@@ -38,7 +38,14 @@ def parse_structures(filenames):
             logging.error(f"Error parsing CIF from file: {filename}. Skipping...")
             continue
 
-        if get_dimensionality_larsen(CrystalNN().get_bonded_structure(structure)) < 2:
+        if (
+            get_dimensionality_larsen(
+                CrystalNN().get_bonded_structure(
+                    structure, on_disorder="take_max_species"
+                )
+            )
+            < 2
+        ):
             continue
 
         metadata = cif.data[next(iter(cif.data.keys()))].data
