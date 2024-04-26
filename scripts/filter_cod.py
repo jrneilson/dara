@@ -6,12 +6,13 @@ import logging
 from pathlib import Path
 
 import ray
-from monty.serialization import dumpfn, loadfn
-from pymatgen.analysis.structure_analyzer import SpacegroupAnalyzer
-from pymatgen.analysis.structure_matcher import StructureMatcher
-
 from dara import SETTINGS
 from dara.cif import Cif
+from monty.serialization import dumpfn, loadfn
+from pymatgen.analysis.dimensionality import get_dimensionality_larsen
+from pymatgen.analysis.local_env import CrystalNN
+from pymatgen.analysis.structure_analyzer import SpacegroupAnalyzer
+from pymatgen.analysis.structure_matcher import StructureMatcher
 
 path_to_cod = Path(SETTINGS.PATH_TO_COD)
 
@@ -26,7 +27,9 @@ def parse_structures(filenames):
         try:
             cif = Cif.from_file(filename)
         except Exception as err:
-            logging.error(f"Error reading CIF from file: {filename} due to error: {err}")
+            logging.error(
+                f"Error reading CIF from file: {filename} due to error: {err}"
+            )
             continue
 
         try:
@@ -35,22 +38,44 @@ def parse_structures(filenames):
             logging.error(f"Error parsing CIF from file: {filename}. Skipping...")
             continue
 
+        if (
+            get_dimensionality_larsen(
+                CrystalNN().get_bonded_structure(
+                    structure, on_disorder="take_max_species"
+                )
+            )
+            < 2
+        ):
+            continue
+
         metadata = cif.data[next(iter(cif.data.keys()))].data
 
         date = metadata.get("_journal_year", "1900")
-        temp = str(metadata.get("_diffrn_ambient_temperature", 0)).split("(", maxsplit=1)[0]  # remove uncertainty
+        temp = str(metadata.get("_diffrn_ambient_temperature", 0)).split(
+            "(", maxsplit=1
+        )[
+            0
+        ]  # remove uncertainty
         if temp == "?":
             temp = "0"
 
         if temp == "0":
-            temp = str(metadata.get("_cell_measurement_temperature", 0)).split("(", maxsplit=1)[0]  # remove uncertainty
+            temp = str(metadata.get("_cell_measurement_temperature", 0)).split(
+                "(", maxsplit=1
+            )[
+                0
+            ]  # remove uncertainty
         try:
             temp = float(temp)
         except ValueError:
-            logging.error(f"Error parsing temperature from file: {filename}. Setting to 0.")
+            logging.error(
+                f"Error parsing temperature from file: {filename}. Setting to 0."
+            )
             temp = 0
 
-        cod_id = str(metadata.get("_cod_database_code", filename.stem))  # prefer whats in CIF
+        cod_id = str(
+            metadata.get("_cod_database_code", filename.stem)
+        )  # prefer whats in CIF
         data = {"structure": structure, "temp": temp, "date": date, "cod_id": cod_id}
         all_data.append(data)
     return all_data
@@ -70,7 +95,12 @@ def load_cod_structures():
     cod_data = {}
 
     all_cifs = sorted(path_to_cod.rglob("*.cif"))
-    all_data = ray.get([parse_structures.remote(all_cifs[i : i + 500]) for i in range(0, len(all_cifs), 500)])
+    all_data = ray.get(
+        [
+            parse_structures.remote(all_cifs[i : i + 500])
+            for i in range(0, len(all_cifs), 500)
+        ]
+    )
 
     for a_data in all_data:
         for data in a_data:
@@ -97,13 +127,17 @@ def group_data(data, mp_struct_info):
             print("skipping (too big):", item["cod_id"])
             continue
         try:
-            sg_data = SpacegroupAnalyzer(structure=item["structure"], symprec=0.1)._space_group_data
+            sg_data = SpacegroupAnalyzer(
+                structure=item["structure"], symprec=0.1
+            )._space_group_data
         except Exception:
             sg_data = None
 
         if sg_data is None:
             try:  # different tolerance
-                sg_data = SpacegroupAnalyzer(structure=item["structure"], symprec=0.01)._space_group_data
+                sg_data = SpacegroupAnalyzer(
+                    structure=item["structure"], symprec=0.01
+                )._space_group_data
             except Exception:
                 try:
                     sg_data = SpacegroupAnalyzer(
@@ -131,7 +165,7 @@ def group_data(data, mp_struct_info):
             print(sg_data)
             continue
 
-    # group matched structures for downstream filteering
+    # group matched structures for downstream filtering
     sorted_data = []
     for sg, group in grouped_structures.items():
         grouped_structures_sg = {}
@@ -152,7 +186,9 @@ def group_data(data, mp_struct_info):
 
     for sg, groups in sorted_data:
         for group in groups:
-            group_sorted = sorted(group, key=lambda x: (abs(x["temp"] - 293.0), x["date"]))
+            group_sorted = sorted(
+                group, key=lambda x: (abs(x["temp"] - 293.0), x["date"])
+            )
             selected = group_sorted[0]
             formula = selected["structure"].composition.reduced_formula
             data = [formula, selected["cod_id"], sg, None]
@@ -180,7 +216,9 @@ def filter_cod_structures(cod_data, mp_struct_info):
 
     mp_struct_info_obj_id = ray.put(mp_struct_info)
 
-    all_data = ray.get([group_data.remote(data, mp_struct_info_obj_id) for data in cod_data.values()])
+    all_data = ray.get(
+        [group_data.remote(data, mp_struct_info_obj_id) for data in cod_data.values()]
+    )
     for chemsys, data in zip(cod_data.keys(), all_data):
         if chemsys in filtered_data:
             filtered_data[chemsys].extend(data)
@@ -193,8 +231,12 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     path = Path(__file__).resolve()
 
-    logging.info("Loading information on MP structures (formulas, space groups, e_hulls)...")
-    mp_struct_info = loadfn(Path(__file__).resolve().parent.parent / "src/dara/data/mp_struct_info.json.gz")
+    logging.info(
+        "Loading information on MP structures (formulas, space groups, e_hulls)..."
+    )
+    mp_struct_info = loadfn(
+        Path(__file__).resolve().parent.parent / "src/dara/data/mp_struct_info.json.gz"
+    )
 
     logging.info("Loading COD structures...")
     cod_data = load_cod_structures()
