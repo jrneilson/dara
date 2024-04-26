@@ -245,7 +245,7 @@ class CODDatabase(StructureDatabase):
                 default_folder.mkdir()
 
             for cif in cifs:
-                cif.to_file(default_folder / cif.filename)
+                cif.to_file((default_folder / cif.filename).with_suffix(".cif"))
 
         return cifs
 
@@ -276,12 +276,11 @@ class CODDatabase(StructureDatabase):
             url = COD_URL.format(cod_id=cod_id)
             response = requests.get(url, timeout=30)
             response.raise_for_status()  # Raise an error for bad status codes
-            temp_file = NamedTemporaryFile(mode="w+b")  # the with protocol does not work here
-            temp_file.write(response.content)
-            cif = Cif.from_file(temp_file.name)
-            cif.filename = f"{cod_id}.cif"
-            temp_file.close()
-
+            with NamedTemporaryFile(mode="w+b") as temp_file:
+                temp_file.write(response.content)
+                temp_file.flush()
+                cif = Cif.from_file(temp_file.name)
+            cif.filename = str(cod_id)
         except Exception as e:
             print(f"Failed to download {cod_id}: {e}")
             raise
