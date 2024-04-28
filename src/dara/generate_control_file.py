@@ -53,7 +53,7 @@ def generate_control_file(
     try:
         xy_content = np.loadtxt(pattern_path)
     except ValueError as e:
-        raise ValueError(f"Could not load pattern file {pattern_path}")
+        raise ValueError(f"Could not load pattern file {pattern_path}") from e
 
     if xy_content[:, 1].min() <= 0:
         warnings.warn(

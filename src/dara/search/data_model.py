@@ -5,10 +5,12 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Literal, Optional
 
+import numpy as np
 from pydantic import BaseModel, Field
 
 from dara.plot import visualize
 from dara.result import RefinementResult
+from dara.search.peak_matcher import PeakMatcher
 
 
 class SearchNodeData(BaseModel):
@@ -45,27 +47,35 @@ class SearchNodeData(BaseModel):
             if len(self.current_phases) > 1:
                 phase_string += f"({', '.join([p.stem for p in self.current_phases])}) "
             return phase_string
-        else:
-            import colorful as cf
 
-            status_color = {
-                "max_depth": cf.blue,
-                "error": cf.red,
-                "expanded": cf.green,
-            }
-            status_str = status_color.get(self.status, lambda x: x)(self.status)
-            phase_string = f"({status_str}) "
-            phase_string += self.current_phases[-1].stem
-            total_len = 3 + len(self.status) + len(self.current_phases[-1].stem)
+        import colorful as cf
 
-            phase_string += " " * max(60 - total_len, 0)
+        status_color = {
+            "max_depth": cf.blue,
+            "error": cf.red,
+            "expanded": cf.green,
+        }
+        status_str = status_color.get(self.status, lambda x: x)(self.status)
+        phase_string = f"({status_str}) "
+        phase_string += self.current_phases[-1].stem
+        total_len = 3 + len(self.status) + len(self.current_phases[-1].stem)
+
+        phase_string += " " * max(60 - total_len, 0)
 
         return f"{phase_string}" + (
             f"Rwp: {self.current_result.lst_data.rwp if self.current_result is not None else 1 * 100:.2f}% | "
-            + f"Strain: {round(self.lattice_strain * 100, 2)}% | "
-            + f"Group {self.group_id}  "
+            f"Strain: {round(self.lattice_strain * 100, 2)}% | "
+            f"Group {self.group_id}  "
             if self.current_result is not None
             else ""
+        )
+
+    def get_peak_matcher(self, peak_obs: np.ndarray, *args, **kwargs) -> PeakMatcher:
+        return PeakMatcher(
+            *args,
+            peak_obs=peak_obs,
+            peak_calc=self.current_result.peak_data[["2theta", "intensity"]].values,
+            **kwargs,
         )
 
 
