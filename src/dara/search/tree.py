@@ -316,7 +316,7 @@ def get_natural_break_results(
     all_rhos = None
 
     # remove results that are too bad (dead end in the tree search)
-    while all_rhos is None or max(all_rhos) > min(all_rhos) + 10:
+    while all_rhos is None or max(all_rhos) > min(all_rhos) + 5:
         all_rhos = [result.refinement_result.lst_data.rho for result in results]
 
         if len(set(all_rhos)) > 2:
