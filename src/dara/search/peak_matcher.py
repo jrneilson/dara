@@ -42,11 +42,8 @@ def distance_matrix(peaks1: np.ndarray, peaks2: np.ndarray) -> np.ndarray:
     -------
         (n, m) distance matrix
     """
-    position_distance = (
-        cdist(
-            peaks1[:, 0].reshape(-1, 1), peaks2[:, 0].reshape(-1, 1), metric="cityblock"
-        )
-        * 2
+    position_distance = cdist(
+        peaks1[:, 0].reshape(-1, 1), peaks2[:, 0].reshape(-1, 1), metric="cityblock"
     )
     intensity_distance = cdist(
         peaks1[:, 1].reshape(-1, 1),
@@ -54,7 +51,7 @@ def distance_matrix(peaks1: np.ndarray, peaks2: np.ndarray) -> np.ndarray:
         metric=absolute_log_error,
     )
 
-    return np.max(np.array([position_distance, intensity_distance]), axis=0)
+    return np.sum(np.array([position_distance, intensity_distance]), axis=0)
 
 
 def find_best_match(
