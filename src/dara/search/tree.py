@@ -228,15 +228,14 @@ def group_phases(
     }
 
     if len(all_phases_result) <= 1:
-        results = {}
         for phase, result in all_phases_result.items():
             fom, lattice_strain = calculate_fom_and_strain(phase, result)
-            results[phase] = {
+            grouped_result[phase] = {
                 "group_id": 0,
                 "fom": fom,
                 "lattice_strain": lattice_strain,
             }
-        return results
+        return grouped_result
 
     peaks = []
 
