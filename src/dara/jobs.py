@@ -168,6 +168,7 @@ class PhaseSearchMaker(Maker):
                     db.get_cifs_by_chemsys(elems, copy_files=True, dest_dir=cifs_path.as_posix())
             else:
                 logger.info("Predicting phases...")
+                self.phase_predictor.cif_dbs = cif_dbs  # ensure CIF databases match as provided in job
                 self._predict_folder(
                     precursors,
                     cifs_path=cifs_path,
