@@ -106,6 +106,7 @@ class PhaseSearchMaker(Maker):
     verbose: bool = True
     run_final_refinement: bool = True
     cifs_folder_name: str = "dara_cifs"
+    max_num_results: int | None = 10
 
     @job(output_schema=PhaseSearchDocument)
     def make(
@@ -182,6 +183,8 @@ class PhaseSearchMaker(Maker):
             **search_kwargs,
         )
         self._save_results(results)
+
+        results = sorted(results, key=lambda x: x.refinement_result.lst_data.rwp)[: self.max_num_results]
 
         best_result = None
         if self.run_final_refinement and results:
