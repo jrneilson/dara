@@ -20,6 +20,7 @@ from pymatgen.core import Composition, Structure
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.symmetry.structure import SymmetrizedStructure
 from scipy import signal
+from sklearn.cluster import AgglomerativeClustering
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -450,3 +451,56 @@ def get_composition_distance(comp1: Composition | str, comp2: Composition | str,
     delta_composition = {k: v / (comp1[k] + comp2[k]) for k, v in delta_composition.items()}
 
     return np.linalg.norm(np.array(list(delta_composition.values())), ord=order)
+
+
+def compositions_to_array(compositions: list[str] | list[Composition]):
+    """Convert a list of compositions/formulas to an array of their fractional
+    elemental components.
+    """
+    comps = [Composition(c).fractional_composition for c in compositions]
+    elems = sorted({e for comp in comps for e in comp.elements})
+    arr = np.zeros((len(compositions), len(elems)))
+    for idx, comp in enumerate(comps):
+        vec = [comp[el] for el in elems]
+        arr[idx] = vec
+    return arr
+
+
+def get_compositional_clusters(compositions: list[str] | list[Composition], distance_threshold: float = 0.1):
+    """Get similar clusters of compositions based on their compositional similarity.
+    Uses AgglomerativeClustering with a distance threshold of 0.1.
+    """
+    raw_clusters = AgglomerativeClustering(None, distance_threshold=distance_threshold).fit_predict(
+        compositions_to_array(compositions)
+    )
+    clusters: list[list[str]] = [[] for _ in range(len(set(raw_clusters)))]
+    for c, comp in zip(raw_clusters, compositions):
+        clusters[c].append(comp)
+
+    return clusters
+
+
+def get_head_of_compositional_cluster(compositions):
+    """Get head of a compositional cluster. This returns the closest stoichiometric
+    composition to the average composition. If no stoichiometric composition is found,
+    then the nonstoichiometric composition with the smallest distance to the average composition is returned.
+    """
+    frac_comps = [Composition(c, allow_negative=True).fractional_composition for c in compositions]
+    comp_sum = Composition(allow_negative=True)
+    for comp in frac_comps:
+        comp_sum += comp
+
+    mean = comp_sum / len(frac_comps)
+
+    diffs = {}
+    for comp, frac_comp in zip(compositions, frac_comps):
+        if comp in diffs:
+            continue
+        diffs[comp] = sum(abs(i) for i in (frac_comp - mean).values())
+
+    sorted_comps = sorted(compositions, key=lambda i: diffs[i])
+    for comp in sorted_comps:
+        if all(v.is_integer() for v in Composition(comp).values()):  # prefer stoichiometric always
+            return comp
+
+    return sorted_comps[0]
