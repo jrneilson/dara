@@ -6,7 +6,7 @@ from scipy.spatial.distance import cdist
 DEFAULT_ANGLE_TOLERANCE = 0.2  # maximum difference in angle
 DEFAULT_INTENSITY_TOLERANCE = 2  # maximum ratio of the intensities
 # maximum ratio of the intensities to be considered as missing instead of wrong intensity
-DEFAULT_MAX_INTENSITY_TOLERANCE = 10
+DEFAULT_MAX_INTENSITY_TOLERANCE = 5
 
 
 def absolute_log_error(x: np.ndarray, y: np.ndarray) -> np.ndarray:

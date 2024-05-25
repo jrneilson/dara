@@ -13,6 +13,7 @@ from pymatgen.analysis.dimensionality import get_dimensionality_larsen
 from pymatgen.analysis.local_env import CrystalNN
 from pymatgen.analysis.structure_analyzer import SpacegroupAnalyzer
 from pymatgen.analysis.structure_matcher import StructureMatcher
+from pymatgen.core import Element
 
 path_to_cod = Path(SETTINGS.PATH_TO_COD)
 
@@ -38,15 +39,37 @@ def parse_structures(filenames):
             logging.error(f"Error parsing CIF from file: {filename}. Skipping...")
             continue
 
-        if (
-            get_dimensionality_larsen(
-                CrystalNN().get_bonded_structure(
-                    structure, on_disorder="take_max_species"
-                )
-            )
-            < 2
-        ):
+        if len(structure) > MAX_NUM_ATOMS:
+            logging.error(f"Structure too big: {filename}. Skipping...")
             continue
+
+        composition = structure.composition
+
+        # directly skip some chemical systems
+        if composition.chemical_system in {
+            "C-H-N-O": 49626,
+            "C-Cl-H-N-O": 10999,
+            "C-H-O": 17741,
+            "C-H-N-O-S": 16300,
+        }:
+            continue
+        try:
+            if (
+                (Element("C") in composition.elements)
+                and (Element("H") in composition.elements)
+                and (
+                    get_dimensionality_larsen(
+                        CrystalNN().get_bonded_structure(
+                            structure, on_disorder="take_max_species"
+                        )
+                    )
+                    < 2
+                )
+            ):
+                continue
+        except (TypeError, AttributeError, ValueError) as e:
+            continue
+            # raise Exception(filename) from e
 
         metadata = cif.data[next(iter(cif.data.keys()))].data
 
@@ -97,8 +120,8 @@ def load_cod_structures():
     all_cifs = sorted(path_to_cod.rglob("*.cif"))
     all_data = ray.get(
         [
-            parse_structures.remote(all_cifs[i : i + 500])
-            for i in range(0, len(all_cifs), 500)
+            parse_structures.remote(all_cifs[i : i + 50])
+            for i in range(0, len(all_cifs), 50)
         ]
     )
 

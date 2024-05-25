@@ -3,8 +3,8 @@ from pathlib import Path
 
 from pymatgen.core import Composition
 
-from dara.structure_db import ICSDDatabase
 from dara.search.search_phase import search_phases
+from dara.structure_db import ICSDDatabase
 
 dataset_path = Path(__file__).parent.parent / "dataset" / "precursor_mixture"
 result_folder = Path(__file__).parent.parent / "benchmarks" / "precursor_mixture"
