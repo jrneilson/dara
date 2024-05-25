@@ -93,7 +93,7 @@ class SearchResult(BaseModel):
     extra_peaks: list[list[float]]
 
     @property
-    def groupped_phases(
+    def grouped_phases(
         self,
     ) -> tuple[tuple[tuple[Composition, tuple[Path, ...]], ...], ...]:
         """Group the phases based on their composition."""
