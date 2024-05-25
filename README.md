@@ -9,7 +9,7 @@ First, git clone the repository. Then navigate to the directory and pip install:
 
 ```bash
 cd dara
-pip install .
+pip install -e .
 ```
 
 
