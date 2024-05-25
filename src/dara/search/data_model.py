@@ -7,10 +7,15 @@ from typing import Literal, Optional
 
 import numpy as np
 from pydantic import BaseModel, Field
+from pymatgen.core import Composition
 
 from dara.plot import visualize
 from dara.result import RefinementResult
 from dara.search.peak_matcher import PeakMatcher
+from dara.utils import (
+    get_compositional_clusters,
+    get_head_of_compositional_cluster,
+)
 
 
 class SearchNodeData(BaseModel):
@@ -86,6 +91,21 @@ class SearchResult(BaseModel):
     lattice_strains: tuple[tuple[float, ...], ...]
     missing_peaks: list[list[float]]
     extra_peaks: list[list[float]]
+
+    @property
+    def groupped_phases(
+        self,
+    ) -> tuple[tuple[tuple[Composition, tuple[Path, ...]], ...], ...]:
+        """Group the phases based on their composition."""
+        groupped_phases = []
+        for phases in self.phases:
+            groupped_phase = get_compositional_clusters(list(phases))
+            groupped_phase_with_head = tuple(
+                (get_head_of_compositional_cluster(cluster), tuple(cluster))
+                for cluster in groupped_phase
+            )
+            groupped_phases.append(groupped_phase_with_head)
+        return tuple(groupped_phases)
 
     def visualize(self, diff_offset: bool = False):
         return visualize(
