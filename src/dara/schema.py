@@ -92,6 +92,6 @@ class PhaseSearchDocument(BaseModel):
         None, description="The name of the folder containing the CIFs."
     )
 
-    grouped_phases: Optional[
-        list[tuple[tuple[tuple[Composition, tuple[str, ...]], ...], ...]]
-    ] = Field(None, description="The groupped phases.")
+    grouped_phases: Optional[list[list[list[tuple[Composition, list[str]]]]]] = Field(
+        None, description="The groupped phases."
+    )
