@@ -95,17 +95,17 @@ class SearchResult(BaseModel):
     @property
     def grouped_phases(
         self,
-    ) -> tuple[tuple[tuple[Composition, tuple[Path, ...]], ...], ...]:
+    ) -> list[list[tuple[Composition, list[Path]]]]:
         """Group the phases based on their composition."""
-        groupped_phases = []
+        grouped_phases = []
         for phases in self.phases:
-            groupped_phase = get_compositional_clusters(list(phases))
-            groupped_phase_with_head = tuple(
-                (get_head_of_compositional_cluster(cluster), tuple(cluster))
-                for cluster in groupped_phase
-            )
-            groupped_phases.append(groupped_phase_with_head)
-        return tuple(groupped_phases)
+            grouped_phase = get_compositional_clusters(list(phases))
+            grouped_phase_with_head = [
+                (get_head_of_compositional_cluster(cluster), cluster)
+                for cluster in grouped_phase
+            ]
+            grouped_phases.append(grouped_phase_with_head)
+        return grouped_phases
 
     def visualize(self, diff_offset: bool = False):
         return visualize(

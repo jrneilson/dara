@@ -489,11 +489,16 @@ def compositions_to_array(compositions: list[str] | list[Composition]):
 
 
 def get_compositional_clusters(
-    paths: list[Path], distance_threshold: float = 0.1
-) -> list[list[Path]]:
+    paths: list[Path | str], distance_threshold: float = 0.1
+) -> list[list[Path | str]]:
     """Get similar clusters of compositions based on their compositional similarity.
     Uses AgglomerativeClustering with a distance threshold of 0.1.
     """
+    if len(paths) == 0:
+        return []
+    if len(paths) == 1:
+        return [[paths[0]]]
+
     compositions = [get_composition_from_filename(p) for p in paths]
     raw_clusters = AgglomerativeClustering(
         None, distance_threshold=distance_threshold

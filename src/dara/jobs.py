@@ -244,19 +244,16 @@ class PhaseSearchMaker(Maker):
             )
             for result in results
         ]
-        grouped_phases: list[
-            tuple[tuple[tuple[Composition, tuple[Path, ...]], ...], ...]
-        ] = [r.grouped_phases for r in results]
+        grouped_phases = [r.grouped_phases for r in results]
 
         # convert Path to str
         for i in range(len(grouped_phases)):
             for j in range(len(grouped_phases[i])):
                 for k in range(len(grouped_phases[i][j])):
-                    for ii in range(len(grouped_phases[i][j][k])):
-                        grouped_phases[i][j][k][ii] = (
-                            grouped_phases[i][j][k][ii][0],
-                            tuple(p.stem for p in grouped_phases[i][j][k][ii][1]),
-                        )
+                    grouped_phases[i][j][k] = (
+                        grouped_phases[i][j][k][0],
+                        [p.stem for p in grouped_phases[i][j][k][1]],
+                    )
 
         foms = [[list(f) for f in r.foms] for r in results]
         lattice_strains = [[list(ls) for ls in r.lattice_strains] for r in results]
