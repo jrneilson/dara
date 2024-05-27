@@ -453,7 +453,7 @@ def get_composition_from_filename(file_name: str | Path) -> Composition:
     if isinstance(file_name, str):
         file_name = Path(file_name)
 
-    return Composition(file_name.stem.split("_")[0])
+    return Composition(file_name.name.split("_")[0])
 
 
 def get_composition_distance(
