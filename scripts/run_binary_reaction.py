@@ -1,4 +1,5 @@
 import pickle
+import re
 from pathlib import Path
 
 from pymatgen.core import Composition
@@ -6,30 +7,23 @@ from pymatgen.core import Composition
 from dara.search.search_phase import search_phases
 from dara.structure_db import ICSDDatabase
 
-dataset_path = Path(__file__).parent.parent / "dataset" / "precursor_mixture"
-result_folder = Path(__file__).parent.parent / "benchmarks" / "precursor_mixture"
-result_folder.mkdir(exist_ok=True, parents=True)
-
-composition_mapping = {
-    "Bi2O3-alpha": "Bi2O3",
-    "Bi2O3-beta": "Bi2O3",
-    "NaAlO2-1.5H2O": "NaAlO3.5H3",
-}
+dataset_path = Path(__file__).parent.parent / "dataset" / "binary_reactions"
+result_folder = Path(__file__).parent.parent / "benchmarks" / "binary_reactions"
 
 
 def parse_chemical_system(file: Path) -> str:
-    precursors = ".".join(file.stem.split(".")[:-1]).split("_")
+    precursors = file.stem.split("_")[0].split("-")
     compositions = Composition({})
     for precursor in precursors:
-        if precursor in composition_mapping:
-            compositions += Composition(composition_mapping[precursor])
-        else:
-            compositions += Composition(precursor)
+        precursor = re.sub(r"^(\d+)", "", precursor)
+        compositions += Composition(precursor)
 
     return compositions.chemical_system
 
 
 if __name__ == "__main__":
+    result_folder.mkdir(exist_ok=True, parents=True)
+
     for xrdml in dataset_path.glob("*.xrdml"):
         chemical_system = parse_chemical_system(xrdml)
 
