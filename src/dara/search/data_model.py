@@ -40,7 +40,7 @@ class SearchNodeData(BaseModel):
     isolated_missing_peaks: Optional[list[list[float]]] = None
     isolated_extra_peaks: Optional[list[list[float]]] = None
 
-    peak_matcher_scores: Optional[dict[Path, float]] = None
+    peak_matcher_scores: Optional[dict[Path, list[float]]] = None
     peak_matcher_threshold: Optional[float] = None
 
     @property
