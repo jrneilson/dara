@@ -419,7 +419,11 @@ def find_optimal_score_threshold(
     score_percentile = signal.savgol_filter(score_percentile, 5, 1)
 
     second_derivative = np.diff(score_percentile, n=2)
-    return score_percentile[np.argmax(second_derivative)].item(), score_percentile
+    threshold = score_percentile[np.argmax(second_derivative)].item()
+
+    # add a small tolerance to the threshold
+    threshold -= 0.05
+    return threshold, score_percentile
 
 
 def find_optimal_intensity_threshold(
