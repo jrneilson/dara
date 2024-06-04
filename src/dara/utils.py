@@ -73,19 +73,13 @@ def load_symmetrized_structure(
         warnings.filterwarnings("ignore")
         try:
             structure = SpacegroupAnalyzer(
-                Structure.from_file(
-                    cif_path.as_posix(), site_tolerance=1e-3, occupancy_tolerance=100
-                )
+                Structure.from_file(cif_path.as_posix(), site_tolerance=1e-3, occupancy_tolerance=100)
             ).get_refined_structure()
             spg = SpacegroupAnalyzer(structure)
-            symmetrized_structure: SymmetrizedStructure = (
-                spg.get_symmetrized_structure()
-            )
+            symmetrized_structure: SymmetrizedStructure = spg.get_symmetrized_structure()
         except Exception:  # try with a higher site tolerance
             structure = SpacegroupAnalyzer(
-                Structure.from_file(
-                    cif_path.as_posix(), site_tolerance=1e-2, occupancy_tolerance=100
-                )
+                Structure.from_file(cif_path.as_posix(), site_tolerance=1e-2, occupancy_tolerance=100)
             ).get_refined_structure()
             spg = SpacegroupAnalyzer(structure)
             symmetrized_structure = spg.get_symmetrized_structure()
@@ -128,8 +122,8 @@ def get_optimal_max_two_theta(
     threshold = round(peak_data["2theta"].iloc[end_idx], 2) + buffer
     if min_threshold is None:
         return threshold
-    else:
-        return max(min_threshold, threshold)
+
+    return max(min_threshold, threshold)
 
 
 def read_phase_name_from_str(str_path: Path) -> str:
@@ -151,9 +145,7 @@ def read_phase_name_from_str(str_path: Path) -> str:
     try:
         return re.search(r"PHASE=(\S*)", text).group(1)
     except AttributeError as e:
-        raise ValueError(
-            f"Could not find phase name in {str_path}. The content is: {text}"
-        ) from e
+        raise ValueError(f"Could not find phase name in {str_path}. The content is: {text}") from e
 
 
 def standardize_coords(x, y, z):
@@ -218,9 +210,7 @@ def fuzzy_compare(a: float, b: float):
     return is_close(fa, fb)
 
 
-def copy_and_rename_files(
-    file_map: dict, dest_directory: Path | str, verbose: bool = True
-):
+def copy_and_rename_files(file_map: dict, dest_directory: Path | str, verbose: bool = True):
     """Copy files (and rename them) into a destination directory using a provided mapping.
 
     src_directory: Path to the source directory
@@ -242,9 +232,7 @@ def copy_and_rename_files(
         if os.path.isfile(src_file):
             shutil.copy(src_file, dest_file)
             if verbose:
-                print(
-                    f"Successfully copied {src_file.name} to {dest_file.name} in {dest_directory}"
-                )
+                print(f"Successfully copied {src_file.name} to {dest_file.name} in {dest_directory}")
         else:
             if verbose:
                 print(f"ERROR: File {src_file} not found!")
@@ -310,9 +298,7 @@ def angular_correction(tt, eps1, eps2):
     return deps1 + deps2  # + deps3
 
 
-def intensity_correction(
-    intensity: float, d_inv: float, gsum: float, wavelength: float, pol: float = 1
-):
+def intensity_correction(intensity: float, d_inv: float, gsum: float, wavelength: float, pol: float = 1):
     """
     Translated from Profex source (bgmnparparser.cpp:L112)
 
@@ -331,9 +317,7 @@ def intensity_correction(
     sinx2 = (0.5 * d_inv * wavelength) ** 2
     # double intens = gsum * 360.0 * intens * 0.5 / (M_PI * std::sqrt(1.0 - sinx2) / pl.waveLength);
     # if (pl.polarization > 0.0) intens *= (0.5 * (1.0 + pl.polarization * std::pow(1.0 - 2.0 * sinx2, 2.0)));
-    intensity = (
-        gsum * 360.0 * intensity * 0.5 / (np.pi * np.sqrt(1.0 - sinx2) / wavelength)
-    )
+    intensity = gsum * 360.0 * intensity * 0.5 / (np.pi * np.sqrt(1.0 - sinx2) / wavelength)
     if pol > 0.0:
         intensity *= 0.5 * (1.0 + pol * (1.0 - 2.0 * sinx2) ** 2.0)
 
@@ -422,9 +406,7 @@ def find_optimal_score_threshold(
     return score_percentile[np.argmax(second_derivative)].item(), score_percentile
 
 
-def find_optimal_intensity_threshold(
-    intensities: list[float] | np.ndarray, percentile: float = 90
-) -> float:
+def find_optimal_intensity_threshold(intensities: list[float] | np.ndarray, percentile: float = 90) -> float:
     """
     Find the intensity threshold that captures percentile% of the intensities.
 
@@ -456,9 +438,7 @@ def get_composition_from_filename(file_name: str | Path) -> Composition:
     return Composition(file_name.name.split("_")[0])
 
 
-def get_composition_distance(
-    comp1: Composition | str, comp2: Composition | str, order: int = 2
-) -> float:
+def get_composition_distance(comp1: Composition | str, comp2: Composition | str, order: int = 2) -> float:
     """
     Calculate the distance between two compositions.
 
@@ -468,9 +448,7 @@ def get_composition_distance(
     comp2 = Composition(comp2, allow_negative=True).fractional_composition
 
     delta_composition = comp1 - comp2
-    delta_composition = {
-        k: v / (comp1[k] + comp2[k]) for k, v in delta_composition.items()
-    }
+    delta_composition = {k: v / (comp1[k] + comp2[k]) for k, v in delta_composition.items()}
 
     return np.linalg.norm(np.array(list(delta_composition.values())), ord=order)
 
@@ -488,9 +466,7 @@ def compositions_to_array(compositions: list[str] | list[Composition]):
     return arr
 
 
-def get_compositional_clusters(
-    paths: list[Path | str], distance_threshold: float = 0.1
-) -> list[list[Path | str]]:
+def get_compositional_clusters(paths: list[Path | str], distance_threshold: float = 0.1) -> list[list[Path | str]]:
     """Get similar clusters of compositions based on their compositional similarity.
     Uses AgglomerativeClustering with a distance threshold of 0.1.
     """
@@ -500,9 +476,9 @@ def get_compositional_clusters(
         return [[paths[0]]]
 
     compositions = [get_composition_from_filename(p) for p in paths]
-    raw_clusters = AgglomerativeClustering(
-        None, distance_threshold=distance_threshold
-    ).fit_predict(compositions_to_array(compositions))
+    raw_clusters = AgglomerativeClustering(None, distance_threshold=distance_threshold).fit_predict(
+        compositions_to_array(compositions)
+    )
     clusters: list[list[Path]] = [[] for _ in range(len(set(raw_clusters)))]
     for c, path in zip(raw_clusters, paths):
         clusters[c].append(path)
@@ -516,9 +492,7 @@ def get_head_of_compositional_cluster(paths: list[str | Path]) -> Composition:
     then the nonstoichiometric composition with the smallest distance to the average composition is returned.
     """
     compositions = [get_composition_from_filename(p) for p in paths]
-    frac_comps = [
-        Composition(c, allow_negative=True).fractional_composition for c in compositions
-    ]
+    frac_comps = [Composition(c, allow_negative=True).fractional_composition for c in compositions]
     comp_sum = Composition(allow_negative=True)
     for comp in frac_comps:
         comp_sum += comp
@@ -533,9 +507,7 @@ def get_head_of_compositional_cluster(paths: list[str | Path]) -> Composition:
 
     sorted_comps = sorted(compositions, key=lambda i: diffs[i])
     for comp in sorted_comps:
-        if all(
-            v.is_integer() for v in Composition(comp).values()
-        ):  # prefer stoichiometric always
+        if all(v.is_integer() for v in Composition(comp).values()):  # prefer stoichiometric always
             return comp
 
     return sorted_comps[0]

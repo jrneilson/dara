@@ -89,8 +89,8 @@ class SearchResult(BaseModel):
     phases: tuple[tuple[Path, ...], ...]
     foms: tuple[tuple[float, ...], ...]
     lattice_strains: tuple[tuple[float, ...], ...]
-    missing_peaks: list[list[float]]
-    extra_peaks: list[list[float]]
+    missing_peaks: Optional[list[list[float]]]
+    extra_peaks: Optional[list[list[float]]]
 
     @property
     def grouped_phases(
@@ -101,8 +101,7 @@ class SearchResult(BaseModel):
         for phases in self.phases:
             grouped_phase = get_compositional_clusters(list(phases))
             grouped_phase_with_head = [
-                (get_head_of_compositional_cluster(cluster), cluster)
-                for cluster in grouped_phase
+                (get_head_of_compositional_cluster(cluster), cluster) for cluster in grouped_phase
             ]
             grouped_phases.append(grouped_phase_with_head)
         return grouped_phases
