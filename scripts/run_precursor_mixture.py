@@ -30,7 +30,7 @@ def parse_chemical_system(file: Path) -> str:
 
 
 if __name__ == "__main__":
-    for xrdml in dataset_path.glob("*.xrdml"):
+    for xrdml in dataset_path.glob("*.12-min.xrdml"):
         chemical_system = parse_chemical_system(xrdml)
 
         dest_folder = result_folder / xrdml.stem

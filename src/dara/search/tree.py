@@ -621,7 +621,7 @@ class BaseSearchTree(Tree):
         self,
         all_phases_result: dict[Path, RefinementResult],
         current_result: RefinementResult | None = None,
-    ) -> tuple[list[Path], dict[Path, float], float]:
+    ) -> tuple[list[Path], dict[Path, list[float]], float]:
         """
         Get the best matched phases.
 
@@ -653,13 +653,61 @@ class BaseSearchTree(Tree):
             ].values
             for phase, refinement_result in all_phases_result.items()
         ]
-        scores = dict(
-            zip_longest(
-                all_phases_result.keys(),
-                batch_peak_matching(peak_calcs, missing_peaks, return_type="score"),
-                fillvalue=None,
+
+        if self.record_peak_matcher_scores:
+            peak_matchers = dict(
+                zip_longest(
+                    all_phases_result.keys(),
+                    batch_peak_matching(
+                        peak_calcs, missing_peaks, return_type="PeakMatcher"
+                    ),
+                    fillvalue=None,
+                )
             )
-        )
+
+            scores = {
+                k: v.score() if v is not None else 0 for k, v in peak_matchers.items()
+            }
+
+            raw_scores = {}
+
+            for phase, peak_matcher in peak_matchers.items():
+                if peak_matcher is not None:
+                    raw_scores[phase] = [
+                        peak_matcher.score(
+                            matched_coeff=1,
+                            wrong_intensity_coeff=0,
+                            missing_coeff=0,
+                            extra_coeff=0,
+                        ),
+                        peak_matcher.score(
+                            matched_coeff=0,
+                            wrong_intensity_coeff=1,
+                            missing_coeff=0,
+                            extra_coeff=0,
+                        ),
+                        peak_matcher.score(
+                            matched_coeff=0,
+                            wrong_intensity_coeff=0,
+                            missing_coeff=1,
+                            extra_coeff=0,
+                        ),
+                        peak_matcher.score(
+                            matched_coeff=0,
+                            wrong_intensity_coeff=0,
+                            missing_coeff=0,
+                            extra_coeff=1,
+                        ),
+                    ]
+        else:
+            scores = dict(
+                zip_longest(
+                    all_phases_result.keys(),
+                    batch_peak_matching(peak_calcs, missing_peaks, return_type="score"),
+                    fillvalue=0,
+                )
+            )
+            raw_scores = {}
 
         peak_matcher_score_threshold, _ = find_optimal_score_threshold(list(scores.values()))
         peak_matcher_score_threshold = max(peak_matcher_score_threshold, 0)
@@ -668,7 +716,7 @@ class BaseSearchTree(Tree):
 
         return (
             sorted(filtered_scores, key=lambda x: filtered_scores[x], reverse=True),
-            scores,
+            raw_scores,
             peak_matcher_score_threshold,
         )
 
