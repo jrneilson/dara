@@ -26,9 +26,7 @@ if TYPE_CHECKING:
 try:
     from jobflow import Maker, job
 except ImportError:
-    raise ImportError(
-        "Please install jobflow to use the dara jobs module! (pip install 'dara[jobflow]')"
-    )
+    raise ImportError("Please install jobflow to use the dara jobs module! (pip install 'dara[jobflow]')")
 
 
 logger = get_logger(__name__)
@@ -116,13 +114,30 @@ class PhaseSearchMaker(Maker):
         xrd_data: XRDData,
         cifs: list[Cif] | None = None,
         cif_dbs: list[StructureDatabase] | None = None,
+        additional_cifs: list[Cif] | None = None,
         precursors: list[str] | None = None,
         predict_kwargs: dict | None = None,
         search_kwargs: dict | None = None,
         final_refinement_params: dict | None = None,
         computed_entries=None,
     ):
-        """Perform phase search."""
+        """Perform phase search.
+
+        Args:
+            xrd_data: the XRD pattern
+            cifs: A list of CIFs to search against. WARNING: If provided, phase
+                prediction and CIF download from DBs will be skipped. If you want to
+                provide additional CIFs to a database result, use "additional_cifs".
+            cif_dbs: A list of CIF databases to search against; if not provided, will
+                default to using the COD database.
+            additional_cifs: Additional CIFs to include in the search. These are added
+                to the CIFs from the database.
+            precursors: A list of precursor formulas to predict phases for.
+            predict_kwargs: Keyword arguments for the phase predictor.
+            search_kwargs: Keyword arguments for the search.
+            final_refinement_params: Parameters for the final refinement.
+            computed_entries: Computed entries to use for phase prediction.
+        """
         directory = Path(os.getcwd())
 
         if predict_kwargs is None:
@@ -152,7 +167,7 @@ class PhaseSearchMaker(Maker):
 
         if cifs is not None:
             logger.info("CIFs provided. Skipping CIF download and phase prediction.")
-            for cif in cifs:
+            for cif in cifs + (additional_cifs or []):
                 cp = cifs_path / f"{cif.name}.cif"
 
                 with open(cp, "w") as f:
@@ -165,27 +180,24 @@ class PhaseSearchMaker(Maker):
                 cif_dbs = [CODDatabase()]
 
             if self.phase_predictor is None:
-                logger.info(
-                    "Phase prediction disabled; using all ICSD phases in the chemical system."
-                )
-                elems = {
-                    str(elem) for p in precursors for elem in Composition(p).elements
-                }
+                logger.info("Phase prediction disabled; using all ICSD phases in the chemical system.")
+                elems = {str(elem) for p in precursors for elem in Composition(p).elements}
                 for db in cif_dbs:
-                    db.get_cifs_by_chemsys(
-                        elems, copy_files=True, dest_dir=cifs_path.as_posix()
-                    )
+                    db.get_cifs_by_chemsys(elems, copy_files=True, dest_dir=cifs_path.as_posix())
             else:
                 logger.info("Predicting phases...")
-                self.phase_predictor.cif_dbs = (
-                    cif_dbs  # ensure CIF databases match as provided in job
-                )
+                self.phase_predictor.cif_dbs = cif_dbs  # ensure CIF databases match as provided in job
                 self._predict_folder(
                     precursors,
                     cifs_path=cifs_path,
                     computed_entries=computed_entries,
                     **predict_kwargs,
                 )
+            if additional_cifs:
+                for cif in additional_cifs:
+                    cp = cifs_path / f"{cif.name}.cif"
+                    with open(cp, "w") as f:
+                        f.write(str(cif))
 
         results = search_phases(
             pattern_path=pattern_path,
@@ -194,20 +206,14 @@ class PhaseSearchMaker(Maker):
         )
         self._save_results(results)
 
-        results = sorted(results, key=lambda x: x.refinement_result.lst_data.rwp)[
-            : self.max_num_results
-        ]
+        results = sorted(results, key=lambda x: x.refinement_result.lst_data.rwp)[: self.max_num_results]
 
         best_result = None
         if self.run_final_refinement and results:
             logger.info("Re-refining best result...")
 
             for item in os.listdir(directory):
-                if (
-                    "1_result_rwp" in item
-                    and "rwp" in item
-                    and os.path.isdir(directory / item)
-                ):
+                if "1_result_rwp" in item and "rwp" in item and os.path.isdir(directory / item):
                     best_dir = item
                     break
             else:
@@ -228,9 +234,7 @@ class PhaseSearchMaker(Maker):
                 phase_params=final_refinement_params,
                 show_progress=True,
             )
-            new_best_dir_path = (
-                str(best_dir_path) + f"_rwp_{round(best_result.lst_data.rwp, 2)}"
-            )
+            new_best_dir_path = str(best_dir_path) + f"_rwp_{round(best_result.lst_data.rwp, 2)}"
 
             if os.path.exists(new_best_dir_path):
                 shutil.rmtree(new_best_dir_path)
@@ -303,9 +307,7 @@ class PhaseSearchMaker(Maker):
             )
             cost_cutoff = 0.5
 
-        self.phase_predictor.write_cifs_from_formulas(
-            prediction, dest_dir=cifs_path, cost_cutoff=cost_cutoff
-        )
+        self.phase_predictor.write_cifs_from_formulas(prediction, dest_dir=cifs_path, cost_cutoff=cost_cutoff)
 
         return prediction
 
