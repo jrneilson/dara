@@ -213,12 +213,13 @@ class PhaseSearchMaker(Maker):
                         f.write(str(cif))
 
         cif_paths = list(cifs_path.glob("*.cif"))
-        additional_cifs_name_set = {cif.name for cif in additional_cifs}
-        for i in range(len(cif_paths)):
-            if cif_paths[i].stem in additional_cifs_name_set:
-                cif_paths[i] = RefinementPhase(
-                    path=cif_paths[i], params=additional_cif_params or {}
-                )
+        if additional_cifs:
+            additional_cifs_name_set = {cif.name for cif in additional_cifs}
+            for i in range(len(cif_paths)):
+                if cif_paths[i].stem in additional_cifs_name_set:
+                    cif_paths[i] = RefinementPhase(
+                        path=cif_paths[i], params=additional_cif_params or {}
+                    )
 
         results = search_phases(
             pattern_path=pattern_path, phases=cif_paths, **search_kwargs

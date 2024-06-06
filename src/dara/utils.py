@@ -410,7 +410,7 @@ def datetime_str() -> str:
 def find_optimal_score_threshold(
     scores: list[float] | np.ndarray,
 ) -> tuple[float, np.ndarray]:
-    """Find the inflection point from a list of scores. We will calculate the percentile first"""
+    """Find the inflection point from a list of scores. We will calculate the percentile first."""
     if len(scores) == 0:
         return 0.0, np.array([]).reshape(-1)
 
