@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 from pymatgen.core import Composition
 
 from dara.plot import visualize
-from dara.refine import InputPhase
+from dara.refine import RefinementPhase
 from dara.result import RefinementResult
 from dara.search.peak_matcher import PeakMatcher
 from dara.utils import (
@@ -21,7 +21,7 @@ from dara.utils import (
 
 class SearchNodeData(BaseModel):
     current_result: Optional[RefinementResult]
-    current_phases: list[InputPhase]
+    current_phases: list[RefinementPhase]
 
     group_id: int = Field(default=-1, ge=-1)
     fom: float = Field(default=0, ge=0)
@@ -41,7 +41,7 @@ class SearchNodeData(BaseModel):
     isolated_missing_peaks: Optional[list[list[float]]] = None
     isolated_extra_peaks: Optional[list[list[float]]] = None
 
-    peak_matcher_scores: Optional[dict[InputPhase, list[float]]] = None
+    peak_matcher_scores: Optional[dict[RefinementPhase, list[float]]] = None
     peak_matcher_threshold: Optional[float] = None
 
     @property
@@ -89,7 +89,7 @@ class SearchNodeData(BaseModel):
 
 class SearchResult(BaseModel):
     refinement_result: RefinementResult
-    phases: tuple[tuple[InputPhase, ...], ...]
+    phases: tuple[tuple[RefinementPhase, ...], ...]
     foms: tuple[tuple[float, ...], ...]
     lattice_strains: tuple[tuple[float, ...], ...]
     missing_peaks: Optional[list[list[float]]]

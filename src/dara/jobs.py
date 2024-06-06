@@ -13,7 +13,7 @@ from pymatgen.core import Composition
 
 from dara.cif import Cif
 from dara.prediction.core import PhasePredictor
-from dara.refine import do_refinement, do_refinement_no_saving
+from dara.refine import do_refinement, do_refinement_no_saving, RefinementPhase
 from dara.schema import PhaseSearchDocument, RefinementDocument
 from dara.search import search_phases
 from dara.search.data_model import SearchResult
@@ -26,7 +26,9 @@ if TYPE_CHECKING:
 try:
     from jobflow import Maker, job
 except ImportError:
-    raise ImportError("Please install jobflow to use the dara jobs module! (pip install 'dara[jobflow]')")
+    raise ImportError(
+        "Please install jobflow to use the dara jobs module! (pip install 'dara[jobflow]')"
+    )
 
 
 logger = get_logger(__name__)
@@ -115,6 +117,7 @@ class PhaseSearchMaker(Maker):
         cifs: list[Cif] | None = None,
         cif_dbs: list[StructureDatabase] | None = None,
         additional_cifs: list[Cif] | None = None,
+        additional_cif_params: dict | None = None,
         precursors: list[str] | None = None,
         predict_kwargs: dict | None = None,
         search_kwargs: dict | None = None,
@@ -132,6 +135,8 @@ class PhaseSearchMaker(Maker):
                 default to using the COD database.
             additional_cifs: Additional CIFs to include in the search. These are added
                 to the CIFs from the database.
+            additional_cif_params: Additional parameters for the CIFs, it will overwrite
+                the default parameters in the refinement.
             precursors: A list of precursor formulas to predict phases for.
             predict_kwargs: Keyword arguments for the phase predictor.
             search_kwargs: Keyword arguments for the search.
@@ -180,13 +185,21 @@ class PhaseSearchMaker(Maker):
                 cif_dbs = [CODDatabase()]
 
             if self.phase_predictor is None:
-                logger.info("Phase prediction disabled; using all ICSD phases in the chemical system.")
-                elems = {str(elem) for p in precursors for elem in Composition(p).elements}
+                logger.info(
+                    "Phase prediction disabled; using all ICSD phases in the chemical system."
+                )
+                elems = {
+                    str(elem) for p in precursors for elem in Composition(p).elements
+                }
                 for db in cif_dbs:
-                    db.get_cifs_by_chemsys(elems, copy_files=True, dest_dir=cifs_path.as_posix())
+                    db.get_cifs_by_chemsys(
+                        elems, copy_files=True, dest_dir=cifs_path.as_posix()
+                    )
             else:
                 logger.info("Predicting phases...")
-                self.phase_predictor.cif_dbs = cif_dbs  # ensure CIF databases match as provided in job
+                self.phase_predictor.cif_dbs = (
+                    cif_dbs  # ensure CIF databases match as provided in job
+                )
                 self._predict_folder(
                     precursors,
                     cifs_path=cifs_path,
@@ -199,21 +212,33 @@ class PhaseSearchMaker(Maker):
                     with open(cp, "w") as f:
                         f.write(str(cif))
 
+        cif_paths = list(cifs_path.glob("*.cif"))
+        additional_cifs_name_set = {cif.name for cif in additional_cifs}
+        for i in range(len(cif_paths)):
+            if cif_paths[i].stem in additional_cifs_name_set:
+                cif_paths[i] = RefinementPhase(
+                    path=cif_paths[i], params=additional_cif_params or {}
+                )
+
         results = search_phases(
-            pattern_path=pattern_path,
-            cif_paths=list(cifs_path.glob("*.cif")),
-            **search_kwargs,
+            pattern_path=pattern_path, phases=cif_paths, **search_kwargs
         )
         self._save_results(results)
 
-        results = sorted(results, key=lambda x: x.refinement_result.lst_data.rwp)[: self.max_num_results]
+        results = sorted(results, key=lambda x: x.refinement_result.lst_data.rwp)[
+            : self.max_num_results
+        ]
 
         best_result = None
         if self.run_final_refinement and results:
             logger.info("Re-refining best result...")
 
             for item in os.listdir(directory):
-                if "1_result_rwp" in item and "rwp" in item and os.path.isdir(directory / item):
+                if (
+                    "1_result_rwp" in item
+                    and "rwp" in item
+                    and os.path.isdir(directory / item)
+                ):
                     best_dir = item
                     break
             else:
@@ -234,7 +259,9 @@ class PhaseSearchMaker(Maker):
                 phase_params=final_refinement_params,
                 show_progress=True,
             )
-            new_best_dir_path = str(best_dir_path) + f"_rwp_{round(best_result.lst_data.rwp, 2)}"
+            new_best_dir_path = (
+                str(best_dir_path) + f"_rwp_{round(best_result.lst_data.rwp, 2)}"
+            )
 
             if os.path.exists(new_best_dir_path):
                 shutil.rmtree(new_best_dir_path)
@@ -243,7 +270,10 @@ class PhaseSearchMaker(Maker):
 
         parsed_results = [
             (
-                [[Cif.from_file(f) for f in phase] for phase in result.phases],
+                [
+                    [Cif.from_file(phase.path) for phase in phases]
+                    for phases in result.phases
+                ],
                 result.refinement_result,
             )
             for result in results
@@ -307,7 +337,9 @@ class PhaseSearchMaker(Maker):
             )
             cost_cutoff = 0.5
 
-        self.phase_predictor.write_cifs_from_formulas(prediction, dest_dir=cifs_path, cost_cutoff=cost_cutoff)
+        self.phase_predictor.write_cifs_from_formulas(
+            prediction, dest_dir=cifs_path, cost_cutoff=cost_cutoff
+        )
 
         return prediction
 
@@ -315,7 +347,7 @@ class PhaseSearchMaker(Maker):
         results_sorted = sorted(results, key=lambda x: x.refinement_result.lst_data.rwp)
         for idx, search_result in enumerate(results_sorted):
             phases = search_result.phases
-            main_folder = phases[0][0].parent.parent
+            main_folder = phases[0][0].path.parent.parent
 
             rwp = search_result.refinement_result.lst_data.rwp
             folder_path = main_folder / f"{idx+1}_result_rwp_{round(rwp,2)}"
@@ -335,6 +367,6 @@ class PhaseSearchMaker(Maker):
                 phase_folder = folder_path / f"phase_{phase_i+1}"
                 phase_folder.mkdir(exist_ok=True)
                 for phase in phases_:
-                    shutil.copy(phase, phase_folder)
+                    shutil.copy(phase.path, phase_folder)
 
             logger.info(f"Successfully saved result {idx+1}")

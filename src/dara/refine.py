@@ -16,7 +16,7 @@ from dara.result import get_result, RefinementResult
 from dara.xrd import raw2xy, xrdml2xy
 
 
-class InputPhase(BaseModel, frozen=True):
+class RefinementPhase(BaseModel, frozen=True):
     """
     Input phase for refinement.
 
@@ -40,33 +40,33 @@ class InputPhase(BaseModel, frozen=True):
     def __hash__(self):
         return hash(self.path)
 
-    def __eq__(self, other: InputPhase):
+    def __eq__(self, other: RefinementPhase):
         return self.path == other.path
 
     @classmethod
-    def make(cls, path_obj: InputPhase | Path | str) -> InputPhase:
+    def make(cls, path_obj: RefinementPhase | Path | str) -> RefinementPhase:
         """
-        Make an InputPhase object from a path object. If the path object is already an InputPhase object, return it.
-        If the path object is a string or Path object, create an InputPhase object with the path object with no
+        Make an RefinementPhase object from a path object. If the path object is already an RefinementPhase object, return it.
+        If the path object is a string or Path object, create an RefinementPhase object with the path object with no
         specific parameters (the default parameters will be used).
 
         Args:
-            path_obj: the path object, can be a string, Path object, or InputPhase object.
+            path_obj: the path object, can be a string, Path object, or RefinementPhase object.
 
         Returns
         -------
-            InputPhase object
+            RefinementPhase object
         """
         return (
             path_obj
-            if isinstance(path_obj, InputPhase)
-            else InputPhase(path=Path(path_obj))
+            if isinstance(path_obj, RefinementPhase)
+            else RefinementPhase(path=Path(path_obj))
         )
 
 
 def do_refinement(
     pattern_path: Path | str,
-    phase_paths: list[InputPhase | Path | str],
+    phase_paths: list[RefinementPhase | Path | str],
     instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
     working_dir: Path | str | None = None,
     phase_params: dict | None = None,
@@ -97,7 +97,7 @@ def do_refinement(
 
     str_paths = []
     for phase_path in phase_paths:
-        phase = InputPhase.make(phase_path)
+        phase = RefinementPhase.make(phase_path)
         phase_path_ = phase.path
         phase_params_ = phase_params.copy()
         # Update the default phase parameters with the specific parameters for the phase
@@ -125,7 +125,7 @@ def do_refinement(
 
 def do_refinement_no_saving(
     pattern_path: Path,
-    phase_paths: list[InputPhase | Path | str],
+    phase_paths: list[RefinementPhase | Path | str],
     instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
     phase_params: dict | None = None,
     refinement_params: dict | None = None,

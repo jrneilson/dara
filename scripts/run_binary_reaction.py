@@ -4,7 +4,7 @@ from pathlib import Path
 
 from pymatgen.core import Composition
 
-from dara.search.search_phase import search_phases
+from dara.search._search_phases import search_phases
 from dara.structure_db import ICSDDatabase
 
 dataset_path = Path(__file__).parent.parent / "dataset" / "binary_reactions"
@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
         search_tree = search_phases(
             pattern_path=xrdml,
-            cif_paths=list(cif_folder.glob("*.cif")),
+            phases=list(cif_folder.glob("*.cif")),
             return_search_tree=True,
         )
 

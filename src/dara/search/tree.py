@@ -15,7 +15,7 @@ from treelib import Node, Tree
 from dara import do_refinement_no_saving
 from dara.cif2str import CIF2StrError
 from dara.peak_detection import detect_peaks
-from dara.refine import InputPhase
+from dara.refine import RefinementPhase
 from dara.search.data_model import SearchNodeData, SearchResult
 from dara.search.peak_matcher import PeakMatcher
 from dara.utils import (
@@ -113,7 +113,7 @@ def batch_peak_matching(
 
 def batch_refinement(
     pattern_path: Path,
-    cif_paths: list[list[InputPhase]],
+    cif_paths: list[list[RefinementPhase]],
     instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
     phase_params: dict[str, ...] | None = None,
     refinement_params: dict[str, float] | None = None,
@@ -132,7 +132,7 @@ def batch_refinement(
 
 
 def calculate_fom_and_strain(
-    phase: InputPhase, result: RefinementResult
+    phase: RefinementPhase, result: RefinementResult
 ) -> tuple[float, float]:
     """
     Calculate the figure of merit for a phase and lattice strain.
@@ -202,9 +202,9 @@ def calculate_fom_and_strain(
 
 
 def group_phases(
-    all_phases_result: dict[InputPhase, RefinementResult | None],
+    all_phases_result: dict[RefinementPhase, RefinementResult | None],
     distance_threshold: float = 0.1,
-) -> dict[InputPhase, dict[str, float | int]]:
+) -> dict[RefinementPhase, dict[str, float | int]]:
     """
     Group the phases based on their similarity.
 
@@ -362,7 +362,7 @@ class BaseSearchTree(Tree):
     def __init__(
         self,
         pattern_path: Path,
-        all_phases_result: dict[InputPhase, RefinementResult] | None,
+        all_phases_result: dict[RefinementPhase, RefinementResult] | None,
         peak_obs: np.ndarray | None,
         refine_params: dict[str, ...] | None,
         phase_params: dict[str, ...] | None,
@@ -371,7 +371,7 @@ class BaseSearchTree(Tree):
         maximum_grouping_distance: float,
         max_phases: float,
         rpb_threshold: float,
-        pinned_phases: list[InputPhase] | None = None,
+        pinned_phases: list[RefinementPhase] | None = None,
         record_peak_matcher_scores: bool = False,
         *args,
         **kwargs,
@@ -599,7 +599,7 @@ class BaseSearchTree(Tree):
     def get_phase_combinations(
         self, node: Node
     ) -> tuple[
-        tuple[tuple[InputPhase, ...], ...],
+        tuple[tuple[RefinementPhase, ...], ...],
         tuple[tuple[float, ...], ...],
         tuple[tuple[float, ...], ...],
     ]:
@@ -687,9 +687,9 @@ class BaseSearchTree(Tree):
 
     def score_phases(
         self,
-        all_phases_result: dict[InputPhase, RefinementResult],
+        all_phases_result: dict[RefinementPhase, RefinementResult],
         current_result: RefinementResult | None = None,
-    ) -> tuple[list[InputPhase], dict[InputPhase, list[float]], float]:
+    ) -> tuple[list[RefinementPhase], dict[RefinementPhase, list[float]], float]:
         """
         Get the best matched phases.
 
@@ -796,9 +796,9 @@ class BaseSearchTree(Tree):
 
     def refine_phases(
         self,
-        phases: list[InputPhase],
-        pinned_phases: list[InputPhase] | None = None,
-    ) -> dict[InputPhase, RefinementResult | None]:
+        phases: list[RefinementPhase],
+        pinned_phases: list[RefinementPhase] | None = None,
+    ) -> dict[RefinementPhase, RefinementResult | None]:
         """
         Get the result of all the phases.
 
@@ -825,7 +825,7 @@ class BaseSearchTree(Tree):
 
     def _batch_refine(
         self,
-        all_references: list[list[InputPhase]],
+        all_references: list[list[RefinementPhase]],
     ) -> list[RefinementResult]:
         return batch_refinement(
             self.pattern_path,
@@ -934,8 +934,8 @@ class SearchTree(BaseSearchTree):
     def __init__(
         self,
         pattern_path: Path | str,
-        cif_paths: list[InputPhase | Path | str],
-        pinned_phases: list[InputPhase | Path | str] | None = None,
+        cif_paths: list[RefinementPhase | Path | str],
+        pinned_phases: list[RefinementPhase | Path | str] | None = None,
         refine_params: dict[str, ...] | None = None,
         phase_params: dict[str, ...] | None = None,
         instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
@@ -949,9 +949,11 @@ class SearchTree(BaseSearchTree):
         pattern_path = Path(pattern_path)
 
         # remove duplicates
-        self.cif_paths = list({InputPhase.make(cif_path) for cif_path in cif_paths})
+        self.cif_paths = list(
+            {RefinementPhase.make(cif_path) for cif_path in cif_paths}
+        )
         self.pinned_phases = list(
-            {InputPhase.make(pinned_phase) for pinned_phase in pinned_phases}
+            {RefinementPhase.make(pinned_phase) for pinned_phase in pinned_phases}
             if pinned_phases is not None
             else []
         )
@@ -1029,7 +1031,7 @@ class SearchTree(BaseSearchTree):
             ),
         )
 
-    def _get_all_cleaned_phases_result(self) -> dict[InputPhase, RefinementResult]:
+    def _get_all_cleaned_phases_result(self) -> dict[RefinementPhase, RefinementResult]:
         logger.info("Refining all the phases in the dataset.")
         pinned_phases_set = set(self.pinned_phases)
         cif_paths = [

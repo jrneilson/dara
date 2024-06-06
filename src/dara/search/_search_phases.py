@@ -14,7 +14,7 @@ from dara.search.tree import BaseSearchTree, SearchTree
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from dara.refine import InputPhase
+    from dara.refine import RefinementPhase
     from dara.search.data_model import SearchResult
 
 DEFAULT_PHASE_PARAMS = {
@@ -47,8 +47,8 @@ def remote_expand_node(search_tree: SearchTree, nid: str) -> ray.ObjectRef:
 
 def search_phases(
     pattern_path: Path | str,
-    cif_paths: list[Path | str | InputPhase],
-    pinned_phases: list[Path | str | InputPhase] | None = None,
+    phases: list[Path | str | RefinementPhase],
+    pinned_phases: list[Path | str | RefinementPhase] | None = None,
     max_phases: int = 5,
     instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
     phase_params: dict[str, ...] | None = None,
@@ -62,7 +62,7 @@ def search_phases(
 
     Args:
         pattern_path: the path to the pattern file. It has to be either in `.xrdml` or `.xy` format
-        cif_paths: the paths to the CIF files
+        phases: the paths to the CIF files
         pinned_phases: the paths to the pinned phases, which will be included in all the results
         max_phases: the maximum number of phases to refine
         instrument_name: the name of the instrument
@@ -85,7 +85,7 @@ def search_phases(
     # build the search tree
     search_tree = SearchTree(
         pattern_path=pattern_path,
-        cif_paths=cif_paths,
+        cif_paths=phases,
         pinned_phases=pinned_phases,
         rpb_threshold=rpb_threshold,
         instrument_name=instrument_name,
