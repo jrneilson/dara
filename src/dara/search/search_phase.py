@@ -9,12 +9,12 @@ from typing import TYPE_CHECKING
 
 import ray
 
-from dara.refine import InputPhase
 from dara.search.tree import BaseSearchTree, SearchTree
 
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from dara.refine import InputPhase
     from dara.search.data_model import SearchResult
 
 DEFAULT_PHASE_PARAMS = {
