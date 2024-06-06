@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 from pymatgen.core import Composition
 
 from dara.plot import visualize
+from dara.refine import InputPhase
 from dara.result import RefinementResult
 from dara.search.peak_matcher import PeakMatcher
 from dara.utils import (
@@ -20,7 +21,7 @@ from dara.utils import (
 
 class SearchNodeData(BaseModel):
     current_result: Optional[RefinementResult]
-    current_phases: list[Path]
+    current_phases: list[InputPhase]
 
     group_id: int = Field(default=-1, ge=-1)
     fom: float = Field(default=0, ge=0)
@@ -40,7 +41,7 @@ class SearchNodeData(BaseModel):
     isolated_missing_peaks: Optional[list[list[float]]] = None
     isolated_extra_peaks: Optional[list[list[float]]] = None
 
-    peak_matcher_scores: Optional[dict[Path, list[float]]] = None
+    peak_matcher_scores: Optional[dict[InputPhase, list[float]]] = None
     peak_matcher_threshold: Optional[float] = None
 
     @property
@@ -86,7 +87,7 @@ class SearchNodeData(BaseModel):
 
 class SearchResult(BaseModel):
     refinement_result: RefinementResult
-    phases: tuple[tuple[Path, ...], ...]
+    phases: tuple[tuple[InputPhase, ...], ...]
     foms: tuple[tuple[float, ...], ...]
     lattice_strains: tuple[tuple[float, ...], ...]
     missing_peaks: Optional[list[list[float]]]
@@ -99,9 +100,10 @@ class SearchResult(BaseModel):
         """Group the phases based on their composition."""
         grouped_phases = []
         for phases in self.phases:
-            grouped_phase = get_compositional_clusters(list(phases))
+            grouped_phase = get_compositional_clusters([p.path for p in phases])
             grouped_phase_with_head = [
-                (get_head_of_compositional_cluster(cluster), cluster) for cluster in grouped_phase
+                (get_head_of_compositional_cluster(cluster), cluster)
+                for cluster in grouped_phase
             ]
             grouped_phases.append(grouped_phase_with_head)
         return grouped_phases

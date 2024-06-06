@@ -5,17 +5,68 @@ from __future__ import annotations
 import shutil
 import tempfile
 from pathlib import Path
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from dara.bgmn_worker import BGMNWorker
 from dara.cif2str import cif2str
 from dara.generate_control_file import generate_control_file
-from dara.result import RefinementResult, get_result
+from dara.result import get_result, RefinementResult
 from dara.xrd import raw2xy, xrdml2xy
+
+
+class InputPhase(BaseModel, frozen=True):
+    """
+    Input phase for refinement.
+
+    Contains the path to the phase file and the specific parameters for the phase.
+    """
+
+    model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True)
+
+    path: Path = Field(..., description="The path to the phase file.")
+    params: dict[str, Any] = Field(
+        default_factory=dict,
+        kw_only=True,
+        description="The specific parameters for the phase.",
+    )
+
+    @field_validator("path", mode="before")
+    @classmethod
+    def _validate_path(cls, v):
+        return Path(v)
+
+    def __hash__(self):
+        return hash(self.path)
+
+    def __eq__(self, other: InputPhase):
+        return self.path == other.path
+
+    @classmethod
+    def make(cls, path_obj: InputPhase | Path | str) -> InputPhase:
+        """
+        Make an InputPhase object from a path object. If the path object is already an InputPhase object, return it.
+        If the path object is a string or Path object, create an InputPhase object with the path object with no
+        specific parameters (the default parameters will be used).
+
+        Args:
+            path_obj: the path object, can be a string, Path object, or InputPhase object.
+
+        Returns
+        -------
+            InputPhase object
+        """
+        return (
+            path_obj
+            if isinstance(path_obj, InputPhase)
+            else InputPhase(path=Path(path_obj))
+        )
 
 
 def do_refinement(
     pattern_path: Path | str,
-    phase_paths: list[Path | str],
+    phase_paths: list[InputPhase | Path | str],
     instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
     working_dir: Path | str | None = None,
     phase_params: dict | None = None,
@@ -24,9 +75,10 @@ def do_refinement(
 ) -> RefinementResult:
     """Refine the structure using BGMN."""
     pattern_path = Path(pattern_path)
-    phase_paths = [Path(phase_path) for phase_path in phase_paths]
     working_dir = (
-        Path(working_dir) if working_dir is not None else pattern_path.parent / f"refinement_{pattern_path.stem}"
+        Path(working_dir)
+        if working_dir is not None
+        else pattern_path.parent / f"refinement_{pattern_path.stem}"
     )
 
     if not working_dir.exists():
@@ -44,13 +96,18 @@ def do_refinement(
         pattern_path = raw2xy(pattern_path, working_dir)
 
     str_paths = []
-    for i, phase_path in enumerate(phase_paths):
-        if phase_path.suffix == ".cif":
-            str_path = cif2str(phase_path, "", working_dir, **phase_params)
+    for phase_path in phase_paths:
+        phase = InputPhase.make(phase_path)
+        phase_path_ = phase.path
+        phase_params_ = phase_params.copy()
+        # Update the default phase parameters with the specific parameters for the phase
+        phase_params_.update(phase.params)
+        if phase_path_.suffix == ".cif":
+            str_path = cif2str(phase_path_, "", working_dir, **phase_params_)
         else:
-            if phase_path.parent != working_dir:
-                shutil.copy(phase_path, working_dir)
-            str_path = working_dir / phase_path.name
+            if phase_path_.parent != working_dir:
+                shutil.copy(phase_path_, working_dir)
+            str_path = working_dir / phase_path_.name
         str_paths.append(str_path)
 
     control_file_path = generate_control_file(
@@ -68,7 +125,7 @@ def do_refinement(
 
 def do_refinement_no_saving(
     pattern_path: Path,
-    phase_paths: list[Path],
+    phase_paths: list[InputPhase | Path | str],
     instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
     phase_params: dict | None = None,
     refinement_params: dict | None = None,

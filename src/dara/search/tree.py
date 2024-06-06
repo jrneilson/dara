@@ -4,7 +4,7 @@ import warnings
 from itertools import zip_longest
 from pathlib import Path
 from subprocess import TimeoutExpired
-from typing import TYPE_CHECKING, Literal
+from typing import Literal, TYPE_CHECKING
 
 import jenkspy
 import numpy as np
@@ -15,6 +15,7 @@ from treelib import Node, Tree
 from dara import do_refinement_no_saving
 from dara.cif2str import CIF2StrError
 from dara.peak_detection import detect_peaks
+from dara.refine import InputPhase
 from dara.search.data_model import SearchNodeData, SearchResult
 from dara.search.peak_matcher import PeakMatcher
 from dara.utils import (
@@ -101,14 +102,18 @@ def batch_peak_matching(
         raise ValueError("Length of peak_calcs and peak_obs must be the same.")
 
     all_data = list(zip_longest(peak_calcs, peak_obs, fillvalue=None))
-    batches = [all_data[i : i + batch_size] for i in range(0, len(all_data), batch_size)]
-    handles = [remote_peak_matching.remote(batch, return_type=return_type) for batch in batches]
+    batches = [
+        all_data[i : i + batch_size] for i in range(0, len(all_data), batch_size)
+    ]
+    handles = [
+        remote_peak_matching.remote(batch, return_type=return_type) for batch in batches
+    ]
     return sum(ray.get(handles), [])
 
 
 def batch_refinement(
     pattern_path: Path,
-    cif_paths: list[list[Path]],
+    cif_paths: list[list[InputPhase]],
     instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
     phase_params: dict[str, ...] | None = None,
     refinement_params: dict[str, float] | None = None,
@@ -126,13 +131,14 @@ def batch_refinement(
     return ray.get(handles)
 
 
-def calculate_fom_and_strain(phase_path: Path, result: RefinementResult) -> tuple[float, float]:
+def calculate_fom_and_strain(
+    phase: InputPhase, result: RefinementResult
+) -> tuple[float, float]:
     """
     Calculate the figure of merit for a phase and lattice strain.
 
     For more detail, refer to https://journals.iucr.org/j/issues/2019/03/00/nb5231/.
     Args:
-        phase_path: the path to the phase (cif file)
         result: the refinement result
 
     Returns
@@ -145,6 +151,8 @@ def calculate_fom_and_strain(phase_path: Path, result: RefinementResult) -> tupl
     # we disable the particle size for now
     c = 0.0
     b1_threshold = 2e-5
+
+    phase_path = phase.path
 
     structure, _ = load_symmetrized_structure(phase_path)
     initial_lattice_abc = structure.lattice.abc
@@ -174,22 +182,29 @@ def calculate_fom_and_strain(phase_path: Path, result: RefinementResult) -> tupl
     initial_lattice_abc = np.array(initial_lattice_abc) / 10  # convert to nm
     refined_lattice_abc = np.array(refined_lattice_abc)
 
-    delta_u = np.sum(np.abs(initial_lattice_abc - refined_lattice_abc) / initial_lattice_abc) * 100
+    delta_u = (
+        np.sum(np.abs(initial_lattice_abc - refined_lattice_abc) / initial_lattice_abc)
+        * 100
+    )
 
-    lattice_strain = np.mean((refined_lattice_abc - initial_lattice_abc) / initial_lattice_abc)
+    lattice_strain = np.mean(
+        (refined_lattice_abc - initial_lattice_abc) / initial_lattice_abc
+    )
 
     if b1 is None or b1 < b1_threshold:
         c = 0
     else:
         c /= b1
 
-    return (1 / (result.lst_data.rho + a * delta_u + 1e-4) + b * geweicht) / (1 + c), lattice_strain
+    return (1 / (result.lst_data.rho + a * delta_u + 1e-4) + b * geweicht) / (
+        1 + c
+    ), lattice_strain
 
 
 def group_phases(
-    all_phases_result: dict[Path, RefinementResult | None],
+    all_phases_result: dict[InputPhase, RefinementResult | None],
     distance_threshold: float = 0.1,
-) -> dict[Path, dict[str, float | int]]:
+) -> dict[InputPhase, dict[str, float | int]]:
     """
     Group the phases based on their similarity.
 
@@ -208,7 +223,11 @@ def group_phases(
         if result is None:
             grouped_result[phase] = {"group_id": -1, "fom": 0, "lattice_strain": 0}
 
-    all_phases_result = {phase: result for phase, result in all_phases_result.items() if result is not None}
+    all_phases_result = {
+        phase: result
+        for phase, result in all_phases_result.items()
+        if result is not None
+    }
 
     if len(all_phases_result) <= 1:
         for phase, result in all_phases_result.items():
@@ -224,7 +243,11 @@ def group_phases(
 
     for phase, result in all_phases_result.items():
         all_peaks = result.peak_data
-        peaks.append(all_peaks[all_peaks["phase"] == phase.stem][["2theta", "intensity"]].values)
+        peaks.append(
+            all_peaks[all_peaks["phase"] == phase.path.stem][
+                ["2theta", "intensity"]
+            ].values
+        )
 
     pairwise_similarity = batch_peak_matching(
         [p for p in peaks for _ in peaks],
@@ -289,7 +312,9 @@ def remove_unnecessary_phases(
     return new_phases
 
 
-def get_natural_break_results(results: list[SearchResult], sorting: bool = True) -> list[SearchResult]:
+def get_natural_break_results(
+    results: list[SearchResult], sorting: bool = True
+) -> list[SearchResult]:
     """Get the natural break results based on (1-rho) value."""
     all_rhos = None
 
@@ -301,7 +326,11 @@ def get_natural_break_results(results: list[SearchResult], sorting: bool = True)
             # get the first natural break
             interval = jenkspy.jenks_breaks(all_rhos, n_classes=2)
             rho_cutoff = interval[1]
-            results = [result for result in results if result.refinement_result.lst_data.rho <= rho_cutoff]
+            results = [
+                result
+                for result in results
+                if result.refinement_result.lst_data.rho <= rho_cutoff
+            ]
             all_rhos = [result.refinement_result.lst_data.rho for result in results]
         else:
             break
@@ -333,7 +362,7 @@ class BaseSearchTree(Tree):
     def __init__(
         self,
         pattern_path: Path,
-        all_phases_result: dict[Path, RefinementResult] | None,
+        all_phases_result: dict[InputPhase, RefinementResult] | None,
         peak_obs: np.ndarray | None,
         refine_params: dict[str, ...] | None,
         phase_params: dict[str, ...] | None,
@@ -342,7 +371,7 @@ class BaseSearchTree(Tree):
         maximum_grouping_distance: float,
         max_phases: float,
         rpb_threshold: float,
-        pinned_phases: list[Path] | None = None,
+        pinned_phases: list[InputPhase] | None = None,
         record_peak_matcher_scores: bool = False,
         *args,
         **kwargs,
@@ -388,15 +417,21 @@ class BaseSearchTree(Tree):
             # remove phases that are already in the current result
             current_phases_set = set(node.data.current_phases)
             all_phases_result = {
-                phase: result for phase, result in self.all_phases_result.items() if phase not in current_phases_set
+                phase: result
+                for phase, result in self.all_phases_result.items()
+                if phase not in current_phases_set
             }
-            best_phases, scores, threshold = self.score_phases(all_phases_result, node.data.current_result)
+            best_phases, scores, threshold = self.score_phases(
+                all_phases_result, node.data.current_result
+            )
 
             if self.record_peak_matcher_scores:
                 node.data.peak_matcher_scores = scores
                 node.data.peak_matcher_threshold = threshold
 
-            new_results = self.refine_phases(best_phases, pinned_phases=node.data.current_phases)
+            new_results = self.refine_phases(
+                best_phases, pinned_phases=node.data.current_phases
+            )
 
             # group the results
             grouped_results = group_phases(
@@ -411,19 +446,29 @@ class BaseSearchTree(Tree):
                 fom = grouped_results[phase]["fom"]
 
                 is_best_result_in_group = phase == max(
-                    [phase_ for phase_ in grouped_results if grouped_results[phase_]["group_id"] == group_id],
+                    [
+                        phase_
+                        for phase_ in grouped_results
+                        if grouped_results[phase_]["group_id"] == group_id
+                    ],
                     key=lambda x: grouped_results[x]["fom"],
                 )
 
                 if new_result is not None:
-                    searched_phases = [p for p in new_phases if p not in self.pinned_phases]
+                    searched_phases = [
+                        p for p in new_phases if p not in self.pinned_phases
+                    ]
                     sorted_searched_phases = sorted(
                         searched_phases,
-                        key=lambda x: new_result.peak_data[new_result.peak_data["phase"] == x.stem]["intensity"].sum(),
+                        key=lambda phase: new_result.peak_data[
+                            new_result.peak_data["phase"] == phase.path.stem
+                        ]["intensity"].sum(),
                         reverse=True,
                     )
                     # make sure the newly added phase has the lowest peak intensity
-                    is_low_weight_fraction = sorted_searched_phases[-1] != searched_phases[-1]
+                    is_low_weight_fraction = (
+                        sorted_searched_phases[-1] != searched_phases[-1]
+                    )
                 else:
                     is_low_weight_fraction = False
 
@@ -432,8 +477,12 @@ class BaseSearchTree(Tree):
                         new_result.peak_data[["2theta", "intensity"]].values,
                         self.peak_obs,
                     )
-                    isolated_missing_peaks = peak_matcher.get_isolated_peaks(peak_type="missing").tolist()
-                    isolated_extra_peaks = peak_matcher.get_isolated_peaks(peak_type="extra").tolist()
+                    isolated_missing_peaks = peak_matcher.get_isolated_peaks(
+                        peak_type="missing"
+                    ).tolist()
+                    isolated_extra_peaks = peak_matcher.get_isolated_peaks(
+                        peak_type="extra"
+                    ).tolist()
                 else:
                     isolated_missing_peaks = [[]]
                     isolated_extra_peaks = [[]]
@@ -443,8 +492,16 @@ class BaseSearchTree(Tree):
                 # if the new result is worse than the current result from Rwp perspective
                 elif (
                     node.data.current_result is not None
-                    and (node.data.current_result.lst_data.rpb - new_result.lst_data.rpb) < self.rpb_threshold
-                    or len(remove_unnecessary_phases(new_result, new_phases, self.rpb_threshold)) != len(new_phases)
+                    and (
+                        node.data.current_result.lst_data.rpb - new_result.lst_data.rpb
+                    )
+                    < self.rpb_threshold
+                    or len(
+                        remove_unnecessary_phases(
+                            new_result, [p.path for p in new_phases], self.rpb_threshold
+                        )
+                    )
+                    != len(new_phases)
                 ):
                     status = "no_improvement"
                 elif is_low_weight_fraction:
@@ -494,7 +551,9 @@ class BaseSearchTree(Tree):
             raise ValueError(f"Node with id {nid} does not exist.")
 
         return [
-            child.identifier for child in self.children(nid) if self.get_node(child.identifier).data.status == "pending"
+            child.identifier
+            for child in self.children(nid)
+            if self.get_node(child.identifier).data.status == "pending"
         ]
 
     def expand_root(self) -> list[str]:
@@ -527,17 +586,20 @@ class BaseSearchTree(Tree):
             node_at_same_level
             for node_at_same_level in nodes_at_same_level
             if node_at_same_level.data.group_id == node.data.group_id
-            and node_at_same_level.data.status in {"similar_structure", "expanded", "max_depth"}
+            and node_at_same_level.data.status
+            in {"similar_structure", "expanded", "max_depth"}
         ]
 
-        phases_at_same_level = sorted(phases_at_same_level, key=lambda x: x.data.fom, reverse=True)
+        phases_at_same_level = sorted(
+            phases_at_same_level, key=lambda x: x.data.fom, reverse=True
+        )
 
         return tuple(phases_at_same_level)
 
     def get_phase_combinations(
         self, node: Node
     ) -> tuple[
-        tuple[tuple[Path, ...], ...],
+        tuple[tuple[InputPhase, ...], ...],
         tuple[tuple[float, ...], ...],
         tuple[tuple[float, ...], ...],
     ]:
@@ -560,28 +622,33 @@ class BaseSearchTree(Tree):
         all_possible_nodes = []
 
         while self.level(parent_node.identifier) != 0:
-            all_possible_nodes.append(self.get_all_possible_nodes_at_same_level(parent_node))
+            all_possible_nodes.append(
+                self.get_all_possible_nodes_at_same_level(parent_node)
+            )
             parent_node = self.get_node(self.ancestor(parent_node.identifier))
 
         all_possible_nodes.append([parent_node])
 
         all_possible_nodes = all_possible_nodes[::-1]
 
-        foms = tuple(tuple([node.data.fom or 0 for node in possible_nodes]) for possible_nodes in all_possible_nodes)
-        phases = (
-            tuple(
-                [
-                    (pinned_phase,)
-                    for pinned_phase in all_possible_nodes[0][0].data.current_phases  # root node
-                ]
-            )
-            + tuple(
-                tuple([node.data.current_phases[-1] for node in possible_nodes])
-                for possible_nodes in all_possible_nodes[1:]
-            )
+        foms = tuple(
+            tuple([node.data.fom or 0 for node in possible_nodes])
+            for possible_nodes in all_possible_nodes
+        )
+        phases = tuple(
+            [
+                (pinned_phase,)
+                for pinned_phase in all_possible_nodes[0][
+                    0
+                ].data.current_phases  # root node
+            ]
+        ) + tuple(
+            tuple([node.data.current_phases[-1] for node in possible_nodes])
+            for possible_nodes in all_possible_nodes[1:]
         )
         lattice_strains = tuple(
-            tuple([node.data.lattice_strain or 0 for node in possible_nodes]) for possible_nodes in all_possible_nodes
+            tuple([node.data.lattice_strain or 0 for node in possible_nodes])
+            for possible_nodes in all_possible_nodes
         )
 
         return phases, foms, lattice_strains
@@ -602,7 +669,8 @@ class BaseSearchTree(Tree):
             if node.data.current_result is None:
                 continue
             if node.data.status in {"expanded", "max_depth"} and all(
-                child.data.status not in {"expanded", "max_depth"} for child in self.children(node.identifier)
+                child.data.status not in {"expanded", "max_depth"}
+                for child in self.children(node.identifier)
             ):
                 phases, foms, lattice_strains = self.get_phase_combinations(node)
                 results.append(
@@ -619,9 +687,9 @@ class BaseSearchTree(Tree):
 
     def score_phases(
         self,
-        all_phases_result: dict[Path, RefinementResult],
+        all_phases_result: dict[InputPhase, RefinementResult],
         current_result: RefinementResult | None = None,
-    ) -> tuple[list[Path], dict[Path, list[float]], float]:
+    ) -> tuple[list[InputPhase], dict[InputPhase, list[float]], float]:
         """
         Get the best matched phases.
 
@@ -648,9 +716,9 @@ class BaseSearchTree(Tree):
             return [], {}, 0
 
         peak_calcs = [
-            refinement_result.peak_data[refinement_result.peak_data["phase"] == phase.stem][
-                ["2theta", "intensity"]
-            ].values
+            refinement_result.peak_data[
+                refinement_result.peak_data["phase"] == phase.path.stem
+            ][["2theta", "intensity"]].values
             for phase, refinement_result in all_phases_result.items()
         ]
 
@@ -709,10 +777,16 @@ class BaseSearchTree(Tree):
             )
             raw_scores = {}
 
-        peak_matcher_score_threshold, _ = find_optimal_score_threshold(list(scores.values()))
+        peak_matcher_score_threshold, _ = find_optimal_score_threshold(
+            list(scores.values())
+        )
         peak_matcher_score_threshold = max(peak_matcher_score_threshold, 0)
 
-        filtered_scores = {phase: score for phase, score in scores.items() if score >= peak_matcher_score_threshold}
+        filtered_scores = {
+            phase: score
+            for phase, score in scores.items()
+            if score >= peak_matcher_score_threshold
+        }
 
         return (
             sorted(filtered_scores, key=lambda x: filtered_scores[x], reverse=True),
@@ -722,9 +796,9 @@ class BaseSearchTree(Tree):
 
     def refine_phases(
         self,
-        phases: list[Path],
-        pinned_phases: list[Path] | None = None,
-    ) -> dict[Path, RefinementResult | None]:
+        phases: list[InputPhase],
+        pinned_phases: list[InputPhase] | None = None,
+    ) -> dict[InputPhase, RefinementResult | None]:
         """
         Get the result of all the phases.
 
@@ -751,7 +825,7 @@ class BaseSearchTree(Tree):
 
     def _batch_refine(
         self,
-        all_references: list[list[Path]],
+        all_references: list[list[InputPhase]],
     ) -> list[RefinementResult]:
         return batch_refinement(
             self.pattern_path,
@@ -780,7 +854,9 @@ class BaseSearchTree(Tree):
         )
 
     @classmethod
-    def from_search_tree(cls, root_nid: str, search_tree: BaseSearchTree) -> BaseSearchTree:
+    def from_search_tree(
+        cls, root_nid: str, search_tree: BaseSearchTree
+    ) -> BaseSearchTree:
         """
         Create a new search tree from an existing search tree.
 
@@ -827,8 +903,13 @@ class BaseSearchTree(Tree):
             the merged search tree
         """
         # update the data from the search tree
-        if search_tree.get_node(search_tree.root).data.current_phases != self.get_node(anchor_nid).data.current_phases:
-            raise ValueError("The root node of the subtree must have the same current_phases as the anchor node.")
+        if (
+            search_tree.get_node(search_tree.root).data.current_phases
+            != self.get_node(anchor_nid).data.current_phases
+        ):
+            raise ValueError(
+                "The root node of the subtree must have the same current_phases as the anchor node."
+            )
 
         self.merge(nid=anchor_nid, new_tree=search_tree, deep=False)
         self.update_node(anchor_nid, data=search_tree.get_node(search_tree.root).data)
@@ -853,8 +934,8 @@ class SearchTree(BaseSearchTree):
     def __init__(
         self,
         pattern_path: Path | str,
-        cif_paths: list[Path | str],
-        pinned_phases: list[Path | str] | None = None,
+        cif_paths: list[InputPhase | Path | str],
+        pinned_phases: list[InputPhase | Path | str] | None = None,
         refine_params: dict[str, ...] | None = None,
         phase_params: dict[str, ...] | None = None,
         instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
@@ -866,8 +947,14 @@ class SearchTree(BaseSearchTree):
         **kwargs,
     ):
         pattern_path = Path(pattern_path)
-        self.cif_paths = [Path(cif_path) for cif_path in cif_paths]
-        self.pinned_phases = [Path(pinned_phase) for pinned_phase in pinned_phases] if pinned_phases is not None else []
+
+        # remove duplicates
+        self.cif_paths = list({InputPhase.make(cif_path) for cif_path in cif_paths})
+        self.pinned_phases = list(
+            {InputPhase.make(pinned_phase) for pinned_phase in pinned_phases}
+            if pinned_phases is not None
+            else []
+        )
 
         if len(self.pinned_phases) >= max_phases:
             raise ValueError(
@@ -916,35 +1003,49 @@ class SearchTree(BaseSearchTree):
                 f"The wmax ({self.refinement_params['wmax']}) in refinement_params "
                 f"will be ignored. The wmax will be automatically adjusted."
             )
-        peak_list = detect_peaks(self.pattern_path, wmin=self.refinement_params.get("wmin", None), wmax=None)
+        peak_list = detect_peaks(
+            self.pattern_path, wmin=self.refinement_params.get("wmin", None), wmax=None
+        )
         optimal_wmax = get_optimal_max_two_theta(peak_list)
         logger.info(f"The wmax is automatically adjusted to {optimal_wmax}.")
         self.refinement_params["wmax"] = optimal_wmax
 
         peak_list_array = peak_list[["2theta", "intensity"]].values
 
-        return peak_list_array[np.where(peak_list_array[:, 0] < self.refinement_params["wmax"])]
+        return peak_list_array[
+            np.where(peak_list_array[:, 0] < self.refinement_params["wmax"])
+        ]
 
     def _create_root_node(self) -> Node:
         logger.info("Creating the root node.")
         return Node(
             data=SearchNodeData(
-                current_result=(self._batch_refine([self.pinned_phases])[0] if self.pinned_phases else None),
+                current_result=(
+                    self._batch_refine([self.pinned_phases])[0]
+                    if self.pinned_phases
+                    else None
+                ),
                 current_phases=self.pinned_phases,
             ),
         )
 
-    def _get_all_cleaned_phases_result(self) -> dict[Path, RefinementResult]:
+    def _get_all_cleaned_phases_result(self) -> dict[InputPhase, RefinementResult]:
         logger.info("Refining all the phases in the dataset.")
         pinned_phases_set = set(self.pinned_phases)
-        cif_paths = [cif_path for cif_path in self.cif_paths if cif_path not in pinned_phases_set]
+        cif_paths = [
+            cif_path for cif_path in self.cif_paths if cif_path not in pinned_phases_set
+        ]
         all_phases_result = self.refine_phases(
             cif_paths,
             pinned_phases=self.pinned_phases,
         )
 
         # clean up cif paths (if no result, remove from list)
-        all_phases_result = {phase: result for phase, result in all_phases_result.items() if result is not None}
+        all_phases_result = {
+            phase: result
+            for phase, result in all_phases_result.items()
+            if result is not None
+        }
 
         logger.info(
             f"Finished refining {len(all_phases_result)} phases, "

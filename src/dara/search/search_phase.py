@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 
 import ray
 
+from dara.refine import InputPhase
 from dara.search.tree import BaseSearchTree, SearchTree
 
 if TYPE_CHECKING:
@@ -46,8 +47,8 @@ def remote_expand_node(search_tree: SearchTree, nid: str) -> ray.ObjectRef:
 
 def search_phases(
     pattern_path: Path | str,
-    cif_paths: list[Path | str],
-    pinned_phases: list[Path | str] | None = None,
+    cif_paths: list[Path | str | InputPhase],
+    pinned_phases: list[Path | str | InputPhase] | None = None,
     max_phases: int = 5,
     instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
     phase_params: dict[str, ...] | None = None,
