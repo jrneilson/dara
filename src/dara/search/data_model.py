@@ -51,7 +51,9 @@ class SearchNodeData(BaseModel):
         if is_root_node:
             phase_string = "Root "
             if len(self.current_phases) > 1:
-                phase_string += f"({', '.join([p.stem for p in self.current_phases])}) "
+                phase_string += (
+                    f"({', '.join([p.path.stem for p in self.current_phases])}) "
+                )
             return phase_string
 
         import colorful as cf
@@ -63,8 +65,8 @@ class SearchNodeData(BaseModel):
         }
         status_str = status_color.get(self.status, lambda x: x)(self.status)
         phase_string = f"({status_str}) "
-        phase_string += self.current_phases[-1].stem
-        total_len = 3 + len(self.status) + len(self.current_phases[-1].stem)
+        phase_string += self.current_phases[-1].path.stem
+        total_len = 3 + len(self.status) + len(self.current_phases[-1].path.stem)
 
         phase_string += " " * max(60 - total_len, 0)
 
