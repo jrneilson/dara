@@ -66,7 +66,7 @@ class RefinementPhase(BaseModel, frozen=True):
 
 def do_refinement(
     pattern_path: Path | str,
-    phase_paths: list[RefinementPhase | Path | str],
+    phases: list[RefinementPhase | Path | str],
     instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
     working_dir: Path | str | None = None,
     phase_params: dict | None = None,
@@ -96,7 +96,7 @@ def do_refinement(
         pattern_path = raw2xy(pattern_path, working_dir)
 
     str_paths = []
-    for phase_path in phase_paths:
+    for phase_path in phases:
         phase = RefinementPhase.make(phase_path)
         phase_path_ = phase.path
         phase_params_ = phase_params.copy()
@@ -135,12 +135,6 @@ def do_refinement_no_saving(
     with tempfile.TemporaryDirectory() as tmpdir:
         working_dir = Path(tmpdir)
 
-        return do_refinement(
-            pattern_path,
-            phase_paths,
-            instrument_name,
-            working_dir=working_dir,
-            phase_params=phase_params,
-            refinement_params=refinement_params,
-            show_progress=show_progress,
-        )
+        return do_refinement(pattern_path, phase_paths, instrument_name, working_dir=working_dir,
+                             phase_params=phase_params, refinement_params=refinement_params,
+                             show_progress=show_progress)
