@@ -12,7 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from dara.bgmn_worker import BGMNWorker
 from dara.cif2str import cif2str
 from dara.generate_control_file import generate_control_file
-from dara.result import get_result, RefinementResult
+from dara.result import RefinementResult, get_result
 from dara.xrd import raw2xy, xrdml2xy
 
 
@@ -135,6 +135,12 @@ def do_refinement_no_saving(
     with tempfile.TemporaryDirectory() as tmpdir:
         working_dir = Path(tmpdir)
 
-        return do_refinement(pattern_path, phase_paths, instrument_name, working_dir=working_dir,
-                             phase_params=phase_params, refinement_params=refinement_params,
-                             show_progress=show_progress)
+        return do_refinement(
+            pattern_path,
+            phase_paths,
+            instrument_name,
+            working_dir=working_dir,
+            phase_params=phase_params,
+            refinement_params=refinement_params,
+            show_progress=show_progress,
+        )
