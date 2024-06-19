@@ -382,11 +382,9 @@ def parse_par(par_file: Path, phase_names: list[str]) -> pd.DataFrame:
         wavelength = get_wavelength(wavelength.group(1))
     else:
         wavelength = re.search(r"SYNCHROTRON=(\d+(\.\d+)?)", content[0])
-        try:
-            wavelength = float(wavelength.group(1))
-        except AttributeError:
-            raise ValueError("Wavelength not found in the .par file")
-
+        if not wavelength:
+            raise ValueError("Cannot find the wavelength in the .par file")
+        wavelength = float(wavelength.group(1))
     peak_num = int(peak_num.group(1))
 
     # get the mapping between the peak's phase name to the actual phase name
