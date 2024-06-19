@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 import tempfile
 from pathlib import Path
@@ -8,7 +9,7 @@ from typing import Literal, Union
 
 import numpy as np
 import pandas as pd
-import re
+
 from dara.bgmn.download_bgmn import download_bgmn
 from dara.generate_control_file import copy_instrument_files, copy_xy_pattern
 from dara.utils import get_logger, get_wavelength, intensity_correction
@@ -86,7 +87,7 @@ class EflechWorker:
                 show_progress=show_progress,
             )
 
-            peak_list = self.parse_peak_list(temp_dir)
+            peak_list = self.parse_peak_list(temp_dir, wavelength=wavelength)
 
             return peak_list
 
@@ -153,11 +154,16 @@ class EflechWorker:
                 f"{cp.stderr}"
             )
 
-    def parse_peak_list(self, par_folder: Path) -> pd.DataFrame:
+    def parse_peak_list(
+        self,
+        par_folder: Path,
+        wavelength: Literal["Cu", "Co", "Cr", "Fe", "Mo"] | float,
+    ) -> pd.DataFrame:
         all_par_files = list(par_folder.glob("output-*.par"))
         peak_list = []
+        wavelength_float = get_wavelength(wavelength)
         for par_file in all_par_files:
-            peak_list.extend(self.parse_par_file(par_file))
+            peak_list.extend(self.parse_par_file(par_file, wavelength=wavelength_float))
 
         peak_list = np.array(peak_list).reshape(-1, 4)
 
@@ -166,33 +172,22 @@ class EflechWorker:
         b1 = peak_list[:, 2]
         b2 = peak_list[:, 3]
 
-        two_theta = np.arcsin(0.15406 * d_inv / 2) * 180 / np.pi * 2
+        two_theta = np.arcsin(wavelength_float * d_inv / 2) * 180 / np.pi * 2
 
         peak_list_two_theta = np.column_stack((two_theta, intensity, b1, b2))
         peak_list_two_theta = peak_list_two_theta[peak_list_two_theta[:, 0].argsort()]
 
-        df = pd.DataFrame(
+        return pd.DataFrame(
             peak_list_two_theta, columns=["2theta", "intensity", "b1", "b2"]
         ).astype(float)
 
-        return df
-
     @staticmethod
-    def parse_par_file(par_file: Path) -> list[list[float]]:
+    def parse_par_file(par_file: Path, wavelength: float) -> list[list[float]]:
         content = par_file.read_text().split("\n")
         peak_list = []
 
         if len(content) < 2:
             return peak_list
-
-        wavelength = re.search(r"LAMBDA=(\d+(\.\d+)?)", content[0])
-        if wavelength:
-            wavelength = get_wavelength(wavelength.group(1))
-        else:
-            # If the LAMBDA line is not found, try to find the SYNCHROTRON line
-            # and use it as the wavelength
-            wavelength = re.search("SYNCHROTRON=(\d+(\.\d+)?)", content[0])
-            wavelength = float(wavelength.group(1)) if wavelength else 0.0
 
         peak_num = re.search(r"PEAKZAHL=(\d+)", content[0])
         pol = re.search(r"POL=(\d+(\.\d+)?)", content[0])
@@ -216,9 +211,7 @@ class EflechWorker:
                 rp = int(numbers[0])
                 intensity = float(numbers[1])
                 d_inv = float(numbers[2])
-                if (
-                    gsum := re.search(r"GSUM=(\d+(\.\d+)?)", content[i])
-                ) is None:  # noqa: SIM108
+                if (gsum := re.search(r"GSUM=(\d+(\.\d+)?)", content[i])) is None:
                     gsum = 1.0
                 else:
                     gsum = float(gsum.group(1))

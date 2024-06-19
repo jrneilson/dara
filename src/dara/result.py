@@ -374,6 +374,7 @@ def parse_par(par_file: Path, phase_names: list[str]) -> pd.DataFrame:
     eps2 = re.search(r"EPS2=([+-]?\d+(\.\d+)?)", content[0])
     pol = re.search(r"POL=(\d+(\.\d+)?)", content[0])
     wavelength = re.search(r"LAMBDA=(\d+(\.\d+)?)", content[0])
+
     eps1 = float(eps1.group(1)) if eps1 else 0.0
     eps2 = float(eps2.group(1)) if eps2 else 0.0
     pol = float(pol.group(1)) if pol else 1.0
@@ -381,7 +382,10 @@ def parse_par(par_file: Path, phase_names: list[str]) -> pd.DataFrame:
         wavelength = get_wavelength(wavelength.group(1))
     else:
         wavelength = re.search(r"SYNCHROTRON=(\d+(\.\d+)?)", content[0])
-        wavelength = float(wavelength.group(1)) if wavelength else 0.0
+        try:
+            wavelength = float(wavelength.group(1))
+        except AttributeError:
+            raise ValueError("Wavelength not found in the .par file")
 
     peak_num = int(peak_num.group(1))
 
