@@ -373,18 +373,16 @@ def parse_par(par_file: Path, phase_names: list[str]) -> pd.DataFrame:
     eps1 = re.search(r"EPS1=(\d+(\.\d+)?)", content[0])
     eps2 = re.search(r"EPS2=([+-]?\d+(\.\d+)?)", content[0])
     pol = re.search(r"POL=(\d+(\.\d+)?)", content[0])
-    wavelength = re.search(r"LAMBDA=(\d+(\.\d+)?)", content[0])
+    wavelength = re.search(r"LAMBDA=(\S+)", content[0])
+    if not wavelength:
+        wavelength = re.search(r"SYNCHROTRON=(\S+)", content[0])
+    if not wavelength:
+        raise ValueError("Cannot find the wavelength from the .par file")
 
     eps1 = float(eps1.group(1)) if eps1 else 0.0
     eps2 = float(eps2.group(1)) if eps2 else 0.0
     pol = float(pol.group(1)) if pol else 1.0
-    if wavelength:
-        wavelength = get_wavelength(wavelength.group(1))
-    else:
-        wavelength = re.search(r"SYNCHROTRON=(\d+(\.\d+)?)", content[0])
-        if not wavelength:
-            raise ValueError("Cannot find the wavelength in the .par file")
-        wavelength = float(wavelength.group(1))
+    wavelength = get_wavelength(wavelength.group(1))
     peak_num = int(peak_num.group(1))
 
     # get the mapping between the peak's phase name to the actual phase name

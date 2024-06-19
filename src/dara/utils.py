@@ -97,7 +97,6 @@ def get_optimal_max_two_theta(
     peak_data: pd.DataFrame,
     fraction: float = 0.7,
     intensity_filter=0.1,
-    min_threshold: float | None = 50,
 ) -> float:
     """Get the optimal 2theta max given detected peaks. The range is determined by
     proportion of the detected peaks.
@@ -113,6 +112,9 @@ def get_optimal_max_two_theta(
     -------
         A tuple of the optimal 2theta range.
     """
+    max_angle = peak_data["2theta"].max()
+    min_angle = peak_data["2theta"].min()
+    angle_threshold = 0.4 * (max_angle - min_angle) + min_angle
     max_intensity = peak_data.intensity.max()
     peak_data = peak_data[peak_data.intensity > intensity_filter * max_intensity]
     peak_data = peak_data.sort_values("2theta")
@@ -126,10 +128,8 @@ def get_optimal_max_two_theta(
     buffer = 1  # include the full last peak
 
     threshold = round(peak_data["2theta"].iloc[end_idx], 2) + buffer
-    if min_threshold is None:
-        return threshold
 
-    return max(min_threshold, threshold)
+    return max(angle_threshold, threshold)
 
 
 def read_phase_name_from_str(str_path: Path) -> str:
