@@ -1,19 +1,28 @@
-from pathlib import Path
-from typing import Union
+from __future__ import annotations
 
-import numpy as np
-import pandas as pd
+from typing import TYPE_CHECKING, Literal
 
 from dara.eflech_worker import EflechWorker
 
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    import numpy as np
+    import pandas as pd
+
 
 def detect_peaks(
-    pattern: Union[Path, np.ndarray],
+    pattern: Path | np.ndarray,
+    wavelength: Literal["Cu", "Co", "Cr", "Fe", "Mo"] | float = "Cu",
     instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
     wmin: float = None,
     wmax: float = None,
 ) -> pd.DataFrame:
     eflech_worker = EflechWorker()
-    peaks = eflech_worker.run_peak_detection(pattern=pattern, instrument_name=instrument_name, wmin=wmin, wmax=wmax)
-
-    return peaks
+    return eflech_worker.run_peak_detection(
+        pattern=pattern,
+        wavelength=wavelength,
+        instrument_name=instrument_name,
+        wmin=wmin,
+        wmax=wmax,
+    )

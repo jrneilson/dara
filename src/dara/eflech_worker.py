@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import subprocess
 import tempfile
@@ -9,7 +11,7 @@ import pandas as pd
 import re
 from dara.bgmn.download_bgmn import download_bgmn
 from dara.generate_control_file import copy_instrument_files, copy_xy_pattern
-from dara.utils import get_logger, intensity_correction
+from dara.utils import get_logger, get_wavelength, intensity_correction
 from dara.xrd import raw2xy, xrdml2xy
 
 logger = get_logger(__name__)
@@ -36,7 +38,8 @@ class EflechWorker:
 
     def run_peak_detection(
         self,
-        pattern: Union[Path, np.ndarray, str],
+        pattern: Path | np.ndarray | str,
+        wavelength: Literal["Cu", "Co", "Cr", "Fe", "Mo"] | float = "Cu",
         instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
         show_progress: bool = False,
         *,
@@ -63,7 +66,11 @@ class EflechWorker:
                     raise ValueError(f"Unknown pattern file type: {pattern.suffix}")
 
             control_file_path = self.generate_control_file(
-                pattern_path_temp, instrument_name, wmin=wmin, wmax=wmax
+                pattern_path_temp,
+                wavelength=wavelength,
+                instrument_name=instrument_name,
+                wmin=wmin,
+                wmax=wmax,
             )
 
             self.run_eflech(
@@ -86,6 +93,7 @@ class EflechWorker:
     @staticmethod
     def generate_control_file(
         pattern_path: Path,
+        wavelength: Literal["Cu", "Co", "Cr", "Fe", "Mo"] | float,
         instrument_name: str,
         *,
         wmin: float = None,
@@ -94,7 +102,7 @@ class EflechWorker:
     ) -> Path:
         control_file_str = f"""
             VERZERR={instrument_name}.geq
-            LAMBDA=CU
+            {f"LAMBDA={wavelength.upper()}" if isinstance(wavelength, str) else f"SYNCHROTRON={wavelength:.4f}"}
             % Measured data
             VAL[1]={pattern_path.name}
             {f"WMIN={wmin}" if wmin is not None else ""}
@@ -177,12 +185,18 @@ class EflechWorker:
         if len(content) < 2:
             return peak_list
 
+        wavelength = re.search(r"LAMBDA=(\d+(\.\d+)?)", content[0])
+        if wavelength:
+            wavelength = get_wavelength(wavelength.group(1))
+        else:
+            # If the LAMBDA line is not found, try to find the SYNCHROTRON line
+            # and use it as the wavelength
+            wavelength = re.search("SYNCHROTRON=(\d+(\.\d+)?)", content[0])
+            wavelength = float(wavelength.group(1)) if wavelength else 0.0
+
         peak_num = re.search(r"PEAKZAHL=(\d+)", content[0])
         pol = re.search(r"POL=(\d+(\.\d+)?)", content[0])
-        if pol:
-            pol = float(pol.group(1))
-        else:
-            pol = 1.0
+        pol = float(pol.group(1)) if pol else 1.0
 
         if not peak_num:
             return peak_list
@@ -202,16 +216,17 @@ class EflechWorker:
                 rp = int(numbers[0])
                 intensity = float(numbers[1])
                 d_inv = float(numbers[2])
-                if (gsum := re.search(r"GSUM=(\d+(\.\d+)?)", content[i])) is None:
+                if (
+                    gsum := re.search(r"GSUM=(\d+(\.\d+)?)", content[i])
+                ) is None:  # noqa: SIM108
                     gsum = 1.0
                 else:
                     gsum = float(gsum.group(1))
-                # TODO: change the wavelength to the user-specified value
                 intensity = intensity_correction(
                     intensity=intensity,
                     d_inv=d_inv,
                     gsum=gsum,
-                    wavelength=0.15406,
+                    wavelength=wavelength,
                     pol=pol,
                 )
 

@@ -12,7 +12,7 @@ import sys
 import warnings
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Union
+from typing import Literal, TYPE_CHECKING, Union
 
 import numpy as np
 from monty.json import MontyDecoder
@@ -543,3 +543,30 @@ def get_head_of_compositional_cluster(paths: list[str | Path]) -> Composition:
             return comp
 
     return sorted_comps[0]
+
+
+def get_wavelength(
+    wavelength_or_target_metal: Literal["Cu", "Co", "Cr", "Fe", "Mo"] | float
+) -> float:
+    element_data = {
+        "cu": (1.540598, 1.544426, 1.392250),
+        "cr": (2.289760, 2.293663, 2.084920),
+        "fe": (1.936042, 1.93998, 1.75661),
+        "co": (1.789010, 1.792900, 1.620830),
+        "ni": (1.65791, 1.661747, 1.48862),
+        "mo": (0.709319, 0.713609, 0.632305),
+        "ag": (0.5594075, 0.563798, 0.497069),
+        "w": (0.20901, 0.213828, 0.184374),
+    }
+    if isinstance(wavelength_or_target_metal, str):
+        if wavelength_or_target_metal.lower() in element_data:
+            return (
+                # convert to nm
+                element_data[wavelength_or_target_metal.lower()][0]
+                / 10
+            )
+        raise ValueError(
+            f"Invalid target metal: {wavelength_or_target_metal}. "
+            "Please choose from 'Cu', 'Co', 'Cr', 'Fe', 'Mo'."
+        )
+    return wavelength_or_target_metal

@@ -39,6 +39,7 @@ logger = get_logger(__name__, level="INFO")
 def remote_do_refinement_no_saving(
     pattern_path: Path,
     cif_paths: list[Path],
+    wavelength: Literal["Cu", "Co", "Cr", "Fe", "Mo"] | float,
     instrument_name: str,
     phase_params: dict[str, ...] | None,
     refinement_params: dict[str, float] | None,
@@ -54,6 +55,7 @@ def remote_do_refinement_no_saving(
         result = do_refinement_no_saving(
             pattern_path,
             cif_paths,
+            wavelength=wavelength,
             instrument_name=instrument_name,
             phase_params=phase_params,
             refinement_params=refinement_params,
@@ -114,6 +116,7 @@ def batch_peak_matching(
 def batch_refinement(
     pattern_path: Path,
     cif_paths: list[list[RefinementPhase]],
+    wavelength: Literal["Cu", "Co", "Cr", "Fe", "Mo"] | float = "Cu",
     instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
     phase_params: dict[str, ...] | None = None,
     refinement_params: dict[str, float] | None = None,
@@ -122,6 +125,7 @@ def batch_refinement(
         remote_do_refinement_no_saving.remote(
             pattern_path,
             cif_paths,
+            wavelength=wavelength,
             instrument_name=instrument_name,
             phase_params=phase_params,
             refinement_params=refinement_params,
@@ -367,6 +371,7 @@ class BaseSearchTree(Tree):
         refine_params: dict[str, ...] | None,
         phase_params: dict[str, ...] | None,
         intensity_threshold: float,
+        wavelength: Literal["Cu", "Co", "Cr", "Fe", "Mo"] | float,
         instrument_name: str,
         maximum_grouping_distance: float,
         max_phases: float,
@@ -383,6 +388,7 @@ class BaseSearchTree(Tree):
         self.refinement_params = refine_params if refine_params is not None else {}
         self.phase_params = phase_params if phase_params is not None else {}
         self.intensity_threshold = intensity_threshold
+        self.wavelength = wavelength
         self.instrument_name = instrument_name
         self.maximum_grouping_distance = maximum_grouping_distance
         self.max_phases = max_phases
@@ -830,6 +836,7 @@ class BaseSearchTree(Tree):
         return batch_refinement(
             self.pattern_path,
             all_references,
+            wavelength=self.wavelength,
             instrument_name=self.instrument_name,
             phase_params=self.phase_params,
             refinement_params=self.refinement_params,
@@ -848,6 +855,7 @@ class BaseSearchTree(Tree):
             refine_params=self.refinement_params,
             phase_params=self.phase_params,
             intensity_threshold=self.intensity_threshold,
+            wavelength=self.wavelength,
             instrument_name=self.instrument_name,
             maximum_grouping_distance=self.maximum_grouping_distance,
             pinned_phases=self.pinned_phases,
@@ -881,6 +889,7 @@ class BaseSearchTree(Tree):
             refine_params=search_tree.refinement_params,
             phase_params=search_tree.phase_params,
             intensity_threshold=search_tree.intensity_threshold,
+            wavelength=search_tree.wavelength,
             instrument_name=search_tree.instrument_name,
             maximum_grouping_distance=search_tree.maximum_grouping_distance,
             pinned_phases=search_tree.pinned_phases,
@@ -938,6 +947,7 @@ class SearchTree(BaseSearchTree):
         pinned_phases: list[RefinementPhase | Path | str] | None = None,
         refine_params: dict[str, ...] | None = None,
         phase_params: dict[str, ...] | None = None,
+        wavelength: Literal["Cu", "Co", "Cr", "Fe", "Mo"] | float = "Cu",
         instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
         maximum_grouping_distance: float = 0.1,
         max_phases: float = 5,
@@ -973,6 +983,7 @@ class SearchTree(BaseSearchTree):
             refine_params=refine_params,
             phase_params=phase_params,
             intensity_threshold=0.0,  # placeholder, will be updated later
+            wavelength=wavelength,
             instrument_name=instrument_name,
             maximum_grouping_distance=maximum_grouping_distance,
             max_phases=max_phases,
@@ -1006,7 +1017,10 @@ class SearchTree(BaseSearchTree):
                 f"will be ignored. The wmax will be automatically adjusted."
             )
         peak_list = detect_peaks(
-            self.pattern_path, wmin=self.refinement_params.get("wmin", None), wmax=None
+            self.pattern_path,
+            wavelength=self.wavelength,
+            wmin=self.refinement_params.get("wmin", None),
+            wmax=None,
         )
         optimal_wmax = get_optimal_max_two_theta(peak_list)
         logger.info(f"The wmax is automatically adjusted to {optimal_wmax}.")

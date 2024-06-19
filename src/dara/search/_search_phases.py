@@ -5,7 +5,7 @@ from __future__ import annotations
 import copy
 from collections import deque
 from traceback import print_exc
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import ray
 
@@ -50,6 +50,7 @@ def search_phases(
     phases: list[Path | str | RefinementPhase],
     pinned_phases: list[Path | str | RefinementPhase] | None = None,
     max_phases: int = 5,
+    wavelength: Literal["Cu", "Co", "Cr", "Fe", "Mo"] | float = "Cu",
     instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
     phase_params: dict[str, ...] | None = None,
     refinement_params: dict[str, ...] | None = None,
@@ -65,6 +66,8 @@ def search_phases(
         phases: the paths to the CIF files
         pinned_phases: the paths to the pinned phases, which will be included in all the results
         max_phases: the maximum number of phases to refine
+        wavelength: the wavelength of the X-ray. It can be either a float or one of the following strings:
+            "Cu", "Co", "Cr", "Fe", "Mo", indicating the material of the X-ray source
         instrument_name: the name of the instrument
         phase_params: the parameters for the phase search
         refinement_params: the parameters for the refinement
@@ -88,6 +91,7 @@ def search_phases(
         cif_paths=phases,
         pinned_phases=pinned_phases,
         rpb_threshold=rpb_threshold,
+        wavelength=wavelength,
         instrument_name=instrument_name,
         refine_params=refinement_params,
         phase_params=phase_params,

@@ -5,7 +5,7 @@ from __future__ import annotations
 import shutil
 import tempfile
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -67,6 +67,7 @@ class RefinementPhase(BaseModel, frozen=True):
 def do_refinement(
     pattern_path: Path | str,
     phases: list[RefinementPhase | Path | str],
+    wavelength: Literal["Cu", "Co", "Cr", "Fe", "Mo"] | float = "Cu",
     instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
     working_dir: Path | str | None = None,
     phase_params: dict | None = None,
@@ -111,9 +112,10 @@ def do_refinement(
         str_paths.append(str_path)
 
     control_file_path = generate_control_file(
-        pattern_path,
-        str_paths,
-        instrument_name,
+        pattern_path=pattern_path,
+        str_paths=str_paths,
+        instrument_name=instrument_name,
+        wavelength=wavelength,
         working_dir=working_dir,
         **refinement_params,
     )
@@ -125,7 +127,8 @@ def do_refinement(
 
 def do_refinement_no_saving(
     pattern_path: Path,
-    phase_paths: list[RefinementPhase | Path | str],
+    phases: list[RefinementPhase | Path | str],
+    wavelength: Literal["Cu", "Co", "Cr", "Fe", "Mo"] | float = "Cu",
     instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
     phase_params: dict | None = None,
     refinement_params: dict | None = None,
@@ -136,9 +139,10 @@ def do_refinement_no_saving(
         working_dir = Path(tmpdir)
 
         return do_refinement(
-            pattern_path,
-            phase_paths,
-            instrument_name,
+            pattern_path=pattern_path,
+            phases=phases,
+            wavelength=wavelength,
+            instrument_name=instrument_name,
             working_dir=working_dir,
             phase_params=phase_params,
             refinement_params=refinement_params,

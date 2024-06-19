@@ -6,6 +6,7 @@ import re
 import shutil
 import warnings
 from pathlib import Path
+from typing import Literal
 
 import numpy as np
 
@@ -38,8 +39,25 @@ def generate_control_file(
     wmin: float | None = None,
     wmax: float | None = None,
     eps2: float | str = "0_-0.01^0.01",
+    wavelength: Literal["Cu", "Co", "Cr", "Fe", "Mo"] | float = "Cu",
 ) -> Path:
-    """Generate a control file for BGMN."""
+    """
+    Generate a control file for BGMN.
+
+    Args:
+        pattern_path: the path to the pattern file. It has to be in `.xy` format
+        str_paths: the paths to the STR files
+        instrument_name: the name of the instrument
+        working_dir: the working directory
+        n_threads: the number of threads to use
+        wmin: the minimum wavelength
+        wmax: the maximum wavelength
+        eps2: the epsilon2 value, it is used to refine sample height
+        wavelength: the wavelength to use. If a float is provided, it is used as the
+            wavelength in nm (synchrotron radiation). If a string is provided, it is
+            the target material in X-ray tubes.
+
+    """
     if working_dir is None:
         control_file_path = pattern_path.parent / f"{pattern_path.stem}.sav"
     else:
@@ -81,7 +99,7 @@ def generate_control_file(
     % Theoretical instrumental function
     VERZERR={instrument_name}.geq
     % Wavelength
-    LAMBDA=CU
+    {f"LAMBDA={wavelength.upper()}" if isinstance(wavelength, str) else f"SYNCHROTRON={wavelength:.4f}"}
     {f"WMIN={wmin}" if wmin is not None else ""}
     {f"WMAX={wmax}" if wmax is not None else ""}
     % Phases
