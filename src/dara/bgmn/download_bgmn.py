@@ -17,10 +17,10 @@ def download_bgmn():
         raise Exception("Unsupported OS: " + os_name + ".")
 
     # get url
-    URL = f"https://ocf.berkeley.edu/~yuxingfei/bgmn/bgmnwin_{os_name}.zip"
+    URL = f"https://idocx.github.io/dara/bgmnwin_{os_name}.zip"
 
     # download
-    r = requests.get(URL, stream=True)
+    r = requests.get(URL, stream=True, timeout=30)
     if r.status_code != 200:
         raise Exception(
             f"Cannot download from {URL}. Please check your internet connection or contact the developer."
