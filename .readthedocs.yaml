@@ -30,3 +30,5 @@ python:
       extra_requirements:
         - docs
         - strict
+        - workflows
+        - prediction
