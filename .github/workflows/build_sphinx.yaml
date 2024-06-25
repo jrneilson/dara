@@ -23,7 +23,7 @@ jobs:
       - name: Compile sphinx
         working-directory: .
         run: |
-          python -m sphinx-build -M html ./docs ./build
+          sphinx-build -M html ./docs ./build
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         if: ${{ github.ref == 'refs/heads/main' }}
