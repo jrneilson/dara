@@ -73,15 +73,18 @@ def find_best_match(
 
     Returns
     -------
-        missing[j]: the indices of the missing peaks in the `obs peaks`
-        matched[i, j]: the indices of both the matched peaks in the `calculated peaks`
-            and the `observed peaks` extra[i]: the indices of the extra peaks in the
-            `calculated peaks`
-        wrong_intensity[i, j]: the indices of the peaks with wrong intensities in both
-          the `calculated peaks` and the `observed peaks`
-        residual_peaks (N_peak_obs, 2): the residual peaks after matching (not including
+        missing[j]:
+            the indices of the missing peaks in the ``obs peaks``
+        matched[i, j]:
+            the indices of both the matched peaks in the ``calculated peaks``
+            and the ``observed peaks`` extra[i]: the indices of the extra peaks in the
+            ``calculated peaks``
+        wrong_intensity[i, j]:
+            the indices of the peaks with wrong intensities in both
+            the ``calculated peaks`` and the ``observed peaks``
+        residual_peaks (N_peak_obs, 2):
+            the residual peaks after matching (not including
             extra peaks in peak_calc)
-
     """
     matched = []
     extra = []

@@ -163,58 +163,61 @@ def parse_lst(lst_path: Path, phase_names: list[str]) -> LstResult:
     Get results from the .lst file. This file mainly contains some numbers for the refinement.
 
     Example of the .lst file:
-    Rietveld refinement to file(s) Mg3MnNi3O8.xy
-    BGMN version 4.2.23, 8301 measured points, 78 peaks, 20 parameters
-    Start: Mon Dec 18 11:43:20 2023; End: Mon Dec 18 11:43:21 2023
-    43 iteration steps
 
-    Rp=4.14%  Rpb=50.39%  R=13.55%  Rwp=8.98% Rexp=1.47%
-    Durbin-Watson d=0.06
-    1-rho=13.6%
+    .. code-block:: none
 
-    Global parameters and GOALs
-    ****************************
-    QMg3MnNi3O8166sym=0.0700+-0.0046
-    QNiO=0.9300+-0.0046
-    EPS2=-0.001657+-0.000033
+        Rietveld refinement to file(s) Mg3MnNi3O8.xy
+        BGMN version 4.2.23, 8301 measured points, 78 peaks, 20 parameters
+        Start: Mon Dec 18 11:43:20 2023; End: Mon Dec 18 11:43:21 2023
+        43 iteration steps
 
-    Local parameters and GOALs for phase Mg3MnNi3O8166sym
-    ******************************************************
-    SpacegroupNo=166
-    HermannMauguin=R-32/m
-    XrayDensity=4.943
-    Rphase=26.64%
-    UNIT=NM
-    A=0.5898+-0.0013
-    C=1.4449+-0.0062
-    k1=1.00000
-    B1=0.00492+-0.00076
-    GEWICHT=0.0288+-0.0019
-    GrainSize(1,1,1)=64.7+-10.0
-    Atomic positions for phase Mg3MnNi3O8166sym
-    ---------------------------------------------
-      9     0.5000  0.0000  0.0000     E=(MG(1.0000))
-      3     0.0000  0.0000  0.0000     E=(MN(1.0000))
-      9     0.5000  0.0000  0.5000     E=(NI(1.0000))
-     18     0.0268 -0.0268  0.7429     E=(O(1.0000))
-      6     0.0000  0.0000  0.2511     E=(O(1.0000))
+        Rp=4.14%  Rpb=50.39%  R=13.55%  Rwp=8.98% Rexp=1.47%
+        Durbin-Watson d=0.06
+        1-rho=13.6%
 
-    Local parameters and GOALs for phase NiO
-    ******************************************************
-    SpacegroupNo=225
-    HermannMauguin=F4/m-32/m
-    XrayDensity=6.760
-    Rphase=11.31%
-    UNIT=NM
-    A=0.418697+-0.000027
-    k1=0
-    B1=0.00798+-0.00022
-    GEWICHT=0.3827+-0.0049
-    GrainSize(1,1,1)=53.2+-1.5
-    Atomic positions for phase NiO
-    ---------------------------------------------
-      4     0.0000  0.0000  0.0000     E=(NI+2(1.0000))
-      4     0.5000  0.5000  0.5000     E=(O-2(1.0000))
+        Global parameters and GOALs
+        ****************************
+        QMg3MnNi3O8166sym=0.0700+-0.0046
+        QNiO=0.9300+-0.0046
+        EPS2=-0.001657+-0.000033
+
+        Local parameters and GOALs for phase Mg3MnNi3O8166sym
+        ******************************************************
+        SpacegroupNo=166
+        HermannMauguin=R-32/m
+        XrayDensity=4.943
+        Rphase=26.64%
+        UNIT=NM
+        A=0.5898+-0.0013
+        C=1.4449+-0.0062
+        k1=1.00000
+        B1=0.00492+-0.00076
+        GEWICHT=0.0288+-0.0019
+        GrainSize(1,1,1)=64.7+-10.0
+        Atomic positions for phase Mg3MnNi3O8166sym
+        ---------------------------------------------
+          9     0.5000  0.0000  0.0000     E=(MG(1.0000))
+          3     0.0000  0.0000  0.0000     E=(MN(1.0000))
+          9     0.5000  0.0000  0.5000     E=(NI(1.0000))
+         18     0.0268 -0.0268  0.7429     E=(O(1.0000))
+          6     0.0000  0.0000  0.2511     E=(O(1.0000))
+
+        Local parameters and GOALs for phase NiO
+        ******************************************************
+        SpacegroupNo=225
+        HermannMauguin=F4/m-32/m
+        XrayDensity=6.760
+        Rphase=11.31%
+        UNIT=NM
+        A=0.418697+-0.000027
+        k1=0
+        B1=0.00798+-0.00022
+        GEWICHT=0.3827+-0.0049
+        GrainSize(1,1,1)=53.2+-1.5
+        Atomic positions for phase NiO
+        ---------------------------------------------
+          4     0.0000  0.0000  0.0000     E=(NI+2(1.0000))
+          4     0.5000  0.5000  0.5000     E=(O-2(1.0000))
 
     Args:
         lst_path:
