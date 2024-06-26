@@ -192,7 +192,8 @@ addopts = "-n auto"
 testpaths = "tests"
 
 [tool.setuptools.package-data]
-dara = ["py.typed", "data/**"]
+"dara.data" = ["**"]
+"dara" = ["py.typed"]
 
 [tool.setuptools-git-versioning]
 enabled = true
