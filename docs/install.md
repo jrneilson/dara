@@ -1,14 +1,12 @@
-# Installation via PyPI (recommended)
+# Installation of DARA
+
+## Installation from PyPI (recommended)
 
 The easiest way to install the latest release of Dara is via pip from PyPI:
 
 ```bash
 pip install dara
 ```
-## Install optional dependencies
-### Reaction Network Plugin
-If you would like to use the reaction network to remove the unlikely phases, 
-you need to install the `prediction` extra:
 
 Note that this approach will only acquire the latest release. For the most recent
 changes, you may want to install from source (see below).
@@ -19,23 +17,30 @@ This approach is recommended if you want to use the latest features and bug fixe
 a good idea to install Dara in a dedicated virtual environment to avoid conflicts with other
 Python packages.
 
-```bash 
-pip install "dara[prediction]"
+```bash
+git clone https://github.com/idocx/dara
+cd dara
+pip install -e .
 ```
 
+## Installation of optional dependencies
+
 ### Jobflow Plugin
-If you would like to use the jobflow to manage your phase searching jobs,
+
+If you would like to use the jobflow to launch phase search jobs,
 you need to install the `workflows` extra:
 
 ```bash
 pip install "dara[workflows]"
 ```
 
-## Installation from source
+### Reaction Network Plugin
+
+If you would like to use reaction-network to remove the unlikely phases,
+you need to install the `prediction` extra:
+
 ```bash
-git clone https://github.com/idocx/dara
-cd dara
-pip install -e .
+pip install "dara[prediction]"
 ```
 
 ### Special case: installation on older cluster (e.g., Lawrencium, LBNL)
