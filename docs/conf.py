@@ -19,11 +19,11 @@ from sphinx.builders.html import StandaloneHTMLBuilder
 # -- Project information -----------------------------------------------------
 
 project = "Alab Management System"
-copyright = f"{date.today().year}, UC Berkeley"
+copyright = f"{date.today().year}, Ceder Group"
 author = "Yuxing Fei, Matthew J. McDermott"
 
 # The full version, including alpha/beta/rc tags
-
+version = __version__
 release = __version__
 
 # -- General configuration ---------------------------------------------------
@@ -42,10 +42,13 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinx.ext.githubpages",
-    "recommonmark",
     "sphinx_autodoc_typehints",
     "sphinxcontrib.autodoc_pydantic",
+    "myst_nb",
+    "sphinx_design",
+    "sphinx_copybutton",
 ]
+myst_enable_extensions = ["colon_fence"]
 
 add_module_names = False
 typehints_fully_qualified = False
@@ -67,7 +70,7 @@ html_theme = "sphinx_book_theme"
 
 html_theme_options = {
     "repository_url": "https://github.com/idocx/dara",
-    "repository_branch": "main",
+    "repository_branch": "docs",
     "use_repository_button": True,
     "home_page_in_toc": True,
     "show_navbar_depth": 0,
@@ -87,6 +90,7 @@ html_theme_options = {
             "icon": "fa-brands fa-github",
         },
     ],
+    "announcement": "Currently the document is under construction.",
 }
 
 html_favicon = (Path(__file__).parent / "_static" / "logo.svg").as_posix()
@@ -98,6 +102,9 @@ html_title = "Dara Documentation"
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
 html_css_files = []
+html_js_files = [
+    "https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"
+]
 
 StandaloneHTMLBuilder.supported_image_types = [
     "image/svg+xml",
