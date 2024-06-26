@@ -325,20 +325,20 @@ def get_natural_break_results(
     # remove results that are too bad (dead end in the tree search)
     while all_rhos is None or max(all_rhos) > min(all_rhos) + 5:
         all_rhos = [result.refinement_result.lst_data.rho for result in results]
-
         if len(set(all_rhos)) > 2:
             # get the first natural break
             interval = jenkspy.jenks_breaks(all_rhos, n_classes=2)
             rho_cutoff = interval[1]
-            results = [
-                result
-                for result in results
-                if result.refinement_result.lst_data.rho <= rho_cutoff
-            ]
-            all_rhos = [result.refinement_result.lst_data.rho for result in results]
+        elif len(set(all_rhos)) == 2 and max(all_rhos) - min(all_rhos) > 10:
+            rho_cutoff = min(all_rhos) + 10
         else:
             break
-
+        results = [
+            result
+            for result in results
+            if result.refinement_result.lst_data.rho <= rho_cutoff
+        ]
+        all_rhos = [result.refinement_result.lst_data.rho for result in results]
     if sorting:
         results = sorted(results, key=lambda x: x.refinement_result.lst_data.rwp)
 
@@ -1022,6 +1022,8 @@ class SearchTree(BaseSearchTree):
             wmin=self.refinement_params.get("wmin", None),
             wmax=None,
         )
+        if len(peak_list) == 0:
+            raise ValueError("No peaks are detected in the pattern.")
         optimal_wmax = get_optimal_max_two_theta(peak_list)
         logger.info(f"The wmax is automatically adjusted to {optimal_wmax}.")
         self.refinement_params["wmax"] = optimal_wmax

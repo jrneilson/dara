@@ -90,7 +90,7 @@ html_theme_options = {
             "icon": "fa-brands fa-github",
         },
     ],
-    "announcement": "Currently the document is under construction.",
+    "announcement": "Currently the document is still under construction.",
 }
 
 html_favicon = (Path(__file__).parent / "_static" / "logo.svg").as_posix()
@@ -116,6 +116,8 @@ StandaloneHTMLBuilder.supported_image_types = [
 # autodoc pydantic settings
 autodoc_pydantic_model_show_json = True
 autodoc_pydantic_model_show_config_summary = False
+
+nb_execution_timeout = 240
 
 
 def run_apidoc(_):
