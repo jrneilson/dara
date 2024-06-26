@@ -4,7 +4,7 @@ import warnings
 from itertools import zip_longest
 from pathlib import Path
 from subprocess import TimeoutExpired
-from typing import Literal, TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import jenkspy
 import numpy as np
