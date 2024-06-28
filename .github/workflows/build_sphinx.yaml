@@ -22,16 +22,16 @@ jobs:
         run: pip install --upgrade pip
       - name: Set up dependencies
         run: pip install '.[docs,strict,workflows,prediction]'
-      - name: Compile sphinx
-        working-directory: .
-        run: |
-          sphinx-build -M html ./docs ./build
       - name: Install zip
         uses: montudor/action-zip@v1
       - name: Build zip
         run: |
           zip -r tutorial.zip notebooks/
-          mv tutorial.zip build/html/_static/
+          mv tutorial.zip docs/_static/
+      - name: Compile sphinx
+        working-directory: .
+        run: |
+          sphinx-build -M html ./docs ./build
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         if: ${{ github.ref == 'refs/heads/main' }}
