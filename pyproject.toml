@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "dara"
 description = "Data-driven automated Rietveld analysis using BGMN."
 readme = "README.md"
-version = "0.9.0"
+version = "0.9.1"
 keywords = [
     "rietveld",
     "search-match",

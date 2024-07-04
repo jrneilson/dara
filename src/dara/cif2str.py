@@ -9,17 +9,17 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
 from asteval import Interpreter
-from pymatgen.core import Lattice
 
 from dara.utils import (
     POSSIBLE_SPECIES,
     fuzzy_compare,
+    load_symmetrized_structure,
     process_phase_name,
     standardize_coords,
-    load_symmetrized_structure,
 )
 
 if TYPE_CHECKING:
+    from pymatgen.core import Lattice
     from pymatgen.core.periodic_table import DummySpecie, Element, Specie
     from pymatgen.symmetry.structure import SymmetrizedStructure
 

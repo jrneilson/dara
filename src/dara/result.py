@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import Any, Optional, TYPE_CHECKING, Union
 
 import numpy as np
 import pandas as pd
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pymatgen.core import Composition, get_el_sp, Lattice, Structure
+from pymatgen.symmetry.groups import SpaceGroup
 
 from dara.plot import visualize
 from dara.utils import (
@@ -41,6 +43,10 @@ class PhaseResult(BaseModel):
     beta: Optional[Union[float, tuple[float, float]]] = Field(None, alias="BETA")
     gamma: Optional[Union[float, tuple[float, float]]] = Field(None, alias="GAMMA")
 
+    atom_positions_string: Optional[str] = Field(
+        None, alias="Atomic positions for phase"
+    )
+
     @model_validator(mode="before")
     @classmethod
     def check_gewicht(cls, values):  # noqa: D102
@@ -53,6 +59,73 @@ class PhaseResult(BaseModel):
         else:
             values["GEWICHT_NAME"] = None
         return values
+
+    def get_structure(self) -> Structure:
+        """
+        Get the refined structure from the phase result.
+
+        Returns
+        -------
+            the refined structure as ``pymatgen.Structure`` object
+        """
+        if not self.atom_positions_string:
+            raise ValueError(
+                "Cannot find the atomic positions from the phase result. "
+                "Please make sure the result is refined using dara >= 0.9.1"
+            )
+        # get lattice
+        lattice_data = {
+            "a": self.a,
+            "b": self.b,
+            "c": self.c,
+            "alpha": self.alpha,
+            "beta": self.beta,
+            "gamma": self.gamma,
+        }
+        lattice_data = {
+            k: get_number(v) for k, v in lattice_data.items() if v is not None
+        }
+        for k in ["a", "b", "c"]:
+            if k in lattice_data:
+                lattice_data[k] = lattice_data[k] * 10
+        spacegroup = SpaceGroup.from_int_number(self.spacegroup_no)
+        crystal_system = spacegroup.crystal_system
+        if crystal_system == "trigonal":
+            crystal_system = "hexagonal"
+        lattice = getattr(Lattice, crystal_system, Lattice.from_parameters)(
+            **lattice_data
+        )
+
+        # get species and coords
+        all_coords = []
+        all_species = []
+        for line in self.atom_positions_string.split("\n"):
+            if not line:
+                continue
+            line = line.strip().split()
+            coords = [float(i) for i in line[1:4]]
+            all_coords.append(coords)
+
+            species = {}
+            specie_stirng = re.search(r"E=\((.+)\)", line[-1]).group(
+                1
+            )  # Sp(Occ), Sp(Occ), ...
+            for specie in specie_stirng.split(","):
+                specie_string = specie.split("(")[0].capitalize()
+                # parse the specie into pymatgen Species
+                specie_string = re.sub(r"([+-])(\d+)", r"\2\1", specie_string)
+                sp = get_el_sp(specie_string)
+                occupancy = float(re.search(r"\((\d+\.\d+)\)", specie).group(1))
+                species[sp] = occupancy
+            species = Composition(species)
+            all_species.append(species)
+
+        return Structure.from_spacegroup(
+            sg=self.spacegroup_no,
+            lattice=lattice,
+            species=all_species,
+            coords=all_coords,
+        )
 
 
 class LstResult(BaseModel):
@@ -293,6 +366,15 @@ def parse_lst(lst_path: Path, phase_names: list[str]) -> LstResult:
         phase_name: parse_section(phase_result)
         for phase_name, phase_result in zip(phase_names, phases_results)
     }
+
+    # add atomic positions
+    for phase_name, phase_result in zip(phase_names, phases_results):
+        atom_section = re.search(
+            rf"Atomic positions for phase .+?\n(-+)\n(.*?)$",
+            phase_result,
+            re.DOTALL,
+        ).group(2)
+        result["phases_results"][phase_name]["atom_positions_string"] = atom_section
     return LstResult(**result)
 
 
