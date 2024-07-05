@@ -196,6 +196,19 @@ class RefinementResult(BaseModel):
             weights = {k: v / tot for k, v in weights.items()}
         return dict(sorted(weights.items(), key=lambda item: item[1], reverse=True))
 
+    def export_structure(self, phase_name: str) -> Structure:
+        """
+        Export the refined structure from the phase result.
+
+        Args:
+            phase_name: the name of the phase
+
+        Returns
+        -------
+            the refined structure as ``pymatgen.Structure`` object
+        """
+        return self.lst_data.phases_results[phase_name].get_structure()
+
 
 class ParseError(Exception):
     """Error when parsing the result."""
