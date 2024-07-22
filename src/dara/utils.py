@@ -545,9 +545,7 @@ def get_head_of_compositional_cluster(paths: list[str | Path]) -> Composition:
     return sorted_comps[0]
 
 
-def get_wavelength(
-    wavelength_or_target_metal: Literal["Cu", "Co", "Cr", "Fe", "Mo"] | float
-) -> float:
+def get_wavelength(wavelength_or_target_metal: float | str) -> float:
     element_data = {
         "cu": (1.540598, 1.544426, 1.392250),
         "cr": (2.289760, 2.293663, 2.084920),
@@ -558,6 +556,10 @@ def get_wavelength(
         "ag": (0.5594075, 0.563798, 0.497069),
         "w": (0.20901, 0.213828, 0.184374),
     }
+    try:
+        wavelength_or_target_metal = float(wavelength_or_target_metal)
+    except ValueError:
+        pass
     if isinstance(wavelength_or_target_metal, str):
         if wavelength_or_target_metal.lower() in element_data:
             return (
