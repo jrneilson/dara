@@ -17,10 +17,16 @@ class XRDData(MSONable):
     XRD data formats. This class ensures that all XRD data can be serialized.
     """
 
-    def __init__(self, angles: list | np.ndarray, intensities: list | np.ndarray):
+    def __init__(
+        self,
+        angles: list | np.ndarray,
+        intensities: list | np.ndarray,
+        errors: list | np.ndarray | None = None,
+    ):
         """Initialize XRD data from angles (2-theta values) and intensities/counts."""
         self._angles = np.array(angles)
         self._intensities = np.array(intensities)
+        self._errors = np.array(errors) if errors is not None else None
 
     @property
     def angles(self) -> np.ndarray:
@@ -31,6 +37,11 @@ class XRDData(MSONable):
     def intensities(self) -> np.ndarray:
         """Intensity values (counts)."""
         return self._intensities
+
+    @property
+    def errors(self) -> np.ndarray | None:
+        """Errors in intensity values."""
+        return self._errors
 
     def plot(self, style="line", ax=None, **kwargs):
         """Plot XRD data.
@@ -73,11 +84,18 @@ class XRDData(MSONable):
         -------
             filename of saved file
         """
-        np.savetxt(
-            Path(fn).as_posix(),
-            np.column_stack((self.angles, self.intensities)),
-            fmt="%f",
-        )
+        if self.errors is not None:
+            np.savetxt(
+                Path(fn).as_posix(),
+                np.column_stack((self.angles, self.intensities, self.errors)),
+                fmt="%f",
+            )
+        else:
+            np.savetxt(
+                Path(fn).as_posix(),
+                np.column_stack((self.angles, self.intensities)),
+                fmt="%f",
+            )
 
 
 class RawFile(XRDData):
@@ -146,15 +164,20 @@ class XRDMLFile(XRDData):
 class XYFile(XRDData):
     """XY file class, useful for loading .xy data."""
 
-    def __init__(self, angles, intensities):
+    def __init__(self, angles, intensities, errors: list | np.ndarray | None = None):
         super().__init__(angles, intensities)
 
     @classmethod
     def from_file(cls, path: str | Path) -> XYFile:
         """Load data from a .xy file."""
         path = Path(path)
-        angles, intensities = np.loadtxt(Path(path), unpack=True)
-        return cls(angles, intensities)
+        data = np.loadtxt(path, unpack=True)
+        if len(data) == 2:
+            angles, intensities = data
+            errors = None
+        else:
+            angles, intensities, errors = data
+        return cls(angles, intensities, errors)
 
 
 def load_xrdml(file: Path) -> dict:
@@ -166,13 +189,19 @@ def load_xrdml(file: Path) -> dict:
 def get_xrdml_data(xrd_dict: dict) -> tuple[np.ndarray, np.ndarray]:
     """Get angles and intensities from an XRDML dictionary."""
     min_angle = float(
-        xrd_dict["xrdMeasurements"]["xrdMeasurement"]["scan"]["dataPoints"]["positions"][0]["startPosition"]
+        xrd_dict["xrdMeasurements"]["xrdMeasurement"]["scan"]["dataPoints"][
+            "positions"
+        ][0]["startPosition"]
     )
     max_angle = float(
-        xrd_dict["xrdMeasurements"]["xrdMeasurement"]["scan"]["dataPoints"]["positions"][0]["endPosition"]
+        xrd_dict["xrdMeasurements"]["xrdMeasurement"]["scan"]["dataPoints"][
+            "positions"
+        ][0]["endPosition"]
     )
 
-    intensities = xrd_dict["xrdMeasurements"]["xrdMeasurement"]["scan"]["dataPoints"]["counts"]["#text"]
+    intensities = xrd_dict["xrdMeasurements"]["xrdMeasurement"]["scan"]["dataPoints"][
+        "counts"
+    ]["#text"]
     intensities = np.array([float(val) for val in intensities.split()])
     angles = np.linspace(min_angle, max_angle, len(intensities))
     return angles, intensities
@@ -201,7 +230,8 @@ def hex2int(hex_string: bytes) -> int:
 
 def load_raw(file: Path | str) -> tuple[tuple[np.ndarray, np.ndarray], bytes]:
     """Convert raw file to xy data."""
-    content = open(file, "rb").read()
+    with open(file, "rb") as f:
+        content = f.read()
     size_float = 4  # Assuming 4 bytes for a float
     size_int = 4  # Assuming 4 bytes for an int
 
@@ -215,7 +245,9 @@ def load_raw(file: Path | str) -> tuple[tuple[np.ndarray, np.ndarray], bytes]:
 
     for j in range(count):
         ang = start_ang + (j / (count - 1)) * (end_ang - start_ang)
-        its = hex2float(content[start_idx + j * size_float : start_idx + (j + 1) * size_float])
+        its = hex2float(
+            content[start_idx + j * size_float : start_idx + (j + 1) * size_float]
+        )
         angles[j] = ang
         intensities[j] = its
 

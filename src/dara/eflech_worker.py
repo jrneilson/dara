@@ -57,7 +57,11 @@ class EflechWorker:
             else:
                 if isinstance(pattern, str):
                     pattern = Path(pattern)
-                if pattern.suffix == ".xy" or pattern.suffix == ".txt":
+                if (
+                    pattern.suffix == ".xy"
+                    or pattern.suffix == ".txt"
+                    or pattern.suffix == ".xye"
+                ):
                     pattern_path_temp = copy_xy_pattern(pattern, temp_dir)
                 elif pattern.suffix == ".xrdml":
                     pattern_path_temp = xrdml2xy(pattern, temp_dir)
