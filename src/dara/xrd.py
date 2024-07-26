@@ -165,7 +165,7 @@ class XYFile(XRDData):
     """XY file class, useful for loading .xy data."""
 
     def __init__(self, angles, intensities, errors: list | np.ndarray | None = None):
-        super().__init__(angles, intensities)
+        super().__init__(angles, intensities, errors)
 
     @classmethod
     def from_file(cls, path: str | Path) -> XYFile:
