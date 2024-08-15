@@ -17,7 +17,11 @@ def copy_instrument_files(instrument_name: str, working_dir: Path) -> None:
     """Copy the instrument files to the working directory."""
     instrument_path = Path(__file__).parent / "data" / "BGMN-Templates" / "Devices"
 
-    for file in instrument_path.glob(f"{instrument_name}.*"):
+    all_files = list(instrument_path.glob(f"{instrument_name}.*"))
+    if not all_files:
+        raise ValueError(f"No files found for instrument {instrument_name}")
+
+    for file in all_files:
         shutil.copy(file, working_dir)
 
 
@@ -27,6 +31,21 @@ def copy_xy_pattern(pattern_path: Path, working_dir: Path) -> Path:
     if pattern_path.parent != working_dir:
         shutil.copy(pattern_path, working_dir)
     return working_dir / pattern_path.name
+
+
+def trim_pattern(xy_content: np.ndarray) -> np.ndarray:
+    """Trim the pattern to remove negative intensities."""
+    if xy_content[:, 1].min() <= 0:
+        warnings.warn(
+            "Pattern contains negative or zero intensities. Setting them to 1e-6."
+        )
+        xy_content[:, 1] = np.clip(xy_content[:, 1], 1e-6, None)
+
+    if xy_content[:, 1].max() < 1.0:
+        warnings.warn("Pattern contains intensities less than 1. Setting them to 1e-6.")
+        xy_content[:, 0] = np.clip(xy_content[:, 0], 1, None)
+
+    return xy_content
 
 
 def generate_control_file(
@@ -73,12 +92,8 @@ def generate_control_file(
     except ValueError as e:
         raise ValueError(f"Could not load pattern file {pattern_path}") from e
 
-    if xy_content[:, 1].min() <= 0:
-        warnings.warn(
-            "Pattern contains negative or zero intensities. Setting them to 1e-6."
-        )
-        xy_content[:, 1] = np.clip(xy_content[:, 1], 1e-6, None)
-        np.savetxt(xy_pattern_path, xy_content, fmt="%.6f")
+    xy_content = trim_pattern(xy_content)
+    np.savetxt(xy_pattern_path, xy_content, fmt="%.6f")
 
     phases_str = "\n".join(
         [f"STRUC[{i}]={str_path.name}" for i, str_path in enumerate(str_paths, start=1)]

@@ -5,13 +5,17 @@ import re
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Literal, Union
+from typing import Literal
 
 import numpy as np
 import pandas as pd
 
 from dara.bgmn.download_bgmn import download_bgmn
-from dara.generate_control_file import copy_instrument_files, copy_xy_pattern
+from dara.generate_control_file import (
+    copy_instrument_files,
+    copy_xy_pattern,
+    trim_pattern,
+)
 from dara.utils import get_logger, get_wavelength, intensity_correction
 from dara.xrd import raw2xy, xrdml2xy
 
@@ -69,6 +73,10 @@ class EflechWorker:
                     pattern_path_temp = raw2xy(pattern, temp_dir)
                 else:
                     raise ValueError(f"Unknown pattern file type: {pattern.suffix}")
+
+            xy_content = np.loadtxt(pattern_path_temp, dtype=float)
+            xy_content = trim_pattern(xy_content)
+            np.savetxt(pattern_path_temp, xy_content, fmt="%.6f")
 
             control_file_path = self.generate_control_file(
                 pattern_path_temp,
@@ -150,6 +158,8 @@ class EflechWorker:
                 timeout=1800,
                 check=False,
             )
+        else:
+            raise ValueError(f"Unknown mode: {mode}")
 
         if cp.returncode:
             raise RuntimeError(
@@ -215,10 +225,11 @@ class EflechWorker:
                 rp = int(numbers[0])
                 intensity = float(numbers[1])
                 d_inv = float(numbers[2])
-                if (gsum := re.search(r"GSUM=(\d+(\.\d+)?)", content[i])) is None:
-                    gsum = 1.0
-                else:
-                    gsum = float(gsum.group(1))
+                gsum = (
+                    1.0
+                    if (gsum := re.search("GSUM=(\\d+(\\.\\d+)?)", content[i])) is None
+                    else float(gsum.group(1))
+                )
                 intensity = intensity_correction(
                     intensity=intensity,
                     d_inv=d_inv,
