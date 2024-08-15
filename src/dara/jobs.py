@@ -259,6 +259,7 @@ class PhaseSearchMaker(Maker):
                 phases=[p[0] for p in results[0].phases],
                 phase_params=final_refinement_params,
                 show_progress=True,
+                **search_kwargs,
             )
             new_best_dir_path = (
                 str(best_dir_path) + f"_rwp_{round(best_result.lst_data.rwp, 2)}"
