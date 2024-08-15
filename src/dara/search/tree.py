@@ -1019,6 +1019,7 @@ class SearchTree(BaseSearchTree):
         peak_list = detect_peaks(
             self.pattern_path,
             wavelength=self.wavelength,
+            instrument_name=self.instrument_name,
             wmin=self.refinement_params.get("wmin", None),
             wmax=None,
         )
