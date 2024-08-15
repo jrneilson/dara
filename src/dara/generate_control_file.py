@@ -41,9 +41,9 @@ def trim_pattern(xy_content: np.ndarray) -> np.ndarray:
         )
         xy_content[:, 1] = np.clip(xy_content[:, 1], 1e-6, None)
 
-    if xy_content[:, 1].max() < 1.0:
-        warnings.warn("Pattern contains intensities less than 1. Setting them to 1e-6.")
-        xy_content[:, 0] = np.clip(xy_content[:, 0], 1, None)
+    if xy_content[:, 0].min() < 1.0:
+        warnings.warn("Pattern contains 2-theta values below 1.0. Remove them.")
+        xy_content = xy_content[xy_content[:, 0] >= 1.0]
 
     return xy_content
 
