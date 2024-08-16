@@ -50,6 +50,7 @@ class EflechWorker:
         *,
         wmin: float = None,
         wmax: float = None,
+        nthreads: int = None,
     ) -> pd.DataFrame:
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_dir = Path(temp_dir)
@@ -84,6 +85,7 @@ class EflechWorker:
                 instrument_name=instrument_name,
                 wmin=wmin,
                 wmax=wmax,
+                nthreads=nthreads,
             )
 
             self.run_eflech(
@@ -99,9 +101,7 @@ class EflechWorker:
                 show_progress=show_progress,
             )
 
-            peak_list = self.parse_peak_list(temp_dir, wavelength=wavelength)
-
-            return peak_list
+            return self.parse_peak_list(temp_dir, wavelength=wavelength)
 
     @staticmethod
     def generate_control_file(
