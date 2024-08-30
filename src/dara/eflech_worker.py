@@ -108,8 +108,8 @@ class EflechWorker:
                     "RU value not found in teil output. The output is: \n" + teil_output
                 )
             control_file_content = control_file_path.read_text()
-            all_wmin2 = re.findall(r"WMIN2\[\d+\]==(.*?)\n", control_file_content)
-            all_wmax2 = re.findall(r"WMAX2\[\d+\]==(.*?)\n", control_file_content)
+            all_wmin2 = re.findall(r"WMIN2\[\d+]==(.*?)\n", control_file_content)
+            all_wmax2 = re.findall(r"WMAX2\[\d+]==(.*?)\n", control_file_content)
             all_wmin2 = [float(wmin) for wmin in all_wmin2]
             all_wmax2 = [float(wmax) for wmax in all_wmax2]
 
