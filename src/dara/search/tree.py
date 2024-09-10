@@ -40,7 +40,7 @@ def remote_do_refinement_no_saving(
     pattern_path: Path,
     cif_paths: list[Path],
     wavelength: Literal["Cu", "Co", "Cr", "Fe", "Mo"] | float,
-    instrument_name: str,
+    instrument_profile: str | Path,
     phase_params: dict[str, ...] | None,
     refinement_params: dict[str, float] | None,
 ) -> RefinementResult | None:
@@ -56,7 +56,7 @@ def remote_do_refinement_no_saving(
             pattern_path,
             cif_paths,
             wavelength=wavelength,
-            instrument_name=instrument_name,
+            instrument_profile=instrument_profile,
             phase_params=phase_params,
             refinement_params=refinement_params,
         )
@@ -117,7 +117,7 @@ def batch_refinement(
     pattern_path: Path,
     cif_paths: list[list[RefinementPhase]],
     wavelength: Literal["Cu", "Co", "Cr", "Fe", "Mo"] | float = "Cu",
-    instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
+    instrument_profile: str | Path = "Aeris-fds-Pixcel1d-Medipix3",
     phase_params: dict[str, ...] | None = None,
     refinement_params: dict[str, float] | None = None,
 ) -> list[RefinementResult]:
@@ -126,7 +126,7 @@ def batch_refinement(
             pattern_path,
             cif_paths,
             wavelength=wavelength,
-            instrument_name=instrument_name,
+            instrument_profile=instrument_profile,
             phase_params=phase_params,
             refinement_params=refinement_params,
         )
@@ -356,7 +356,7 @@ class BaseSearchTree(Tree):
         refine_params: the refinement parameters, it will be passed to the refinement function.
         phase_params: the phase parameters, it will be passed to the refinement function.
         intensity_threshold: the intensity threshold to tell if a peak is significant
-        instrument_name: the name of the instrument, it will be passed to the refinement function.
+        instrument_profile: the name/path of the instrument file, it will be passed to the refinement function.
         maximum_grouping_distance: the maximum grouping distance, default to 0.1
         max_phases: the maximum number of phases
         rpb_threshold: the minimum RPB improvement in each step
@@ -372,7 +372,7 @@ class BaseSearchTree(Tree):
         phase_params: dict[str, ...] | None,
         intensity_threshold: float,
         wavelength: Literal["Cu", "Co", "Cr", "Fe", "Mo"] | float,
-        instrument_name: str,
+        instrument_profile: str | Path,
         maximum_grouping_distance: float,
         max_phases: float,
         rpb_threshold: float,
@@ -389,7 +389,7 @@ class BaseSearchTree(Tree):
         self.phase_params = phase_params if phase_params is not None else {}
         self.intensity_threshold = intensity_threshold
         self.wavelength = wavelength
-        self.instrument_name = instrument_name
+        self.instrument_profile = instrument_profile
         self.maximum_grouping_distance = maximum_grouping_distance
         self.max_phases = max_phases
         self.pinned_phases = pinned_phases
@@ -837,7 +837,7 @@ class BaseSearchTree(Tree):
             self.pattern_path,
             all_references,
             wavelength=self.wavelength,
-            instrument_name=self.instrument_name,
+            instrument_profile=self.instrument_profile,
             phase_params=self.phase_params,
             refinement_params=self.refinement_params,
         )
@@ -856,7 +856,7 @@ class BaseSearchTree(Tree):
             phase_params=self.phase_params,
             intensity_threshold=self.intensity_threshold,
             wavelength=self.wavelength,
-            instrument_name=self.instrument_name,
+            instrument_profile=self.instrument_profile,
             maximum_grouping_distance=self.maximum_grouping_distance,
             pinned_phases=self.pinned_phases,
         )
@@ -890,7 +890,7 @@ class BaseSearchTree(Tree):
             phase_params=search_tree.phase_params,
             intensity_threshold=search_tree.intensity_threshold,
             wavelength=search_tree.wavelength,
-            instrument_name=search_tree.instrument_name,
+            instrument_profile=search_tree.instrument_profile,
             maximum_grouping_distance=search_tree.maximum_grouping_distance,
             pinned_phases=search_tree.pinned_phases,
             record_peak_matcher_scores=search_tree.record_peak_matcher_scores,
@@ -934,7 +934,7 @@ class SearchTree(BaseSearchTree):
         pinned_phases: the phases that will be included in all the refinement
         refine_params: the refinement parameters, it will be passed to the refinement function.
         phase_params: the phase parameters, it will be passed to the refinement function.
-        instrument_name: the name of the instrument, it will be passed to the refinement function.
+        instrument_profile: the name/path of the instrument file, it will be passed to the refinement function.
         maximum_grouping_distance: the maximum grouping distance, default to 0.1
         max_phases: the maximum number of phases, note that the pinned phases are COUNTED as well
         rpb_threshold: deprecated, will be removed in the future
@@ -948,7 +948,7 @@ class SearchTree(BaseSearchTree):
         refine_params: dict[str, ...] | None = None,
         phase_params: dict[str, ...] | None = None,
         wavelength: Literal["Cu", "Co", "Cr", "Fe", "Mo"] | float = "Cu",
-        instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
+        instrument_profile: str | Path = "Aeris-fds-Pixcel1d-Medipix3",
         maximum_grouping_distance: float = 0.1,
         max_phases: float = 5,
         rpb_threshold: float = 4,
@@ -975,20 +975,20 @@ class SearchTree(BaseSearchTree):
             )
 
         super().__init__(
+            pattern_path,
+            None,
+            None,
+            refine_params,
+            phase_params,
+            0.0,
+            wavelength,
+            instrument_profile,
+            maximum_grouping_distance,
+            max_phases,
+            rpb_threshold,
+            self.pinned_phases,
+            record_peak_matcher_scores,
             *args,
-            pattern_path=pattern_path,
-            all_phases_result=None,  # placeholder, will be updated later
-            peak_obs=None,  # placeholder, will be updated later
-            rpb_threshold=rpb_threshold,
-            refine_params=refine_params,
-            phase_params=phase_params,
-            intensity_threshold=0.0,  # placeholder, will be updated later
-            wavelength=wavelength,
-            instrument_name=instrument_name,
-            maximum_grouping_distance=maximum_grouping_distance,
-            max_phases=max_phases,
-            pinned_phases=self.pinned_phases,
-            record_peak_matcher_scores=record_peak_matcher_scores,
             **kwargs,
         )
 
@@ -1019,7 +1019,7 @@ class SearchTree(BaseSearchTree):
         peak_list = detect_peaks(
             self.pattern_path,
             wavelength=self.wavelength,
-            instrument_name=self.instrument_name,
+            instrument_profile=self.instrument_profile,
             wmin=self.refinement_params.get("wmin", None),
             wmax=None,
         )

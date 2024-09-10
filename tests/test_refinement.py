@@ -21,7 +21,7 @@ class TestRefinement(unittest.TestCase):
             result = do_refinement(
                 pattern_path,
                 cif_paths,
-                instrument_name="Aeris-fds-Pixcel1d-Medipix3",
+                instrument_profile="Aeris-fds-Pixcel1d-Medipix3",
                 working_dir=tmpdir,
             )
             self.assertLess(result.lst_data.rwp, 8)

@@ -30,8 +30,6 @@ logging.basicConfig(level=logging.WARNING)
 class CIF2StrError(Exception):
     """CIF2Str error."""
 
-    pass
-
 
 def process_specie_string(sp: str | Specie | Element | DummySpecie) -> str:
     """Reverse the charge notation of a species."""
@@ -223,7 +221,7 @@ def make_spacegroup_setting_str(spacegroup_setting: dict[str, Any]) -> str:
 def make_lattice_parameters_str(
     spacegroup_setting: dict[str, Any],
     structure: SymmetrizedStructure,
-    lattice_range: float,
+    lattice_range: float | Literal["fixed"],
 ) -> str:
     """Make the lattice parameters string."""
     crystal_system = spacegroup_setting["setting"]["Lattice"]
@@ -231,12 +229,17 @@ def make_lattice_parameters_str(
         structure.lattice, crystal_system
     )
 
-    lattice_parameters_str = " ".join(
-        [
-            f"PARAM={k}={v:.5f}_{v * (1 - lattice_range):.5f}^{v * (1 + lattice_range):.5f}"
-            for k, v in lattice_parameters.items()
-        ]
-    )
+    if lattice_range == "fixed":
+        lattice_parameters_str = " ".join(
+            [f"{k}={v:.5f}" for k, v in lattice_parameters.items()]
+        )
+    else:
+        lattice_parameters_str = " ".join(
+            [
+                f"PARAM={k}={v:.5f}_{v * (1 - lattice_range):.5f}^{v * (1 + lattice_range):.5f}"
+                for k, v in lattice_parameters.items()
+            ]
+        )
     lattice_parameters_str += " //"
     return lattice_parameters_str
 
@@ -263,6 +266,7 @@ def cif2str(
     k1: str = "0_0^0.01",
     k2: str = "0_0^0.01",
     b1: str = "0_0^0.01",
+    lebail: bool = False,
 ) -> Path:
     """
     Convert CIF to Str format.
@@ -278,6 +282,7 @@ def cif2str(
         k1: the first peak parameter to be refined. Read more in the BGMN manual.
         k2: the second peak parameter to be refined. Read more in the BGMN manual.
         b1: the third peak parameter to be refined. Read more in the BGMN manual.
+        lebail: whether to use the Le Bail method
 
     An example of the output .str file:
 
@@ -352,6 +357,10 @@ def cif2str(
 
     # add RP
     str_text += make_peak_parameter_str(k1, k2, b1, gewicht, rp) + "\n"
+
+    # add lebail
+    if lebail:
+        str_text += "LeBail=1\n"
 
     # add goals
     str_text += f"GOAL:{phase_name}=GEWICHT*ifthenelse(ifdef(d),exp(my*d*3/4),1) //\nGOAL=GrainSize(1,1,1) //\n"

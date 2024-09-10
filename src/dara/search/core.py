@@ -51,7 +51,7 @@ def search_phases(
     pinned_phases: list[Path | str | RefinementPhase] | None = None,
     max_phases: int = 5,
     wavelength: Literal["Cu", "Co", "Cr", "Fe", "Mo"] | float = "Cu",
-    instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
+    instrument_profile: str | Path = "Aeris-fds-Pixcel1d-Medipix3",
     phase_params: dict[str, ...] | None = None,
     refinement_params: dict[str, ...] | None = None,
     return_search_tree: bool = False,
@@ -68,7 +68,7 @@ def search_phases(
         max_phases: the maximum number of phases to refine
         wavelength: the wavelength of the X-ray. It can be either a float or one of the following strings:
             "Cu", "Co", "Cr", "Fe", "Mo", indicating the material of the X-ray source
-        instrument_name: the name of the instrument
+        instrument_profile: the name of the instrument, or the path to the instrument configuration file (.geq)
         phase_params: the parameters for the phase search
         refinement_params: the parameters for the refinement
         return_search_tree: whether to return the search tree. This is mainly used for debugging purposes.
@@ -90,12 +90,12 @@ def search_phases(
         pattern_path=pattern_path,
         cif_paths=phases,
         pinned_phases=pinned_phases,
-        rpb_threshold=rpb_threshold,
-        wavelength=wavelength,
-        instrument_name=instrument_name,
         refine_params=refinement_params,
         phase_params=phase_params,
+        wavelength=wavelength,
+        instrument_profile=instrument_profile,
         max_phases=max_phases,
+        rpb_threshold=rpb_threshold,
         record_peak_matcher_scores=record_peak_matcher_scores,
     )
 

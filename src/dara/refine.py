@@ -68,7 +68,7 @@ def do_refinement(
     pattern_path: Path | str,
     phases: list[RefinementPhase | Path | str],
     wavelength: Literal["Cu", "Co", "Cr", "Fe", "Mo"] | float = "Cu",
-    instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
+    instrument_profile: str | Path = "Aeris-fds-Pixcel1d-Medipix3",
     working_dir: Path | str | None = None,
     phase_params: dict | None = None,
     refinement_params: dict | None = None,
@@ -114,9 +114,9 @@ def do_refinement(
     control_file_path = generate_control_file(
         pattern_path=pattern_path,
         str_paths=str_paths,
-        instrument_name=instrument_name,
-        wavelength=wavelength,
+        instrument_profile=instrument_profile,
         working_dir=working_dir,
+        wavelength=wavelength,
         **refinement_params,
     )
 
@@ -129,7 +129,7 @@ def do_refinement_no_saving(
     pattern_path: Path,
     phases: list[RefinementPhase | Path | str],
     wavelength: Literal["Cu", "Co", "Cr", "Fe", "Mo"] | float = "Cu",
-    instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
+    instrument_profile: str | Path = "Aeris-fds-Pixcel1d-Medipix3",
     phase_params: dict | None = None,
     refinement_params: dict | None = None,
     show_progress: bool = False,
@@ -142,7 +142,7 @@ def do_refinement_no_saving(
             pattern_path=pattern_path,
             phases=phases,
             wavelength=wavelength,
-            instrument_name=instrument_name,
+            instrument_profile=instrument_profile,
             working_dir=working_dir,
             phase_params=phase_params,
             refinement_params=refinement_params,

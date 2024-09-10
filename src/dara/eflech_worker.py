@@ -48,7 +48,7 @@ class EflechWorker:
         self,
         pattern: Path | np.ndarray | str,
         wavelength: Literal["Cu", "Co", "Cr", "Fe", "Mo"] | float = "Cu",
-        instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
+        instrument_profile: str | Path = "Aeris-fds-Pixcel1d-Medipix3",
         show_progress: bool = False,
         *,
         wmin: float = None,
@@ -59,7 +59,7 @@ class EflechWorker:
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_dir = Path(temp_dir)
 
-            copy_instrument_files(instrument_name, temp_dir)
+            instrument_name = copy_instrument_files(instrument_profile, temp_dir)
             if isinstance(pattern, np.ndarray):
                 pattern_path_temp = temp_dir / "temp.xy"
                 np.savetxt(pattern_path_temp.as_posix(), pattern, fmt="%.6f")
@@ -114,10 +114,7 @@ class EflechWorker:
             all_wmax2 = [float(wmax) for wmax in all_wmax2]
 
             two_theta_range = xy_content[-1, 0] - xy_content[0, 0]
-            print(
-                [wmax - wmin for wmin, wmax in zip(all_wmin2, all_wmax2)],
-                two_theta_range,
-            )
+
             # if teil cannot find a good split of the pattern, we will try to split it manually
             if (
                 not all_wmin2
@@ -211,6 +208,7 @@ class EflechWorker:
             )
         if cp.stdout is not None:
             return cp.stdout.decode()
+        return None
 
     def parse_peak_list(
         self,

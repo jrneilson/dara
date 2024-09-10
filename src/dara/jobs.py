@@ -149,6 +149,12 @@ class PhaseSearchMaker(Maker):
             predict_kwargs = {}
         if search_kwargs is None:
             search_kwargs = {}
+
+        # for backward compatibility
+        # the instrument_name is now instrument_profile
+        if "instrument_name" in search_kwargs:
+            search_kwargs["instrument_profile"] = search_kwargs.pop("instrument_name")
+
         if final_refinement_params is None:
             final_refinement_params = {
                 "gewicht": "SPHAR4",

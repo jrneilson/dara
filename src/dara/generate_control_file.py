@@ -13,16 +13,33 @@ import numpy as np
 from dara.utils import read_phase_name_from_str
 
 
-def copy_instrument_files(instrument_name: str, working_dir: Path) -> None:
-    """Copy the instrument files to the working directory."""
-    instrument_path = Path(__file__).parent / "data" / "BGMN-Templates" / "Devices"
+def copy_instrument_files(instrument_profile: str | Path, working_dir: Path) -> str:
+    """
+    Copy the instrument file (.geq) to the working directory.
 
-    all_files = list(instrument_path.glob(f"{instrument_name}.*"))
-    if not all_files:
-        raise ValueError(f"No files found for instrument {instrument_name}")
+    Args:
+        working_dir: the working directory
 
-    for file in all_files:
-        shutil.copy(file, working_dir)
+    Returns
+    -------
+        The name of the instrument
+    """
+    default_instrument_path = (
+        Path(__file__).parent / "data" / "BGMN-Templates" / "Devices"
+    )
+    instrument_path = Path(instrument_profile)  # try to parse as a path
+    if instrument_path.suffix != ".geq" or not instrument_path.exists():
+        instrument_profile = instrument_path.name.removesuffix(".geq")
+        instrument_path = default_instrument_path / f"{instrument_profile}.geq"
+
+    if not instrument_path.exists():
+        raise FileNotFoundError(
+            f"Could not find the instrument file ({instrument_profile} in both "
+            f"the provided path and the default path ({default_instrument_path})."
+        )
+
+    shutil.copy(instrument_path, working_dir)
+    return instrument_path.stem
 
 
 def copy_xy_pattern(pattern_path: Path, working_dir: Path) -> Path:
@@ -51,7 +68,7 @@ def trim_pattern(xy_content: np.ndarray) -> np.ndarray:
 def generate_control_file(
     pattern_path: Path,
     str_paths: list[Path],
-    instrument_name: str,
+    instrument_profile: str | Path,
     working_dir: Path | None = None,
     *,
     n_threads: int = 8,
@@ -66,7 +83,7 @@ def generate_control_file(
     Args:
         pattern_path: the path to the pattern file. It has to be in `.xy` format
         str_paths: the paths to the STR files
-        instrument_name: the name of the instrument
+        instrument_profile: the name of the instrument, if it is a path, it must be ended with `.geq`
         working_dir: the working directory
         n_threads: the number of threads to use
         wmin: the minimum wavelength
@@ -83,7 +100,9 @@ def generate_control_file(
         control_file_path = working_dir / f"{pattern_path.stem}.sav"
 
     copy_xy_pattern(pattern_path, control_file_path.parent)
-    copy_instrument_files(instrument_name, control_file_path.parent)
+    instrument_name = copy_instrument_files(
+        instrument_profile, control_file_path.parent
+    )
 
     xy_pattern_path = control_file_path.parent / pattern_path.name
 

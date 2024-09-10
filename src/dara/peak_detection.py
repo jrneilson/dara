@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 def detect_peaks(
     pattern: Path | np.ndarray,
     wavelength: Literal["Cu", "Co", "Cr", "Fe", "Mo"] | float = "Cu",
-    instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
+    instrument_profile: str | Path = "Aeris-fds-Pixcel1d-Medipix3",
     wmin: float = None,
     wmax: float = None,
     show_progress: bool = False,
@@ -25,10 +25,10 @@ def detect_peaks(
     return eflech_worker.run_peak_detection(
         pattern=pattern,
         wavelength=wavelength,
-        instrument_name=instrument_name,
+        instrument_profile=instrument_profile,
+        show_progress=show_progress,
         wmin=wmin,
         wmax=wmax,
-        show_progress=show_progress,
         nthreads=nthreads,
         timeout=timeout,
     )
