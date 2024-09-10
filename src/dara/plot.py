@@ -84,17 +84,28 @@ def visualize(
         )
     )
 
-    weight_fractions = result.get_phase_weights()
+    # if there is no phase weight, it will return an empty dictionary (not shown in the legend)
+    try:
+        weight_fractions = result.get_phase_weights()
+    except TypeError:
+        weight_fractions = {}
+
     peak_data = result.peak_data
     max_y = max(np.array(result.plot_data.y_obs) + np.array(result.plot_data.y_bkg))
-    min_y_diff = min(np.array(result.plot_data.y_obs) - np.array(result.plot_data.y_calc))
+    min_y_diff = min(
+        np.array(result.plot_data.y_obs) - np.array(result.plot_data.y_calc)
+    )
     # Adding dashed lines for phases
     for i, (phase_name, phase) in enumerate(plot_data.structs.items()):
         # add area under the curve between the curve and the plot_data["y_bkg"]
         if i >= len(colormap) - 1:
             i = i % (len(colormap) - 1)
 
-        name = f"{phase_name} ({weight_fractions[phase_name] * 100:.2f} %)" if len(weight_fractions) > 1 else phase_name
+        name = (
+            f"{phase_name} ({weight_fractions[phase_name] * 100:.2f} %)"
+            if len(weight_fractions) > 1
+            else phase_name
+        )
         fig.add_trace(
             go.Scatter(
                 x=plot_data.x,
