@@ -53,7 +53,7 @@ class EflechWorker:
         *,
         wmin: float = None,
         wmax: float = None,
-        nthreads: int = None,
+        nthreads: int = 8,
         timeout: int = 1800,
     ) -> pd.DataFrame:
         with tempfile.TemporaryDirectory() as temp_dir:
