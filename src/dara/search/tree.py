@@ -1067,7 +1067,7 @@ class SearchTree(BaseSearchTree):
         }
 
         logger.info(
-            f"Finished refining {len(all_phases_result)} phases, "
+            f"Finished refining {len(cif_paths)} phases, "
             f"with {len(cif_paths) - len(all_phases_result)} phases removed."
         )
 
