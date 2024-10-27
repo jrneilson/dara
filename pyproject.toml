@@ -48,8 +48,8 @@ dependencies = [
     "pydantic>=2.5.3",
     "pydantic-settings>=2.1.0",
     "ray>=2.9.0",
-    "numpy<2.0",  # TODO: remove this when pymatgen is updated
     "pybaselines>=1.1.0",
+    "spglib>=2.5.0",
 ]
 
 [project.optional-dependencies]
@@ -72,6 +72,7 @@ strict = [
     "ray==2.9.0",
     "numpy==1.26.4",
     "pybaselines==1.1.0",
+    "spglib==2.5.0",
 ]
 workflows = [
     "jobflow==0.1.15",
