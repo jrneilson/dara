@@ -22,8 +22,8 @@ SAVE=N
 % Output files for Geomet and MakeGeq
 %-----------------------------------------------------------------------------------------------
 
-VERZERR=synchrotron.ger
-GEQ=synchrotron.geq
+VERZERR=synchrotron_new.ger
+GEQ=synchrotron_new.geq
 
 %-----------------------------------------------------------------------------------------------
 % Goniometer
@@ -120,11 +120,21 @@ DetH=0.1000
 zweiTheta[1]=1
 zweiTheta[2]=5
 zweiTheta[3]=12
-zweiTheta[4]=20
+zweiTheta[4]=21
+zweiTheta[5]=32
+zweiTheta[6]=45
+zweiTheta[7]=59
+zweiTheta[8]=74
+zweiTheta[9]=90
+zweiTheta[10]=106
+zweiTheta[11]=121
+zweiTheta[12]=135
+zweiTheta[13]=148
+zweiTheta[14]=150
 
 % angular range (deg 2theta)
 WMIN=1
-WMAX=20
+WMAX=150
 
 % step width for the interpolation of the geometric profiles (deg 2theta)
 WSTEP=2*sin(pi*zweiTheta/180)

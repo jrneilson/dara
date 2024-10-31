@@ -2,9 +2,11 @@ SampleID:
 % Theoretical instrumental function
 VERZERR=
 % Wavelength
-SYNCHROTRON=0.04246000
+
 % Measured background
 UNT=
+% Wavelength
+LAMBDA=co
 % Phases
 % Measured data
 VAL[1]=
