@@ -495,19 +495,25 @@ class BaseSearchTree(Tree):
 
                 if new_result is None:
                     status = "error"
-                # if the new result is worse than the current result from Rwp perspective
+
                 elif (
                     node.data.current_result is not None
                     and (
-                        node.data.current_result.lst_data.rpb - new_result.lst_data.rpb
+                        # if the new result is worse than the current result from Rwp perspective
+                        node.data.current_result.lst_data.rpb
+                        - new_result.lst_data.rpb
                     )
                     < self.rpb_threshold
-                    or len(
-                        remove_unnecessary_phases(
-                            new_result, [p.path for p in new_phases], self.rpb_threshold
+                    or (  # or if removing one phase does not improve the result (indication of overfitting)
+                        len(
+                            remove_unnecessary_phases(
+                                new_result,
+                                [p.path for p in new_phases],
+                                self.rpb_threshold,
+                            )
                         )
+                        != len(new_phases)
                     )
-                    != len(new_phases)
                 ):
                     status = "no_improvement"
                 elif is_low_weight_fraction:

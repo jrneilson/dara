@@ -171,7 +171,11 @@ class XYFile(XRDData):
     def from_file(cls, path: str | Path) -> XYFile:
         """Load data from a .xy file."""
         path = Path(path)
-        data = np.loadtxt(path, unpack=True)
+        try:
+            data = np.loadtxt(path, unpack=True)
+        except ValueError:
+            # Try to load the file with a comma delimiter
+            data = np.loadtxt(path, unpack=True, delimiter=",")
         if len(data) == 2:
             angles, intensities = data
             errors = None

@@ -17,6 +17,8 @@ def detect_peaks(
     instrument_profile: str | Path = "Aeris-fds-Pixcel1d-Medipix3",
     wmin: float = None,
     wmax: float = None,
+    epsilon: float = None,
+    possible_changes: str = None,
     show_progress: bool = False,
     nthreads: int = 8,
     timeout: int = 1800,
@@ -29,6 +31,8 @@ def detect_peaks(
         show_progress=show_progress,
         wmin=wmin,
         wmax=wmax,
+        epsilon=epsilon,
+        possible_changes=possible_changes,
         nthreads=nthreads,
         timeout=timeout,
     )

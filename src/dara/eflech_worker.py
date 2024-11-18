@@ -53,6 +53,8 @@ class EflechWorker:
         *,
         wmin: float = None,
         wmax: float = None,
+        epsilon: float = None,
+        possible_changes: str = None,
         nthreads: int = 8,
         timeout: int = 1800,
     ) -> pd.DataFrame:
@@ -89,6 +91,8 @@ class EflechWorker:
                 instrument_name=instrument_name,
                 wmin=wmin,
                 wmax=wmax,
+                epsilon=epsilon,
+                possible_changes=possible_changes,
                 nthreads=nthreads,
             )
 
@@ -147,6 +151,8 @@ class EflechWorker:
         *,
         wmin: float = None,
         wmax: float = None,
+        possible_changes: str = None,
+        epsilon: float = None,
         nthreads: int = None,
     ) -> Path:
         control_file_str = f"""
@@ -156,8 +162,9 @@ class EflechWorker:
             VAL[1]={pattern_path.name}
             {f"WMIN={wmin}" if wmin is not None else ""}
             {f"WMAX={wmax}" if wmax is not None else ""}
+            {f"EPSILON={epsilon}" if epsilon is not None else ""}
             NTHREADS={nthreads if nthreads is not None else os.cpu_count()}
-            TEST=ND234U+-
+            {f"TEST={possible_changes}" if possible_changes is not None else ""}
             OUTPUTMASK=output-$
             TITELMASK=output-$"""
 
