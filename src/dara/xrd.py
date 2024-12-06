@@ -180,7 +180,7 @@ class XYFile(XRDData):
             angles, intensities = data
             errors = None
         else:
-            angles, intensities, errors = data
+            angles, intensities, errors = data  # if it is xye data
         return cls(angles, intensities, errors)
 
 

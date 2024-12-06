@@ -2,7 +2,9 @@ SampleID:
 % Theoretical instrumental function
 VERZERR=
 % Wavelength
-LAMBDA=CU
+LAMBDA=cu
+% Measured background
+UNT=
 % Phases
 % Measured data
 VAL[1]=
