@@ -74,7 +74,7 @@ def generate_control_file(
     n_threads: int = 8,
     wmin: float | None = None,
     wmax: float | None = None,
-    eps2: float | str = "0_-0.01^0.01",
+    eps2: float | str = "0_-0.05^0.05",
     wavelength: Literal["Cu", "Co", "Cr", "Fe", "Mo"] | float = "Cu",
 ) -> Path:
     """
