@@ -186,4 +186,4 @@ if __name__ == "__main__":
 
     logging.info("Saving filtered ICSD data...")
 
-    dumpfn(filtered_data, "icsd_filtered_info_2024_v3.json.gz")
+    dumpfn(filtered_data, "icsd_filtered_info_2025_v3.json.gz")
