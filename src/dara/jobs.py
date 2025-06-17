@@ -161,6 +161,7 @@ class PhaseSearchMaker(Maker):
                 "lattice_range": 0.02,
                 "k1": "0_0^1",
                 "k2": "0_0^0.001",
+                "b1": "0_0^0.05",
             }
 
         pattern_path = directory / "xrd_data.xy"
