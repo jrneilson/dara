@@ -11,7 +11,9 @@ from monty.json import MSONable
 from pymatgen.core import Structure
 from pymatgen.io.cif import CifBlock as CifBlockPymatgen
 from pymatgen.io.cif import CifFile, CifParser
-from pymatgen.transformations.advanced_transformations import DisorderOrderedTransformation
+from pymatgen.transformations.advanced_transformations import (
+    DisorderOrderedTransformation,
+)
 
 
 class CifBlock(MSONable, CifBlockPymatgen):
@@ -22,7 +24,11 @@ class Cif(MSONable, CifFile):
     """Thin wrapper around pymatgen's CifFile to enable serialization."""
 
     def __init__(
-        self, data: dict, orig_string: str | None = None, comment: str | None = None, filename: str | None = None
+        self,
+        data: dict,
+        orig_string: str | None = None,
+        comment: str | None = None,
+        filename: str | None = None,
     ) -> None:
         """
         Args:
@@ -84,12 +90,16 @@ class Cif(MSONable, CifFile):
 
         structs = [
             s["structure"]
-            for s in DisorderOrderedTransformation().apply_transformation(struct, return_ranked_list=max_num_structs)
+            for s in DisorderOrderedTransformation().apply_transformation(
+                struct, return_ranked_list=max_num_structs
+            )
         ]
 
         return [s.scale_lattice(s.volume * vol_scale) for s in structs]
 
-    def get_disordered_cifs(self, max_num_structs: int = 10, vol_scale: float = 1.00, **kwargs) -> list[Structure]:
+    def get_disordered_cifs(
+        self, max_num_structs: int = 10, vol_scale: float = 1.00, **kwargs
+    ) -> list[Cif]:
         """Call get_disordered_structures, but return Cif objects instead.
 
         Args:
@@ -97,7 +107,12 @@ class Cif(MSONable, CifFile):
             vol_scale: Isotropic volume scaling factor. Defaults to 1 (no effect).
             **kwargs: Additional kwargs to pass to to_structure.
         """
-        return [Cif.from_structure(s) for s in self.get_disordered_structures(max_num_structs, vol_scale, **kwargs)]
+        return [
+            Cif.from_structure(s)
+            for s in self.get_disordered_structures(
+                max_num_structs, vol_scale, **kwargs
+            )
+        ]
 
     def to_scaled_structure(self, vol_scale=1.03, **kwargs) -> Structure:
         """Scales the structure isotropically by volume. Useful for expanding DFT-computed structures.
@@ -131,9 +146,6 @@ class Cif(MSONable, CifFile):
         try:
             sg = struct.get_space_group_info()[1]
         except Exception:
-            pass
-
-        if sg is None:
             sg = "unknown"
 
         return f"{formula}_{sg}"
@@ -152,7 +164,9 @@ class Cif(MSONable, CifFile):
         """
         dct = {}
 
-        for block_str in re.split(r"^\s*data_", f"x\n{string}", flags=re.MULTILINE | re.DOTALL)[1:]:
+        for block_str in re.split(
+            r"^\s*data_", f"x\n{string}", flags=re.MULTILINE | re.DOTALL
+        )[1:]:
             if "powder_pattern" in re.split(r"\n", block_str, maxsplit=1)[0]:
                 continue
             block = CifBlock.from_str("data_" + block_str)
