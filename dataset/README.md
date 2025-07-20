@@ -2,15 +2,15 @@
 
 ## Precursor mixture dataset
 
-This dataset contains XRD patterns (.xrdml files) for 50 different precursor mixtures.
-Each precursor mixture is an equal weight combination of three or four different precursors. For
+This dataset contains XRD patterns (.xrdml files) for 20 different precursor mixtures.
+Each precursor mixture is an equal weight combination of two or three different precursors. For
 each mixture, two XRD scan is performed at different resolution (`2-min` fast scan and
-`12-min` normal scan).
+`8-min` normal scan).
 
 Each file has the following format:
 
 ```
-precursor1_precursor2_precursor3[_precursor4].xrd_scan_type.xrdml
+precursor1_wt1-precursor2_wt2[-precursor3_wt3]--[2min|8min].xrdml
 ```
 
 ## Binary reaction dataset
