@@ -15,7 +15,7 @@ keywords = [
     "bgmn",
     "x-ray",
 ]
-license = { text = "modified BSD" }
+license = "MIT"
 authors = [
     { name = "Yuxing Fei", email = "yuxingfei@berkeley.edu" },
     { name = "Matthew McDermott", email = "mcdermott@lbl.gov" }
@@ -27,7 +27,6 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: BSD License",
     "Operating System :: OS Independent",
     "Topic :: Scientific/Engineering :: Information Analysis",
     "Topic :: Scientific/Engineering :: Physics",
