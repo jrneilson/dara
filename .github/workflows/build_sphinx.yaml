@@ -17,11 +17,11 @@ jobs:
       - name: Set up python
         uses: actions/setup-python@v2
         with:
-          python-version: '3.10'
+          python-version: '3.12'
       - name: Update pip
         run: pip install --upgrade pip
       - name: Set up dependencies
-        run: pip install '.[docs,strict,workflows,prediction]'
+        run: pip install '.[docs,strict]'
       - name: Install zip
         uses: montudor/action-zip@v1
       - name: Build zip
