@@ -251,6 +251,6 @@ def get_entry_by_formula(gibbs_entries: GibbsEntrySet, formula: str):
     """Either returns the minimum energy entry or a new interpolated entry."""
     try:
         entry = gibbs_entries.get_min_entry_by_formula(formula)
-    except:
+    except:  # noqa: E722
         entry = gibbs_entries.get_interpolated_entry(formula)  # if entry is missing, use interpolated one
     return entry

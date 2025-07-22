@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Optional, TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import numpy as np
 import pandas as pd
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
-from pymatgen.core import Composition, get_el_sp, Lattice, Structure
+from pymatgen.core import Composition, Lattice, Structure, get_el_sp
 from pymatgen.symmetry.groups import SpaceGroup
 
 from dara.plot import visualize
@@ -49,7 +49,7 @@ class PhaseResult(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def check_gewicht(cls, values):  # noqa: D102
+    def check_gewicht(cls, values):
         if "GEWICHT" in values and isinstance(values["GEWICHT"], str):
             geweicht = values["GEWICHT"]
             geweicht_mean = float(re.search(r"(\d+\.\d+)", geweicht).group(1))
@@ -383,7 +383,7 @@ def parse_lst(lst_path: Path, phase_names: list[str]) -> LstResult:
     # add atomic positions
     for phase_name, phase_result in zip(phase_names, phases_results):
         atom_section = re.search(
-            rf"Atomic positions for phase .+?\n(-+)\n(.*?)$",
+            r"Atomic positions for phase .+?\n(-+)\n(.*?)$",
             phase_result,
             re.DOTALL,
         ).group(2)
@@ -527,7 +527,7 @@ def parse_par(par_file: Path, phase_names: list[str]) -> pd.DataFrame:
 
             h = int(numbers[-3])
             k = int(numbers[-2])
-            l = int(numbers[-1])
+            l = int(numbers[-1])  # noqa: E741
 
             phase = re.search(r"PHASE=(\w+)", content[i]).group(1)
             phase, idx = phase_names_mapping[phase]
@@ -545,6 +545,6 @@ def parse_par(par_file: Path, phase_names: list[str]) -> pd.DataFrame:
 
     # apply eps1 and eps2
     two_theta += angular_correction(two_theta, eps1, eps2)
-    peak_list = [[two_theta[i]] + peak_list[i][1:] for i in range(len(peak_list))]
+    peak_list = [[two_theta[i]] + peak_list[i][1:] for i in range(len(peak_list))]  # noqa: RUF005
 
     return _make_dataframe(peak_list)

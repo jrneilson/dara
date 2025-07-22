@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import os.path
 from typing import Literal
-from pydantic import Field
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -10,15 +12,24 @@ class DaraServerSettings(BaseSettings):
     Settings for the Dara server.
 
     Attributes:
-        host (str): The host address for the server. Default is "127.0.0.1".
-        port (int): The port on which the server will run. Default is 8898.
-        database_backend (Literal["monty", "mongodb"]): The backend to use for the database. Default is "monty".
-        mongodb_host (str): Host for MongoDB. Used only if database_backend is "mongodb". Default is "localhost".
-        mongodb_port (int): Port for MongoDB. Used only if database_backend is "mongodb". Default is 27017.
-        mongodb_database (str): Database name for MongoDB. Used only if database_backend is "mongodb". Default is "dara_server".
-        mongodb_username (str | None): Username for MongoDB. Used only if database_backend is "mongodb". Default is None.
-        mongodb_password (str | None): Password for MongoDB. Used only if database_backend is "mongodb". Default is None.
-        montydb_path (str): Path for MontyDB database. Used only if database_backend is "monty". Default is "~/.dara-server/montydb".
+        host (str): The host address for the server.
+            Default is "127.0.0.1".
+        port (int): The port on which the server will run.
+            Default is 8898.
+        database_backend (Literal["monty", "mongodb"]): The backend
+            to use for the database. Default is "monty".
+        mongodb_host (str): Host for MongoDB. Used only if database_backend
+            is "mongodb". Default is "localhost".
+        mongodb_port (int): Port for MongoDB. Used only if database_backend
+            is "mongodb". Default is 27017.
+        mongodb_database (str): Database name for MongoDB. Used only if
+            database_backend is "mongodb". Default is "dara_server".
+        mongodb_username (str | None): Username for MongoDB. Used only if
+            database_backend is "mongodb". Default is None.
+        mongodb_password (str | None): Password for MongoDB. Used only if
+            database_backend is "mongodb". Default is None.
+        montydb_path (str): Path for MontyDB database. Used only if
+            database_backend is "monty". Default is "~/.dara-server/montydb".
     """
 
     model_config = SettingsConfigDict(

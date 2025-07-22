@@ -20,7 +20,7 @@ _worker_process = None
 @asynccontextmanager
 async def launch_worker_process(app: FastAPI):
     """Context manager to launch the worker process."""
-    global _worker_process
+    global _worker_process  # noqa: PLW0603
     _worker_process = multiprocessing.Process(target=worker_process, daemon=True)
     _worker_process.start()
     try:

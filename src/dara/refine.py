@@ -46,9 +46,10 @@ class RefinementPhase(BaseModel, frozen=True):
     @classmethod
     def make(cls, path_obj: RefinementPhase | Path | str) -> RefinementPhase:
         """
-        Make an RefinementPhase object from a path object. If the path object is already an RefinementPhase object, return it.
-        If the path object is a string or Path object, create an RefinementPhase object with the path object with no
-        specific parameters (the default parameters will be used).
+        Make an RefinementPhase object from a path object. If the path object is already an
+        RefinementPhase object, return it.
+        If the path object is a string or Path object, create an RefinementPhase object
+        with the path object with no specific parameters (the default parameters will be used).
 
         Args:
             path_obj: the path object, can be a string, Path object, or RefinementPhase object.

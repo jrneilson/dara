@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import shutil
 import tempfile
@@ -43,7 +45,7 @@ async def submit(
         with tempfile.NamedTemporaryFile() as temp:
             temp.write(pattern_file.file.read())
             temp.seek(0)
-            if name.endswith(".xy") or name.endswith(".txt") or name.endswith(".xye"):
+            if name.endswith(".xy") or name.endswith(".txt") or name.endswith(".xye"):  # noqa: PIE810
                 pattern = XYFile.from_file(temp.name)
             elif name.endswith(".xrdml"):
                 pattern = XRDMLFile.from_file(temp.name)
@@ -78,7 +80,7 @@ async def submit(
 
         if use_rxn_predictor:
             try:
-                import mp_api
+                import mp_api  # noqa: F401
             except ImportError:
                 raise HTTPException(
                     status_code=400,
@@ -155,7 +157,7 @@ async def result(task_id: int):
             ),
         }
 
-    elif job["status"] == "RUNNING":
+    if job["status"] == "RUNNING":
         return {
             "task_label": job_name,
             "status": job["status"],
@@ -167,7 +169,7 @@ async def result(task_id: int):
             ),
         }
 
-    elif job["status"] == "FIZZLED":
+    if job["status"] == "FIZZLED":
         return {
             "task_label": job_name,
             "status": job["status"],  # FIZZLED
@@ -232,7 +234,7 @@ async def result(task_id: int):
         start_time = convert_to_local_tz(job["start_time"])
         end_time = convert_to_local_tz(job["end_time"])
         runtime = (end_time - start_time).total_seconds()
-        result = {
+        return {
             "status": job["status"],
             "task_label": job["job"]["name"],
             "best_rwp": d.best_rwp,
@@ -256,7 +258,6 @@ async def result(task_id: int):
             "runtime": runtime,
             "additional_search_options": d.search_kwargs,
         }
-        return result
     raise HTTPException(status_code=404, detail="No phases identified in the pattern")
 
 
@@ -271,15 +272,14 @@ async def plot(task_id: int, idx: int = Query(None)):
     d = MontyDecoder().process_decoded(d["output"])
     if idx is None:
         return visualize(result=d.final_result).to_json()
-    elif 0 <= idx < len(d.results):
+    if 0 <= idx < len(d.results):
         result = d.results[idx][1]
         missing_peaks = d.missing_peaks[idx] if d.missing_peaks else None
         extra_peaks = d.extra_peaks[idx] if d.extra_peaks else None
         return visualize(
             result=result, missing_peaks=missing_peaks, extra_peaks=extra_peaks
         ).to_json()
-    else:
-        raise HTTPException(status_code=404, detail="Index out of range")
+    raise HTTPException(status_code=404, detail="Index out of range")
 
 
 @router.get("/tasks")

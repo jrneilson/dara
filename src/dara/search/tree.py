@@ -304,7 +304,7 @@ def remove_unnecessary_phases(
 
     new_phases = []
 
-    for excluded_phase in phases_results:
+    for excluded_phase in phases_results:  # noqa: PLC0206
         y_calc_excl = y_calc.copy()
         y_calc_excl -= phases_results[excluded_phase]
 
@@ -497,13 +497,13 @@ class BaseSearchTree(Tree):
                     status = "error"
 
                 elif (
-                    node.data.current_result is not None
+                    (node.data.current_result is not None
                     and (
                         # if the new result is worse than the current result from Rwp perspective
                         node.data.current_result.lst_data.rpb
                         - new_result.lst_data.rpb
                     )
-                    < self.rpb_threshold
+                    < self.rpb_threshold)
                     or (  # or if removing one phase does not improve the result (indication of overfitting)
                         len(
                             remove_unnecessary_phases(

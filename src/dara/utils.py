@@ -12,7 +12,7 @@ import sys
 import warnings
 from datetime import datetime
 from pathlib import Path
-from typing import Literal, TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Union
 
 import numpy as np
 from monty.json import MontyDecoder
@@ -59,8 +59,7 @@ def get_number(s: Union[float, None, tuple[float, float]]) -> Union[float, None]
     """Get the number from a float or tuple of floats."""
     if isinstance(s, tuple):
         return s[0]
-    else:
-        return s
+    return s
 
 
 def load_symmetrized_structure(
@@ -287,7 +286,7 @@ def get_entries_in_chemsys_db(db: MongoStore, chemsys: list[str] | str):
         chemsys: a chemical system, either as a string (e.g., "Li-Fe-O") or as a list of elements.
 
     """
-    if isinstance(chemsys, str):
+    if isinstance(chemsys, str):  # noqa: SIM108
         elements = chemsys.split("-")
     else:
         elements = chemsys

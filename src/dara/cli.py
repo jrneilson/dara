@@ -1,7 +1,8 @@
 from pydantic import BaseModel
 from pydantic_settings import CliApp, CliSubCommand
+
 from dara.server.setting import DaraServerSettings
-from pydantic import Field
+
 
 class Server(DaraServerSettings):
     """Run the Dara server in a Web UI."""
