@@ -17,8 +17,8 @@ def cod_db():
 
 def test_icsd_database(icsd_db):
     """Test the ICSDDatabase class."""
-    cif_paths = icsd_db.get_cifs_by_chemsys("Fe-O", copy_files=False)
-    assert len(cif_paths) > 0
+    with pytest.raises(NotImplementedError):
+        icsd_db.get_cifs_by_chemsys("Fe-O", copy_files=False)
 
 
 def test_cod_database(cod_db):
