@@ -90,7 +90,7 @@ html_theme_options = {
             "icon": "fa-brands fa-github",
         },
     ],
-    "announcement": "Currently the document is still under construction.",
+    # "announcement": "Currently the document is still under construction.",
 }
 
 html_favicon = (Path(__file__).parent / "_static" / "logo.svg").as_posix()

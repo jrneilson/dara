@@ -263,8 +263,8 @@ def get_entries_in_chemsys_mp(chemsys: str):
     """Download ComputedStructureEntry objects from Materials Project."""
     try:
         from mp_api.client import MPRester
-    except ImportError:
-        raise ImportError("Please install the mp-api package.")
+    except ImportError as e:
+        raise ImportError("Please install the mp-api package.") from e
 
     with MPRester() as mpr:
         return mpr.get_entries_in_chemsys(chemsys)
