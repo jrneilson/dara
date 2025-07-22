@@ -86,7 +86,7 @@ async def submit(
                     status_code=400,
                     detail="Reaction predictor is not available. Please install mp_api.",
                 )
-            if not os.environ["MP_API_KEY"]:
+            if not os.environ.get("MP_API_KEY"):
                 raise HTTPException(
                     status_code=400,
                     detail="MP_API_KEY is not set. You need to `export MP_API_KEY=your_key` in "
