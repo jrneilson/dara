@@ -21,4 +21,4 @@ Dara ships with a browser-based web server for an out-of-box experience of Dara.
 dara server
 ```
 
-Then you can open (localhost:8898) to see an application that can submit, manage, and view jobs.
+Then you can open http://localhost:8898 to see an application that can submit, manage, and view jobs.
