@@ -36,18 +36,13 @@ Some features of Dara include:
 * **Constrained search**: Constrain phase search space using suggested pre-filtering of
   crystallographic databases, as well as reaction energetics and predicted products.
 
-[//]: # (::::{admonition} Installation &#40;recommended&#41;)
+::::{admonition} Installation (recommended)
+:class: note
+The easiest way to install the latest release of Dara is via pip from PyPI:
 
-[//]: # (:class: note)
-
-[//]: # (The easiest way to install the latest release of Dara is via pip from PyPI:)
-
-[//]: # ()
-[//]: # (```)
-
-[//]: # (pip install dara)
-
-[//]: # (```)
+```
+pip install dara
+```
 
 +++
 [More installation options »](install.md)

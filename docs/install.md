@@ -1,21 +1,15 @@
 # Installation of DARA
 
-[//]: # (## Installation from PyPI &#40;recommended&#41;)
+## Installation from PyPI (recommended)
 
-[//]: # ()
-[//]: # (The easiest way to install the latest release of Dara is via pip from PyPI:)
+The easiest way to install the latest release of Dara is via pip from PyPI:
 
-[//]: # ()
-[//]: # (```bash)
+```bash
+pip install dara
+```
 
-[//]: # (pip install dara)
-
-[//]: # (```)
-
-[//]: # ()
-[//]: # (Note that this approach will only acquire the latest release. For the most recent)
-
-[//]: # (changes, you may want to install from source &#40;see below&#41;.)
+Note that this approach will only acquire the latest release. For the most recent
+changes, you may want to install from source (see below).
 
 ## Installation from source (GitHub)
 
