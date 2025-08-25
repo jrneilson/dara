@@ -72,6 +72,7 @@ class EflechWorker:
                     pattern.suffix == ".xy"
                     or pattern.suffix == ".txt"
                     or pattern.suffix == ".xye"
+                    or pattern.suffix == ".scn"
                 ):
                     pattern_path_temp = copy_xy_pattern(pattern, temp_dir)
                 elif pattern.suffix == ".xrdml":

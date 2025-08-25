@@ -74,6 +74,7 @@ def generate_control_file(
     n_threads: int = 8,
     wmin: float | None = None,
     wmax: float | None = None,
+    eps1: float | str = 0.0,
     eps2: float | str = "0_-0.05^0.05",
     wavelength: Literal["Cu", "Co", "Cr", "Fe", "Mo"] | float = "Cu",
 ) -> Path:
@@ -147,7 +148,7 @@ def generate_control_file(
     % Diagram output
     DIAGRAMM={pattern_path.stem}.dia
     % Global parameters for zero point and sample displacement
-    EPS1=0
+    EPS1={eps1}
     {f"PARAM[1]=EPS2={eps2}" if isinstance(eps2, str) else f"EPS2={eps2}"}
     NTHREADS={n_threads}
     PROTOKOLL=Y
