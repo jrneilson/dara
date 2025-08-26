@@ -89,6 +89,7 @@ def generate_control_file(
         n_threads: the number of threads to use
         wmin: the minimum wavelength
         wmax: the maximum wavelength
+        eps1: the epsilon1 value, it is used to refine zero point
         eps2: the epsilon2 value, it is used to refine sample height
         wavelength: the wavelength to use. If a float is provided, it is used as the
             wavelength in nm (synchrotron radiation). If a string is provided, it is
@@ -148,8 +149,8 @@ def generate_control_file(
     % Diagram output
     DIAGRAMM={pattern_path.stem}.dia
     % Global parameters for zero point and sample displacement
-    EPS1={eps1}
-    {f"PARAM[1]=EPS2={eps2}" if isinstance(eps2, str) else f"EPS2={eps2}"}
+    {f"PARAM[1]=EPS1={eps1}" if isinstance(eps1, str) else f"EPS1={eps1}"}
+    {f"PARAM[{'2' if isinstance(eps1, str) else '1'}]=EPS2={eps2}" if isinstance(eps2, str) else f"EPS2={eps2}"}
     NTHREADS={n_threads}
     PROTOKOLL=Y
     sum={"+".join(phase_name for phase_name in phase_names)}
