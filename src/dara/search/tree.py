@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 import warnings
 from itertools import zip_longest
 from numbers import Number
