@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import re
 import warnings
 from itertools import zip_longest
+from numbers import Number
 from pathlib import Path
 from subprocess import TimeoutExpired
 from typing import TYPE_CHECKING, Literal
@@ -25,6 +27,7 @@ from dara.utils import (
     get_number,
     get_optimal_max_two_theta,
     load_symmetrized_structure,
+    parse_refinement_param,
     rpb,
 )
 
@@ -497,23 +500,22 @@ class BaseSearchTree(Tree):
                     status = "error"
 
                 elif (
-                    (node.data.current_result is not None
+                    node.data.current_result is not None
                     and (
                         # if the new result is worse than the current result from Rwp perspective
                         node.data.current_result.lst_data.rpb
                         - new_result.lst_data.rpb
                     )
-                    < self.rpb_threshold)
-                    or (  # or if removing one phase does not improve the result (indication of overfitting)
-                        len(
-                            remove_unnecessary_phases(
-                                new_result,
-                                [p.path for p in new_phases],
-                                self.rpb_threshold,
-                            )
+                    < self.rpb_threshold
+                ) or (  # or if removing one phase does not improve the result (indication of overfitting)
+                    len(
+                        remove_unnecessary_phases(
+                            new_result,
+                            [p.path for p in new_phases],
+                            self.rpb_threshold,
                         )
-                        != len(new_phases)
                     )
+                    != len(new_phases)
                 ):
                     status = "no_improvement"
                 elif is_low_weight_fraction:
@@ -1064,6 +1066,85 @@ class SearchTree(BaseSearchTree):
             cif_paths,
             pinned_phases=self.pinned_phases,
         )
+
+        # adjust the initial value of eps1 based on the weighted average of all the phases
+        if not isinstance(self.refinement_params.get("eps1", 0), Number):
+            weighted_eps1 = 0
+            rwp_sum = 0
+
+            for result in all_phases_result.values():
+                if result is not None:
+                    weighted_eps1 += (
+                        1
+                        / (result.lst_data.rwp + 1e-1)
+                        * get_number(result.lst_data.EPS1)
+                    )
+                    rwp_sum += result.lst_data.rwp
+            weighted_eps1 /= rwp_sum
+            eps1_initial, eps1_lower, eps1_upper = parse_refinement_param(
+                self.refinement_params["eps1"]
+            )
+            self.refinement_params["eps1"] = (
+                f"{weighted_eps1:.6f}"
+                + (f"_{eps1_lower}" if eps1_lower is not None else "")
+                + (f"^{eps1_upper}" if eps1_upper is not None else "")
+            )
+            logger.info(
+                f"The initial value of eps1 is automatically set to {self.refinement_params['eps1']}."
+            )
+
+        # adjust the initial value of eps2 based on the weighted average of all the phases
+        if not isinstance(self.refinement_params.get("eps2", 0), Number):
+            weighted_eps2 = 0
+            rwp_sum = 0
+
+            for result in all_phases_result.values():
+                if result is not None:
+                    weighted_eps2 += (
+                        1
+                        / (result.lst_data.rwp + 1e-1)
+                        * get_number(result.lst_data.EPS2)
+                    )
+                    rwp_sum += result.lst_data.rwp
+            weighted_eps2 /= rwp_sum
+            eps2_initial, eps2_lower, eps2_upper = parse_refinement_param(
+                self.refinement_params["eps2"]
+            )
+            self.refinement_params["eps2"] = (
+                f"{weighted_eps2:.6f}"
+                + (f"_{eps2_lower}" if eps2_lower is not None else "")
+                + (f"^{eps2_upper}" if eps2_upper is not None else "")
+            )
+            logger.info(
+                f"The initial value of eps2 is automatically set to {self.refinement_params['eps2']}."
+            )
+
+        # adjust the initial value of k1 and b1 for each phase based on the refinement result
+        all_phases_result_updated = {}
+        for phase, result in all_phases_result.items():
+            if result is not None:
+                k1 = get_number(result.lst_data.phases_results[phase.path.stem].k1)
+                b1 = get_number(result.lst_data.phases_results[phase.path.stem].B1)
+
+                k1_initial, k1_lower, k1_upper = parse_refinement_param(
+                    phase.params.get("k1", self.phase_params["k1"])
+                )
+                phase.params["k1"] = (
+                    f"{k1:.6f}"
+                    + (f"_{k1_lower}" if k1_lower is not None else "")
+                    + (f"^{k1_upper}" if k1_upper is not None else "")
+                )
+
+                b1_initial, b1_lower, b1_upper = parse_refinement_param(
+                    phase.params.get("b1", self.phase_params["b1"])
+                )
+                phase.params["b1"] = (
+                    f"{b1:.6f}"
+                    + (f"_{b1_lower}" if b1_lower is not None else "")
+                    + (f"^{b1_upper}" if b1_upper is not None else "")
+                )
+
+            all_phases_result_updated[phase] = result
 
         # clean up cif paths (if no result, remove from list)
         all_phases_result = {

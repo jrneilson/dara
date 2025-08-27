@@ -25,7 +25,7 @@ DEFAULT_PHASE_PARAMS = {
     "b1": "0_0^0.005",
     "rp": 4,
 }
-DEFAULT_REFINEMENT_PARAMS = {"n_threads": 8}
+DEFAULT_REFINEMENT_PARAMS = {"n_threads": 8, "eps1": 0, "eps2": "0_-0.05^0.05"}
 
 
 @ray.remote

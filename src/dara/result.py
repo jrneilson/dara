@@ -131,7 +131,7 @@ class PhaseResult(BaseModel):
 class LstResult(BaseModel):
     """Refinement result parsed from the .lst file."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
 
     raw_lst: str
     pattern_name: str
@@ -545,6 +545,8 @@ def parse_par(par_file: Path, phase_names: list[str]) -> pd.DataFrame:
 
     # apply eps1 and eps2
     two_theta += angular_correction(two_theta, eps1, eps2)
-    peak_list = [[two_theta[i]] + peak_list[i][1:] for i in range(len(peak_list))]  # noqa: RUF005
+    peak_list = [
+        [two_theta[i]] + peak_list[i][1:] for i in range(len(peak_list))
+    ]  # noqa: RUF005
 
     return _make_dataframe(peak_list)
