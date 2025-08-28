@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Literal
 
 import jenkspy
 import numpy as np
+import pandas as pd
 import ray
 from sklearn.cluster import AgglomerativeClustering
 from treelib import Node, Tree
@@ -999,15 +1000,17 @@ class SearchTree(BaseSearchTree):
             **kwargs,
         )
 
-        peak_obs = self._detect_peak_in_pattern()
-        self.peak_obs = peak_obs
+        # side effect: sets self.peak_obs and self.refinement_params["wmax"] in the function
+        # also update the initial guess of b1 in self.refinement_params
+        self._detect_peak_in_pattern()
+
         self.intensity_threshold = min(
-            find_optimal_intensity_threshold(peak_obs[:, 1]),
-            0.1 * np.max(peak_obs[:, 1]),
+            find_optimal_intensity_threshold(self.peak_obs[:, 1]),
+            0.1 * np.max(self.peak_obs[:, 1]),
         )
         logger.info(
             f"The intensity threshold is automatically set "
-            f"to {self.intensity_threshold / peak_obs[:, 1].max() * 100:.2f} % of maximum peak intensity."
+            f"to {self.intensity_threshold / self.peak_obs[:, 1].max() * 100:.2f} % of maximum peak intensity."
         )
 
         root_node = self._create_root_node()
@@ -1016,7 +1019,7 @@ class SearchTree(BaseSearchTree):
         all_phases_result = self._get_all_cleaned_phases_result()
         self.all_phases_result = all_phases_result
 
-    def _detect_peak_in_pattern(self) -> np.ndarray:
+    def _detect_peak_in_pattern(self) -> pd.DataFrame:
         logger.info("Detecting peaks in the pattern.")
         if self.refinement_params.get("wmax", None) is not None:
             warnings.warn(
@@ -1038,9 +1041,28 @@ class SearchTree(BaseSearchTree):
 
         peak_list_array = peak_list[["2theta", "intensity"]].values
 
-        return peak_list_array[
+        self.peak_obs = peak_list_array[
             np.where(peak_list_array[:, 0] < self.refinement_params["wmax"])
         ]
+
+        # estimate the mean b1 value from the pattern
+        estimated_b1 = np.mean(peak_list["b1"].dropna().values)
+        initial, lower, upper = parse_refinement_param(self.refinement_params["b1"])
+        if not isinstance(initial, Number) and estimated_b1 is not None:
+            if lower is not None and estimated_b1 < lower:
+                estimated_b1 = lower + 0.1 * abs(upper - lower)
+            if upper is not None and estimated_b1 > upper:
+                estimated_b1 = upper - 0.1 * abs(upper - lower)
+            self.refinement_params["b1"] = (
+                f"{estimated_b1:.6f}"
+                + (f"_{lower}" if lower is not None else "")
+                + (f"^{upper}" if upper is not None else "")
+            )
+            logger.info(
+                f"The initial value of b1 is automatically set to {self.refinement_params['b1']}."
+            )
+
+        return peak_list
 
     def _create_root_node(self) -> Node:
         logger.info("Creating the root node.")
