@@ -578,16 +578,14 @@ def parse_refinement_param(
 ) -> tuple[str | float, float | None, float | None]:
     if isinstance(refinement_param, float):
         return refinement_param, None, None
-    elif refinement_param == "fixed":
+    if refinement_param == "fixed":
         return "fixed", None, None
-    else:
-        match = re.match(
-            r"([-+]?\d*\.?\d+)_([-+]?\d*\.?\d+)\^([-+]?\d*\.?\d+)", refinement_param
-        )
-        if match:
-            initial = float(match.group(1))
-            lower = float(match.group(2))
-            upper = float(match.group(3))
-            return initial, lower, upper
-        else:
-            raise ValueError(f"Invalid refinement parameter: {refinement_param}")
+    match = re.match(
+        r"([-+]?\d*\.?\d+)_([-+]?\d*\.?\d+)\^([-+]?\d*\.?\d+)", refinement_param
+    )
+    if match:
+        initial = float(match.group(1))
+        lower = float(match.group(2))
+        upper = float(match.group(3))
+        return initial, lower, upper
+    raise ValueError(f"Invalid refinement parameter: {refinement_param}")

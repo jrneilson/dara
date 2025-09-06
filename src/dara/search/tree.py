@@ -1150,6 +1150,7 @@ class SearchTree(BaseSearchTree):
                 k1_initial, k1_lower, k1_upper = parse_refinement_param(
                     phase.params.get("k1", self.phase_params["k1"])
                 )
+                k1 = k1 or k1_initial
                 phase.params["k1"] = (
                     f"{k1:.6f}"
                     + (f"_{k1_lower}" if k1_lower is not None else "")
@@ -1159,6 +1160,7 @@ class SearchTree(BaseSearchTree):
                 b1_initial, b1_lower, b1_upper = parse_refinement_param(
                     phase.params.get("b1", self.phase_params["b1"])
                 )
+                b1 = b1 or b1_initial
                 phase.params["b1"] = (
                     f"{b1:.6f}"
                     + (f"_{b1_lower}" if b1_lower is not None else "")

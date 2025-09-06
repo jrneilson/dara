@@ -13,8 +13,9 @@
 from datetime import date
 from pathlib import Path
 
-from dara import __version__
 from sphinx.builders.html import StandaloneHTMLBuilder
+
+from dara import __version__
 
 # -- Project information -----------------------------------------------------
 
