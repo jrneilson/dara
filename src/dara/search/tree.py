@@ -1047,13 +1047,13 @@ class SearchTree(BaseSearchTree):
 
         # estimate the mean b1 value from the pattern
         estimated_b1 = np.mean(peak_list["b1"].dropna().values)
-        initial, lower, upper = parse_refinement_param(self.refinement_params["b1"])
+        initial, lower, upper = parse_refinement_param(self.phase_params["b1"])
         if not isinstance(initial, Number) and estimated_b1 is not None:
             if lower is not None and estimated_b1 < lower:
                 estimated_b1 = lower + 0.1 * abs(upper - lower)
             if upper is not None and estimated_b1 > upper:
                 estimated_b1 = upper - 0.1 * abs(upper - lower)
-            self.refinement_params["b1"] = (
+            self.phase_params["b1"] = (
                 f"{estimated_b1:.6f}"
                 + (f"_{lower}" if lower is not None else "")
                 + (f"^{upper}" if upper is not None else "")
