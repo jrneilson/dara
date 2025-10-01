@@ -5,8 +5,6 @@
 Automated phase search with BGMN.
 
 ## Installation
-First, git clone the repository. Then navigate to the directory and pip install:
-
 ```bash
 pip install dara-xrd
 ```
