@@ -5,6 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "dara"
 description = "Data-driven automated Rietveld analysis using BGMN."
+homepage = "https://idocx.github.io/dara/"
 readme = "README.md"
 version = "1.0.0"
 keywords = [
@@ -26,6 +27,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Intended Audience :: Science/Research",
     "Operating System :: OS Independent",
     "Topic :: Scientific/Engineering :: Information Analysis",
