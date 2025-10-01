@@ -18,7 +18,7 @@ jobs:
         with:
           enable-cache: true
       - name: Install the project
-        run: uv sync --locked --extra docs --extra strict --dev
+        run: uv sync --extra docs --extra strict --dev
       - name: Install zip
         uses: montudor/action-zip@v1
       - name: Build zip
