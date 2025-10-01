@@ -3,7 +3,7 @@ requires = ["setuptools>=42", "wheel", "setuptools-git-versioning"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "dara"
+name = "dara-xrd"
 description = "Data-driven automated Rietveld analysis using BGMN."
 readme = "README.md"
 version = "1.0.0"
@@ -98,8 +98,8 @@ docs = [
 ]
 
 [project.urls]
-homepage = "https://github.com/idocx/dara"
-documentation = "https://idocx.github.io/dara/"
+homepage = "https://github.com/idocx/dara-xrd"
+documentation = "https://idocx.github.io/dara-xrd/"
 
 [project.scripts]
 dara = "dara.cli:main"
