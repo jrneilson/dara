@@ -98,8 +98,8 @@ docs = [
 ]
 
 [project.urls]
-homepage = "https://github.com/idocx/dara-xrd"
-documentation = "https://idocx.github.io/dara-xrd/"
+homepage = "https://github.com/idocx/dara"
+documentation = "https://idocx.github.io/dara/"
 
 [project.scripts]
 dara = "dara.cli:main"
