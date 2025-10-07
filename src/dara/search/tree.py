@@ -945,7 +945,7 @@ class SearchTree(BaseSearchTree):
         instrument_profile: the name/path of the instrument file, it will be passed to the refinement function.
         maximum_grouping_distance: the maximum grouping distance, default to 0.1
         max_phases: the maximum number of phases, note that the pinned phases are COUNTED as well
-        rpb_threshold: deprecated, will be removed in the future
+        rpb_threshold: the minimum RPB improvement in each step
     """
 
     def __init__(
