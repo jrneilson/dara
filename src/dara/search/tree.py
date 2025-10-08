@@ -376,6 +376,7 @@ class BaseSearchTree(Tree):
         intensity_threshold: float,
         wavelength: Literal["Cu", "Co", "Cr", "Fe", "Mo"] | float,
         instrument_profile: str | Path,
+        express_mode: bool,
         maximum_grouping_distance: float,
         max_phases: float,
         rpb_threshold: float,
@@ -393,6 +394,7 @@ class BaseSearchTree(Tree):
         self.intensity_threshold = intensity_threshold
         self.wavelength = wavelength
         self.instrument_profile = instrument_profile
+        self.express_mode = express_mode
         self.maximum_grouping_distance = maximum_grouping_distance
         self.max_phases = max_phases
         self.pinned_phases = pinned_phases
@@ -447,6 +449,11 @@ class BaseSearchTree(Tree):
                 new_results,
                 distance_threshold=self.maximum_grouping_distance,
             )
+
+            # if express mode is on, we will put all the phases in its own group
+            if self.express_mode:
+                for i, phase in enumerate(grouped_results):
+                    grouped_results[phase]["group_id"] = i
 
             for phase, new_result in new_results.items():
                 new_phases = [*node.data.current_phases, phase]
@@ -613,9 +620,9 @@ class BaseSearchTree(Tree):
     def get_phase_combinations(
         self, node: Node
     ) -> tuple[
-        tuple[tuple[RefinementPhase, ...], ...],
-        tuple[tuple[float, ...], ...],
-        tuple[tuple[float, ...], ...],
+        list[tuple[RefinementPhase, ...]],
+        list[tuple[float, ...]],
+        list[tuple[float, ...]],
     ]:
         """
         Get all the phase combinations at this node.
@@ -645,59 +652,25 @@ class BaseSearchTree(Tree):
 
         all_possible_nodes = all_possible_nodes[::-1]
 
-        foms = tuple(
+        foms = [
             tuple([node.data.fom or 0 for node in possible_nodes])
             for possible_nodes in all_possible_nodes
-        )
-        phases = tuple(
-            [
-                (pinned_phase,)
-                for pinned_phase in all_possible_nodes[0][
-                    0
-                ].data.current_phases  # root node
-            ]
-        ) + tuple(
+        ]
+        phases = [
+            (pinned_phase,)
+            for pinned_phase in all_possible_nodes[0][
+                0
+            ].data.current_phases  # root node
+        ] + [
             tuple([node.data.current_phases[-1] for node in possible_nodes])
             for possible_nodes in all_possible_nodes[1:]
-        )
-        lattice_strains = tuple(
+        ]
+        lattice_strains = [
             tuple([node.data.lattice_strain or 0 for node in possible_nodes])
             for possible_nodes in all_possible_nodes
-        )
+        ]
 
         return phases, foms, lattice_strains
-
-    def get_search_results(self) -> list[SearchResult]:
-        """
-        Get the search results.
-
-        The search results are the results of the nodes that have been expanded and have no expandable children.
-
-        Returns
-        -------
-            a dictionary containing the phase combinations and their results
-        """
-        results = []
-
-        for node in self.nodes.values():
-            if node.data.current_result is None:
-                continue
-            if node.data.status in {"expanded", "max_depth"} and all(
-                child.data.status not in {"expanded", "max_depth"}
-                for child in self.children(node.identifier)
-            ):
-                phases, foms, lattice_strains = self.get_phase_combinations(node)
-                results.append(
-                    SearchResult(
-                        refinement_result=node.data.current_result,
-                        phases=phases,
-                        foms=foms,
-                        lattice_strains=lattice_strains,
-                        missing_peaks=node.data.isolated_missing_peaks,
-                        extra_peaks=node.data.isolated_extra_peaks,
-                    )
-                )
-        return get_natural_break_results(results)
 
     def score_phases(
         self,
@@ -867,6 +840,7 @@ class BaseSearchTree(Tree):
             instrument_profile=self.instrument_profile,
             maximum_grouping_distance=self.maximum_grouping_distance,
             pinned_phases=self.pinned_phases,
+            express_mode=self.express_mode,
         )
 
     @classmethod
@@ -899,6 +873,7 @@ class BaseSearchTree(Tree):
             intensity_threshold=search_tree.intensity_threshold,
             wavelength=search_tree.wavelength,
             instrument_profile=search_tree.instrument_profile,
+            express_mode=search_tree.express_mode,
             maximum_grouping_distance=search_tree.maximum_grouping_distance,
             pinned_phases=search_tree.pinned_phases,
             record_peak_matcher_scores=search_tree.record_peak_matcher_scores,
@@ -945,7 +920,7 @@ class SearchTree(BaseSearchTree):
         instrument_profile: the name/path of the instrument file, it will be passed to the refinement function.
         maximum_grouping_distance: the maximum grouping distance, default to 0.1
         max_phases: the maximum number of phases, note that the pinned phases are COUNTED as well
-        rpb_threshold: the minimum RPB improvement in each step
+        rpb_threshold: the minimium Rpb improvement for the search tree to continue to expand one node.
     """
 
     def __init__(
@@ -957,6 +932,7 @@ class SearchTree(BaseSearchTree):
         phase_params: dict[str, ...] | None = None,
         wavelength: Literal["Cu", "Co", "Cr", "Fe", "Mo"] | float = "Cu",
         instrument_profile: str | Path = "Aeris-fds-Pixcel1d-Medipix3",
+        express_mode: bool = True,
         maximum_grouping_distance: float = 0.1,
         max_phases: float = 5,
         rpb_threshold: float = 4,
@@ -991,6 +967,7 @@ class SearchTree(BaseSearchTree):
             0.0,
             wavelength,
             instrument_profile,
+            express_mode,
             maximum_grouping_distance,
             max_phases,
             rpb_threshold,
@@ -1017,7 +994,45 @@ class SearchTree(BaseSearchTree):
         self.add_node(root_node)
 
         all_phases_result = self._get_all_cleaned_phases_result()
-        self.all_phases_result = all_phases_result
+
+        if self.express_mode:
+            logger.info("Express mode is enabled. Grouping phases before starting.")
+            phases_grouped = group_phases(
+                all_phases_result,
+                distance_threshold=self.maximum_grouping_distance,
+            )
+            phase_group_mapping = {}
+
+            for phase in phases_grouped:
+                group_id = phases_grouped[phase]["group_id"]
+                phase_group_mapping.setdefault(group_id, []).append(
+                    {
+                        "phase": phase,
+                        "fom": phases_grouped[phase]["fom"],
+                        "lattice_strain": phases_grouped[phase]["lattice_strain"],
+                    }
+                )
+
+            for group in phase_group_mapping:  # noqa: PLC0206
+                phase_group_mapping[group] = sorted(
+                    phase_group_mapping[group],
+                    key=lambda x: x["fom"],
+                    reverse=True,
+                )
+            logger.info(
+                f"Phases are grouped into {len(phase_group_mapping)} groups. In "
+                f"express mode, only the best phase in each group will be considered during the search."
+            )
+            self.phases_grouped = phases_grouped
+            self.all_phases_result = {
+                phase_group_mapping[group][0]["phase"]: all_phases_result[
+                    phase_group_mapping[group][0]["phase"]
+                ]
+                for group in phase_group_mapping
+            }
+        else:
+            self.phases_grouped = {}
+            self.all_phases_result = all_phases_result
 
     def _detect_peak_in_pattern(self) -> pd.DataFrame:
         logger.info("Detecting peaks in the pattern.")
@@ -1182,6 +1197,71 @@ class SearchTree(BaseSearchTree):
         )
 
         return all_phases_result
+
+    def get_search_results(self) -> list[SearchResult]:
+        """
+        Get the search results.
+
+        The search results are the results of the nodes that have been expanded and have no expandable children.
+
+        Returns
+        -------
+            a dictionary containing the phase combinations and their results
+        """
+        results = []
+
+        for node in self.nodes.values():
+            if node.data.current_result is None:
+                continue
+            if node.data.status in {"expanded", "max_depth"} and all(
+                child.data.status not in {"expanded", "max_depth"}
+                for child in self.children(node.identifier)
+            ):
+                phases, foms, lattice_strains = self.get_phase_combinations(node)
+
+                # if express mode is on, we will expand the phases based on the grouping result
+                # to include all the similar phases
+                if self.express_mode:
+                    for i, phases_ in enumerate(phases):
+                        new_phases_ = []
+                        new_foms_ = []
+                        new_lattice_strains_ = []
+                        for j in range(len(phases_)):
+                            phase = phases_[j]
+                            group_id = self.phases_grouped[phase]["group_id"]
+                            all_phases_in_group = [
+                                p
+                                for p in self.phases_grouped
+                                if self.phases_grouped[p]["group_id"] == group_id
+                            ]
+                            new_phases_.extend(all_phases_in_group)
+                            new_foms_.extend(
+                                [
+                                    self.phases_grouped[p]["fom"]
+                                    for p in all_phases_in_group
+                                ]
+                            )
+                            new_lattice_strains_.extend(
+                                [
+                                    self.phases_grouped[p]["lattice_strain"]
+                                    for p in all_phases_in_group
+                                ]
+                            )
+                        phases[i] = tuple(new_phases_)
+                        foms[i] = tuple(new_foms_)
+                        lattice_strains[i] = tuple(new_lattice_strains_)
+
+                results.append(
+                    SearchResult(
+                        refinement_result=node.data.current_result,
+                        phases=tuple(phases),
+                        foms=tuple(foms),
+                        lattice_strains=tuple(lattice_strains),
+                        missing_peaks=node.data.isolated_missing_peaks,
+                        extra_peaks=node.data.isolated_extra_peaks,
+                    )
+                )
+        return get_natural_break_results(results)
 
     def show(
         self,
