@@ -25,6 +25,8 @@ jobs:
         run: |
           zip -r tutorial.zip notebooks/
           mv tutorial.zip docs/_static/
+      - name: Copy pyproject
+        run: cp pyproject.toml notebooks/
       - name: Compile sphinx
         working-directory: .
         run: |

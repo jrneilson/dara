@@ -260,7 +260,7 @@ class CODDatabase(StructureDatabase):
             self._download_cod,
             ids,
             chunksize=1,
-            max_workers=128,
+            max_workers=16,
             desc="Downloading CIFs from COD...",
         )
         if save:
