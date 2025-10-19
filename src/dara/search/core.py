@@ -7,7 +7,11 @@ from collections import deque
 from traceback import print_exc
 from typing import TYPE_CHECKING, Literal
 
-import ray
+import ray,os
+
+if not ray.is_initialized():
+    ray.init(runtime_env={"working_dir": os.getcwd()})
+
 
 from dara.search.tree import BaseSearchTree, SearchTree
 
