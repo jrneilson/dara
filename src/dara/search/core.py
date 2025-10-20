@@ -55,7 +55,7 @@ def search_phases(
     pinned_phases: list[Path | str | RefinementPhase] | None = None,
     max_phases: int = 5,
     wavelength: Literal["Cu", "Co", "Cr", "Fe", "Mo"] | float = "Cu",
-    instrument_profile: str | Path = "Aeris-fds-Pixcel1d-Medipix3",
+    instrument_profile: str | Path = "CSU-D8-LynxEyeXE",
     express_mode: bool = True,
     phase_params: dict[str, ...] | None = None,
     refinement_params: dict[str, ...] | None = None,

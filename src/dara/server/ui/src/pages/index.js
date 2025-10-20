@@ -41,6 +41,7 @@ const Container = styled.div`
 `
 
 const INSTRUMENT_NAMES = [
+  'CSU-D8-LynxEyeXE',
   'synchrotron',
   'Aeris-fds-Pixcel1d-Medipix3',
   'LBL-d8-LynxEyeXE',
@@ -94,7 +95,7 @@ function Submission() {
   const [rxn_ntwk, setUseRxnntwk] = useState(false);
   const [synchrotron, setSynchrotron] = useState(false);
   // const [synchrotronMessage, setSynchrotronMessage] = useState("");
-  const [ previousInstrumentSelected, setPreviousInstrumentSelected ] = useState("Aeris-fds-Pixcel1d-Medipix3");
+  const [ previousInstrumentSelected, setPreviousInstrumentSelected ] = useState("CSU-D8-LynxEyeXE");
   const [msg, setMsg] = useState(null);
   const [messageApi, contextHolder] = message.useMessage();
   const [spinning, setSpinning] = React.useState(false);
@@ -184,7 +185,7 @@ function Submission() {
           {...layout}
           style={{ width: '60%' }}
           form={form}
-          initialValues={{ use_rxn_predictor: false, temperature: null, "wavelength_lab": 'Cu', instrument_profile: "Aeris-fds-Pixcel1d-Medipix3", synchrotron: false }}
+          initialValues={{ use_rxn_predictor: false, temperature: null, "wavelength_lab": 'Cu', instrument_profile: "CSU-D8-LynxEyeXE", synchrotron: false }}
           onValuesChange={onValuesChange}
         >
           <Form.Item label="User" name="user" tooltip="The username for this refinement. It can be any string that will be shown with the result later." rules={[{ required: true, message: 'Please input your username!' }]}>

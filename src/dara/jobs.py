@@ -53,7 +53,7 @@ class RefinementMaker(Maker):
         xrd_data: XRDData,
         cifs: list[Cif],
         phase_params: dict | None = None,
-        instrument_name: str = "Aeris-fds-Pixcel1d-Medipix3",
+        instrument_name: str = "CSU-D8-LynxEyeXE",
     ):
         """Perform Rietveld refinement.
 

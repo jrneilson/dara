@@ -125,7 +125,7 @@ def batch_refinement(
     pattern_path: Path,
     cif_paths: list[list[RefinementPhase]],
     wavelength: Literal["Cu", "Co", "Cr", "Fe", "Mo"] | float = "Cu",
-    instrument_profile: str | Path = "Aeris-fds-Pixcel1d-Medipix3",
+    instrument_profile: str | Path = "CSU-D8-LynxEyeXE",
     phase_params: dict[str, ...] | None = None,
     refinement_params: dict[str, float] | None = None,
 ) -> list[RefinementResult]:
@@ -936,7 +936,7 @@ class SearchTree(BaseSearchTree):
         refine_params: dict[str, ...] | None = None,
         phase_params: dict[str, ...] | None = None,
         wavelength: Literal["Cu", "Co", "Cr", "Fe", "Mo"] | float = "Cu",
-        instrument_profile: str | Path = "Aeris-fds-Pixcel1d-Medipix3",
+        instrument_profile: str | Path = "CSU-D8-LynxEyeXE",
         express_mode: bool = True,
         maximum_grouping_distance: float = 0.1,
         max_phases: float = 5,

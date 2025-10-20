@@ -34,7 +34,7 @@ async def submit(
     pattern_file: Annotated[UploadFile, File()],
     precursor_formulas: Annotated[str, Form()],
     user: Annotated[str, Form()],
-    instrument_profile: Annotated[str, Form()] = "Aeris-fds-Pixcel1d-Medipix3",
+    instrument_profile: Annotated[str, Form()] = "CSU-D8-LynxEyeXE",
     wavelength: Annotated[str, Form()] = "Cu",
     temperature: Annotated[int, Form()] = -1,
     use_rxn_predictor: Annotated[bool, Form()] = True,

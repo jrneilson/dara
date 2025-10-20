@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 def detect_peaks(
     pattern: Path | np.ndarray,
     wavelength: Literal["Cu", "Co", "Cr", "Fe", "Mo"] | float = "Cu",
-    instrument_profile: str | Path = "Aeris-fds-Pixcel1d-Medipix3",
+    instrument_profile: str | Path = "CSU-D8-LynxEyeXE",
     wmin: float = None,
     wmax: float = None,
     epsilon: float = None,
